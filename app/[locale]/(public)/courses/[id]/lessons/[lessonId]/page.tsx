@@ -8,8 +8,10 @@ import { serializeLessonMdx } from '@/app/[locale]/dashboard/student/courses/[co
 import type { Metadata } from 'next'
 import { buildPageMetadata } from '@/lib/seo'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
+import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
 import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
 import { readLocalModelingLesson } from '@/lib/modeling/local-content'
+import modelingManifest from '@/content/mathematical-modeling/manifest.json'
 
 export const dynamic = 'force-dynamic'
 
@@ -118,14 +120,20 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
     if (!data) notFound()
     const { course, lesson, nextPreview } = data
     const sourceChapters = extractLessonChapters(lesson.content, lesson.title)
-    const serialize = async (chapter: (typeof sourceChapters.en)[number]) => ({
+    const lessonLevel = modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.level ?? 1
+    const serialize = async (
+        chapter: (typeof sourceChapters.en)[number],
+        chapterIndex: number,
+        translatedSource?: string,
+    ) => ({
         id: chapter.id,
         title: chapter.title,
         mdx: await serializeLessonMdx(chapter.source),
+        quiz: buildChapterQuiz(lesson.sequence, chapterIndex, chapter.title, chapter.source, translatedSource),
     })
     const [english, chinese] = await Promise.all([
-        Promise.all(sourceChapters.en.map(serialize)),
-        Promise.all(sourceChapters.zh.map(serialize)),
+        Promise.all(sourceChapters.en.map((chapter, index) => serialize(chapter, index, sourceChapters.zh[index]?.source))),
+        Promise.all(sourceChapters.zh.map((chapter, index) => serialize(chapter, index, chapter.source))),
     ])
 
     return (
@@ -134,6 +142,7 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
             courseId={Number(id)}
             lessonId={lesson.id}
             lessonNumber={lesson.sequence}
+            lessonLevel={lessonLevel}
             courseTitle={course.title}
             lessonTitle={lesson.title}
             lessonDescription={lesson.description}

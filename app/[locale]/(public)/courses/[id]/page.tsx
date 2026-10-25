@@ -39,7 +39,7 @@ import { isFreePreviewEnabled } from '@/lib/settings/free-preview';
 import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
 import { cn } from '@/lib/utils';
-import { modelingLevelBadgeClasses, modelingLevelDotClasses } from '@/lib/modeling/level-styles';
+import { modelingLevelBadgeClasses, modelingLevelDotClasses, modelingLevelIconClasses, modelingLevelRowClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles';
 
 const MODELING_DESCRIPTIONS_ZH: Record<number, string> = {
     1: '从模糊的现实问题出发，学习明确目标、系统边界、状态变量、假设、基线模型与验证证据，建立完整的建模契约。',
@@ -646,14 +646,14 @@ export default async function CourseDetailsPage(props: {
                                         const articleHref = localized(`/courses/${params.id}/lessons/${lesson.id}`);
                                         const quizHref = `${articleHref}?chapter=final`;
                                         return (
-                                            <li key={lesson.id} className="p-4 sm:p-5">
+                                            <li key={lesson.id} className={cn('p-4 sm:p-5', modelingLevelRowClasses(modeling.level))}>
                                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-amber-50 text-lg font-black text-emerald-900 ring-1 ring-emerald-900/10 dark:from-emerald-400/15 dark:to-amber-300/10 dark:text-emerald-200">
+                                                    <div className={cn('flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl border text-lg font-black shadow-lg', modelingLevelIconClasses(modeling.level))}>
                                                         {String(lesson.sequence).padStart(2, '0')}
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <h3 className="text-base font-black leading-snug text-foreground sm:text-lg">{title}</h3>
+                                                            <h3 className={cn('text-base font-black leading-snug sm:text-lg', modelingLevelTitleClasses(modeling.level))}>{title}</h3>
                                                             <span className={cn(
                                                                 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
                                                                 modelingLevelBadgeClasses(modeling.level),
@@ -664,7 +664,7 @@ export default async function CourseDetailsPage(props: {
                                                         </div>
                                                         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
                                                         <p className="mt-2 text-xs font-bold text-emerald-800/75 dark:text-emerald-300/70">
-                                                            {isChinese ? '最多 8 个章节 · 每章 5 题 · 综合测验 15 题' : 'Up to 8 chapters · 5 questions per chapter · 15-question lesson quiz'}
+                                                            {isChinese ? '最多 8 个章节 · 每章 5 题 · 综合检查 15 题' : 'Up to 8 chapters · 5 questions per chapter · 15-question checkpoint quiz'}
                                                         </p>
                                                     </div>
                                                     <div className="flex shrink-0 flex-wrap gap-2 sm:w-40 sm:flex-col">

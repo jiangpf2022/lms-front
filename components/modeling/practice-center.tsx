@@ -15,7 +15,7 @@ type PracticeLesson = {
   title: string
   titleZh: string
   level: number
-  chapters: { title: string; titleZh: string }[]
+  chapters: { title: string; titleZh: string; questions: ModelingQuizQuestion[] }[]
 }
 
 type PracticeHistory = {
@@ -55,14 +55,14 @@ export function PracticeCenter({ locale, lessons }: { locale: string; lessons: P
   const questions = useMemo(() => {
     if (!lesson) return []
     if (mode === 'chapter') {
-      return buildChapterQuiz(lesson.number, chapterIndex, chapter?.title)
+      return chapter?.questions ?? buildChapterQuiz(lesson.number, chapterIndex, chapter?.title)
     }
     const pool = lessons.flatMap((item) => item.chapters.flatMap((itemChapter, index) =>
-      buildChapterQuiz(item.number, index, itemChapter.title)
+      itemChapter.questions ?? buildChapterQuiz(item.number, index, itemChapter.title)
     ))
     const uniquePool = [...new Map(pool.map((question) => [question.prompt.en, question])).values()]
     return seededShuffle(uniquePool, attempt * 7919 + randomCount).slice(0, randomCount)
-  }, [attempt, chapter?.title, chapterIndex, lesson, lessons, mode, randomCount])
+  }, [attempt, chapter?.questions, chapter?.title, chapterIndex, lesson, lessons, mode, randomCount])
 
   const heading = mode === 'chapter'
     ? (language === 'zh' ? `${lesson?.titleZh} · ${chapter?.titleZh}` : `${lesson?.title} · ${chapter?.title}`)

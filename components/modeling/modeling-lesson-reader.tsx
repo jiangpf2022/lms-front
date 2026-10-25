@@ -21,12 +21,14 @@ import { LessonContent } from '@/app/[locale]/dashboard/student/courses/[courseI
 import { Button } from '@/components/ui/button'
 import { createClient } from '@/lib/supabase/client'
 import { cn } from '@/lib/utils'
-import { buildChapterQuiz, buildLessonFinalQuiz, type ModelingQuizQuestion } from '@/lib/modeling/math-quiz-bank'
+import type { ModelingQuizQuestion } from '@/lib/modeling/math-quiz-bank'
+import { modelingLevelBadgeClasses, modelingLevelIconClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles'
 
 type SerializedChapter = {
   id: string
   title: string
   mdx: SerializeResult | null
+  quiz: ModelingQuizQuestion[]
 }
 
 export type ReaderLanguage = 'en' | 'zh'
@@ -200,6 +202,7 @@ export function ModelingLessonReader({
   courseId,
   lessonId,
   lessonNumber,
+  lessonLevel,
   courseTitle,
   lessonTitle,
   lessonDescription,
@@ -210,6 +213,7 @@ export function ModelingLessonReader({
   courseId: number
   lessonId: number
   lessonNumber: number
+  lessonLevel: number
   courseTitle: string
   lessonTitle: string
   lessonDescription: string | null
@@ -229,9 +233,19 @@ export function ModelingLessonReader({
   const progressKey = `modeling-learning-progress:${lessonId}`
   const bookmarkKey = 'modeling-learning-bookmarks'
   const itemId = isFinalQuiz ? 'final-quiz' : `chapter-${activeIndex + 1}`
+  const checkpointQuestions = useMemo(() => {
+    const chapterQuestions = chapters.en.map((chapter) => chapter.quiz)
+    // Interleave by difficulty instead of exhausting early chapters first.
+    // Question 0 checks the chapter's central idea; question 4 is the mapped
+    // calculation whenever that chapter introduces a mathematical method.
+    const conceptPass = chapterQuestions.map((items) => items[0]).filter(Boolean)
+    const calculationPass = chapterQuestions.map((items) => items[4]).filter(Boolean)
+    const transferPass = chapterQuestions.flatMap((items) => items.slice(1, 4))
+    return [...conceptPass, ...calculationPass, ...transferPass].slice(0, 15)
+  }, [chapters.en])
   const questions = useMemo(
-    () => isFinalQuiz ? buildLessonFinalQuiz(lessonNumber) : buildChapterQuiz(lessonNumber, activeIndex, chapters.en[activeIndex]?.title ?? activeChapter?.title),
-    [activeChapter?.title, activeIndex, chapters.en, isFinalQuiz, lessonNumber]
+    () => isFinalQuiz ? checkpointQuestions : (chapters.en[activeIndex]?.quiz ?? activeChapter.quiz),
+    [activeChapter.quiz, activeIndex, chapters.en, checkpointQuestions, isFinalQuiz]
   )
   const totalUnits = localized.length + 1
   const completedCount = progress.completed.filter((id) => id === 'final-quiz' || /^chapter-\d+$/.test(id)).length
@@ -361,8 +375,11 @@ export function ModelingLessonReader({
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
             <div className="min-w-0">
               <div className="flex items-center gap-3">
-                <span className="text-xs font-black uppercase tracking-[0.18em] text-[#4f9bf5]">Blog {lessonNumber}</span>
-                <h1 className="truncate text-base font-black sm:text-xl">{lessonTitle}</h1>
+                <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-black shadow-lg', modelingLevelIconClasses(lessonLevel))}>{String(lessonNumber).padStart(2, '0')}</span>
+                <div className="min-w-0">
+                  <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.15em]', modelingLevelBadgeClasses(lessonLevel))}>Level {lessonLevel}</span>
+                  <h1 className={cn('truncate text-base font-black sm:text-xl', modelingLevelTitleClasses(lessonLevel))}>{lessonTitle}</h1>
+                </div>
               </div>
               <p className="mt-1 text-xs text-white/45">{courseTitle}</p>
             </div>
@@ -373,7 +390,7 @@ export function ModelingLessonReader({
           </div>
           <div className="overflow-x-auto [scrollbar-width:thin]">
             <div className="flex min-w-max items-start px-5 pb-3 pt-2 sm:px-7">
-              {[...localized.map((chapter) => chapter.title), language === 'zh' ? '综合测验' : 'Final Quiz'].map((title, index) => {
+              {[...localized.map((chapter) => chapter.title), language === 'zh' ? '综合检查' : 'Checkpoint Quiz'].map((title, index) => {
                 const id = index === finalIndex ? 'final-quiz' : `chapter-${index + 1}`
                 const complete = progress.completed.includes(id)
                 const active = index === activeIndex
@@ -454,7 +471,7 @@ export function ModelingLessonReader({
           <section className="rounded-[32px] border border-white/80 bg-white/88 p-6 text-center shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1713]/88 sm:p-10">
             <Trophy className="mx-auto h-12 w-12 text-amber-500" />
             <p className="mt-5 text-xs font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">Lesson assessment</p>
-            <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{language === 'zh' ? '综合测验' : 'Final Quiz'}</h2>
+            <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{language === 'zh' ? '综合检查' : 'Checkpoint Quiz'}</h2>
             <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? '15 道题覆盖整篇 Blog 的核心概念、计算与模型判断。题目由易到难，后续可以继续由作者审核和迭代。' : 'Fifteen questions connect the whole blog: concepts, calculations, and modeling judgment. They progress from foundations to deeper transfer.'}</p>
           </section>
         )}
@@ -463,7 +480,7 @@ export function ModelingLessonReader({
           key={`${language}-${itemId}`}
           questions={questions}
           language={language}
-          title={isFinalQuiz ? (language === 'zh' ? '本讲综合测验' : 'Lesson Quiz') : (language === 'zh' ? '章节练习' : 'Chapter Checkpoint')}
+          title={isFinalQuiz ? (language === 'zh' ? '本讲综合检查' : 'Checkpoint Quiz') : (language === 'zh' ? '章节练习' : 'Chapter Checkpoint')}
           description={isFinalQuiz ? (language === 'zh' ? '完成全部 15 道题，检查你是否能够把各章节连接成完整的建模思路。' : 'Complete all 15 questions to test whether you can connect the chapters into one modeling argument.') : (language === 'zh' ? '5 道题不只检查记忆，还要求计算、判断假设并解释模型。' : 'Five questions test calculation, assumptions, and model judgment—not just recall.')}
           submitLabel={language === 'zh' ? '检查答案' : 'Check answers'}
           previousScore={progress.scores[itemId]}

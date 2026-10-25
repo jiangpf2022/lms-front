@@ -191,7 +191,7 @@ export function ModelingLearningCenter({ courseId, lessons, signedIn, locale }: 
     { icon: BookOpenCheck, title: t('First Step', '初次启程'), detail: t('Complete a chapter checkpoint', '完成一次章节测验'), earned: activeRecords.some((record) => record.completed.length >= 1) },
     { icon: Target, title: t('Model Builder', '模型构建者'), detail: t('Complete five learning units', '完成五个学习单元'), earned: activeRecords.reduce((sum, record) => sum + record.completed.length, 0) >= 5 },
     { icon: Star, title: t('Sharp Reasoning', '敏锐推理'), detail: t('Score at least 80% on a quiz', '在一次测验中达到 80%'), earned: activeRecords.some((record) => Object.values(record.scores).some((score) => score >= 80)) },
-    { icon: Trophy, title: t('Blog Master', '博客精通者'), detail: t('Complete a 15-question blog quiz', '完成一次 15 题博客总测验'), earned: activeRecords.some((record) => record.completed.includes('final-quiz')) },
+    { icon: Trophy, title: t('Blog Master', '博客精通者'), detail: t('Complete a 15-question checkpoint quiz', '完成一次 15 题综合检查'), earned: activeRecords.some((record) => record.completed.includes('final-quiz')) },
     { icon: Flame, title: t('Momentum', '保持势头'), detail: t('Earn 50 course XP', '获得 50 点课程经验'), earned: totalXp >= 50 },
   ]
 

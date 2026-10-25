@@ -22,6 +22,17 @@ Pause before calculating. What is under our control? Not profit, rice stock, or 
 
 $$x_R=\text{rice trays},\qquad x_S=\text{salad trays}.$$
 
+Do not rush past that line. A variable is not merely a letter; it is a promise about what one unit means and when the decision is made. Here both variables are measured in **trays prepared before lunch**. If $x_R=10$, the kitchen has committed to ten rice trays. It does not mean ten kilograms of rice, ten customers, or 10 RMB of profit. Writing the unit beside the variable prevents three common mistakes before they happen.
+
+Now build the model one sentence at a time.
+
+1. One rice tray contributes 36 RMB, so $x_R$ rice trays contribute $36x_R$ RMB. Likewise, salads contribute $30x_S$ RMB. Adding quantities with the same unit gives the total contribution margin $36x_R+30x_S$.
+2. Each rice tray consumes 4 kg of rice. Therefore $4x_R$ has units $(\text{kg/tray})(\text{trays})=\text{kg}$. The stock is 80 kg, so the rule is $4x_R\le80$.
+3. Labor is shared. Rice trays use $2x_R$ staff-minutes and salads use $3x_S$ staff-minutes. Their sum cannot exceed 72.
+4. “At most 18” and “at most 16” are upper bounds, while negative production is impossible.
+
+This order—**meaning, unit, arithmetic, inequality direction**—is far safer than trying to remember a template.
+
 Profit becomes $\max 36x_R+30x_S$, and the rules become
 
 $$
@@ -45,6 +56,26 @@ $$
 $$
 
 Here $x$ is the vector of decisions, $c$ gives their objective coefficients, rows of $A$ and $E$ encode rules, and $b,d,\ell,u$ are data. The notation is compact, but the model must retain units. A row that adds kilograms to staff-minutes is not sophisticated; it is wrong.
+
+Let us unpack the compact notation using the kitchen rather than asking you to accept it on sight. With
+
+$$
+x=\begin{bmatrix}x_R\\x_S\end{bmatrix},\qquad
+c=\begin{bmatrix}-36\\-30\end{bmatrix},\qquad
+A=\begin{bmatrix}
+4&0\\
+2&3\\
+1&0\\
+0&1
+\end{bmatrix},\qquad
+b=\begin{bmatrix}80\\72\\18\\16\end{bmatrix},
+$$
+
+the product $Ax$ means “take the dot product of every row with the decision vector.” Its second entry is $2x_R+3x_S$, exactly the labor used. In general, if $A$ has $m$ rows and $n$ columns, then $x\in\mathbb R^n$, $A\in\mathbb R^{m\times n}$, and $b\in\mathbb R^m$. The coefficient $a_{ij}$ tells us how much resource or requirement $i$ is created by one unit of decision $j$. Likewise,
+
+$$c^Tx=\sum_{j=1}^{n}c_jx_j$$
+
+is ordinary multiplication and addition, not a new optimization operation. We wrote negative profit in $c$ only because the compact form above uses minimization: minimizing $-36x_R-30x_S$ is the same decision as maximizing profit. If a matrix expression cannot be translated back into one plain-language sentence per row, it is not ready for a solver.
 
 Natural language usually hides the algebra in three verbs. “At most,” “capacity,” and “cannot exceed” produce $\le$ constraints. “At least,” “coverage,” and “must satisfy” produce $\ge$ constraints. “Balance,” “conservation,” and “exactly” produce equalities.
 
@@ -361,7 +392,25 @@ This connection matters in modeling competitions. Dual variables are not merely 
 
 ## Quadratic Programs
 
-Linear objectives assume marginal value is constant. Often it is not. A schedule may be penalized for deviating from a target; a portfolio may trade return against variance; a control input may be penalized for changing too sharply. These lead to
+Linear objectives assume marginal value is constant. Often it is not. Before introducing a matrix, consider the smallest possible scheduling problem. A quiet study room should receive ten staff-hours of supervision. Let $x$ be the scheduled hours. We could penalize the absolute error $|x-10|$, but suppose a two-hour miss should hurt more than twice as much as a one-hour miss. Squaring expresses that judgment:
+
+$$f(x)=(x-10)^2.$$
+
+Check three decisions by hand: $f(9)=1$, $f(8)=4$, and $f(6)=16$. The square is doing something meaningful: large misses become increasingly expensive, positive and negative misses are treated symmetrically, and the best unconstrained decision is visibly $x=10$. Expanding gives
+
+$$f(x)=x^2-20x+100,\qquad f'(x)=2x-20,\qquad f''(x)=2>0.$$
+
+The derivative vanishes at $x=10$, and positive curvature tells us this stationary point is a minimum. This one-variable example already contains the entire logic of a convex quadratic program.
+
+Now suppose two rooms need total supervision close to ten hours, with target allocations six and four. Let $x=(x_1,x_2)^T$ and add a smoothness penalty discouraging an extreme imbalance:
+
+$$
+f(x_1,x_2)=(x_1-6)^2+(x_2-4)^2+0.2(x_1-x_2)^2.
+$$
+
+The first two squares penalize deviation from each target. The final square couples the decisions: changing $x_1$ changes the marginal cost of $x_2$. We might also require $x_1+x_2\le12$ and $x_1,x_2\ge0$. That is a QP because the objective is quadratic while the constraints remain linear.
+
+A schedule may be penalized for deviating from a target; a portfolio may trade return against variance; a control input may be penalized for changing too sharply. All of these can be written as
 
 $$
 \begin{aligned}
@@ -371,6 +420,30 @@ $$
 $$
 
 When $Q$ is symmetric, $\nabla f(x)=Qx+q$ and $\nabla^2f(x)=Q$. If $Q\succeq0$, the problem is convex and every local minimizer is global. If $Q\succ0$, the objective is strictly convex and the minimizer is unique over a convex feasible set.
+
+Here is how to read every symbol rather than memorize the line.
+
+- $x\in\mathbb R^n$ is still the decision vector.
+- $Q\in\mathbb R^{n\times n}$ controls curvature. Diagonal entries penalize individual decisions; off-diagonal entries describe interaction between pairs of decisions.
+- $q\in\mathbb R^n$ is the linear part and $r$ is a constant. The constant changes the reported objective value but never the minimizer.
+- The factor $1/2$ is bookkeeping: differentiating $\frac12x^TQx$ gives $Qx$ when $Q$ is symmetric instead of $2Qx$.
+- $Q\succeq0$ means $z^TQz\ge0$ for every direction $z$. Geometrically, the surface never bends downward along any line.
+
+For a concrete hand calculation, let
+
+$$Q=\begin{bmatrix}2&1\\1&2\end{bmatrix},\qquad q=\begin{bmatrix}-6\\-6\end{bmatrix}.$$
+
+At $x=(1,1)^T$, the gradient is
+
+$$
+\nabla f(x)=Qx+q
+=\begin{bmatrix}2&1\\1&2\end{bmatrix}
+\begin{bmatrix}1\\1\end{bmatrix}
++\begin{bmatrix}-6\\-6\end{bmatrix}
+=\begin{bmatrix}-3\\-3\end{bmatrix}.
+$$
+
+Both components are negative, so increasing either decision initially reduces the objective. Solving $Qx+q=0$ gives $x=(2,2)^T$. The eigenvalues of $Q$ are 1 and 3, both positive, so this stationary point is the unique unconstrained minimum. If a new constraint $x_1+x_2\le3$ is imposed, $(2,2)$ is infeasible and the constrained optimum must move to the boundary. This is the moment when KKT multipliers become useful: they explain the price of that boundary.
 
 Ordinary least squares is a QP:
 
@@ -1684,6 +1757,17 @@ The next blog goes deeper into convexity proofs, conjugates, duality, proximal o
 
 $$x_R=\text{米饭套餐数量},\qquad x_S=\text{沙拉套餐数量}.$$
 
+这一行不要一眼扫过去。变量不只是一个字母，它其实是一份很具体的约定：一单位代表什么、在什么时候决定。这里的两个变量都以“午餐开始前准备的盘数”为单位。$x_R=10$ 的意思是厨房决定准备 10 盘米饭套餐，不是 10 千克米、10 位顾客，也不是 10 元利润。先把单位说清楚，后面很多系数抄错、量纲混乱的问题会自然消失。
+
+我们按现实语言逐行搭建模型。
+
+1. 每盘米饭套餐贡献 36 元，$x_R$ 盘就贡献 $36x_R$ 元；沙拉同理贡献 $30x_S$ 元。两项单位都是元，因此可以相加。
+2. 每盘米饭套餐用 4 千克米，所以 $4x_R$ 的单位是“千克/盘 × 盘 = 千克”。库存只有 80 千克，因此写成 $4x_R\le80$。
+3. 人工由两种套餐共同占用，分别需要 $2x_R$ 与 $3x_S$ 分钟，总和不能超过 72 分钟。
+4. “最多卖出 18 盘、16 盘”是上界；负数盘套餐没有现实意义，所以变量必须非负。
+
+请记住这个顺序：**先解释含义，再核对单位，再做乘加，最后判断不等号方向。** 这比背诵某个标准模板可靠得多。
+
 于是模型是
 
 $$
@@ -1704,6 +1788,26 @@ $$
 $$\min_x c^Tx\quad\text{s.t.}\quad Ax\le b,\ Ex=d,\ \ell\le x\le u.$$
 
 $x$ 是我们能决定的量，$c$ 是目标系数，$A,E$ 的每一行代表一条规则，$b,d,\ell,u$ 是数据。矩阵写法很紧凑，但单位不能被隐藏：把千克与分钟直接相加，不是高级，而是错误。
+
+把餐厅模型真的装进矩阵里，就不会觉得这些字母是从天上掉下来的：
+
+$$
+x=\begin{bmatrix}x_R\\x_S\end{bmatrix},\quad
+c=\begin{bmatrix}-36\\-30\end{bmatrix},\quad
+A=\begin{bmatrix}
+4&0\\
+2&3\\
+1&0\\
+0&1
+\end{bmatrix},\quad
+b=\begin{bmatrix}80\\72\\18\\16\end{bmatrix}.
+$$
+
+$Ax$ 的意思只是让 $A$ 的每一行分别与 $x$ 做一次点积。例如第二行得到 $2x_R+3x_S$，正好是人工分钟数。如果模型有 $n$ 个决策、$m$ 条不等式，那么 $x\in\mathbb R^n$、$A\in\mathbb R^{m\times n}$、$b\in\mathbb R^m$。其中 $a_{ij}$ 表示“第 $j$ 个决策每增加一单位，会消耗或贡献多少第 $i$ 类资源”。而
+
+$$c^Tx=\sum_{j=1}^{n}c_jx_j$$
+
+也只是普通的逐项相乘再相加。这里把利润系数写成负数，是因为统一形式采用最小化；最小化负利润与最大化利润得到同一个决策。以后看到矩阵模型，可以逐行把它翻译回自然语言。如果某一行怎么也说不清，那一行就还不应该交给求解器。
 
 自然语言中，“不超过、容量、至多”通常对应 $\le$；“至少、覆盖、必须达到”对应 $\ge$；“守恒、平衡、恰好”等词对应等式。若出现“只有启用地块 $i$ 才能种作物 $k$”，还需要二元变量 $z_{ik}\in\{0,1\}$ 和
 
@@ -1792,7 +1896,25 @@ $$y_i^*(b_i-a_i^Tx^*)=0,\qquad x_j^*[(A^Ty^*)_j-c_j]=0.$$
 
 ## 二次规划
 
-线性目标假设边际价值不变，但很多问题并非如此。调度会惩罚偏离目标，投资会权衡收益与方差，控制会惩罚动作突变。这些问题常写成
+线性目标假设边际价值不变，但很多问题并非如此。先不要急着看矩阵，我们从一个只有一个变量的问题开始。
+
+假设一间自习室希望每天安排 10 小时的值班，令 $x$ 为实际安排的小时数。如果少 1 小时和多 1 小时带来的麻烦近似对称，而且偏差越大，额外损失增长得越快，一个自然的惩罚是
+
+$$f(x)=(x-10)^2.$$
+
+手算三个数：$f(9)=1$、$f(8)=4$、$f(6)=16$。偏差从 1 小时扩大到 2 小时，惩罚不是变成 2，而是变成 4；扩大到 4 小时，惩罚变成 16。平方不是为了让公式显得高级，而是在表达“大的偏差比小的偏差严重得多”这一判断。展开后
+
+$$f(x)=x^2-20x+100,\qquad f'(x)=2x-20,\qquad f''(x)=2>0.$$
+
+令一阶导数为零得到 $x=10$，二阶导数为正说明曲线向上弯，因此这里确实是最小值。你已经在一维里看到了凸二次规划最重要的逻辑。
+
+再把问题扩展成两个自习室。令 $x_1,x_2$ 为两间教室的值班小时，希望它们接近 6 小时和 4 小时，同时不要相差得太悬殊：
+
+$$
+f(x_1,x_2)=(x_1-6)^2+(x_2-4)^2+0.2(x_1-x_2)^2.
+$$
+
+前两个平方分别惩罚偏离目标，最后一个平方把两个决策联系起来，惩罚极端不均衡。若再加上 $x_1+x_2\le12$ 与非负约束，这就是一个目标为二次函数、约束为线性的 QP。调度偏差、投资方差、控制动作的剧烈变化，都是同一类结构的不同解释。它们可统一写成
 
 $$
 \min_x \frac12x^TQx+q^Tx+r
@@ -1800,6 +1922,26 @@ $$
 $$
 
 当 $Q$ 对称时，$\nabla f=Qx+q$，$\nabla^2f=Q$。若 $Q\succeq0$，问题是凸的，局部最小值就是全局最小值；若 $Q\succ0$，在凸可行域内最优解唯一。
+
+逐个解释这些符号：$x\in\mathbb R^n$ 仍然是决策向量；$Q\in\mathbb R^{n\times n}$ 控制曲面的弯曲程度，对角元素描述单个变量的平方惩罚，非对角元素描述变量之间的相互作用；$q$ 是线性系数；常数 $r$ 会改变目标函数的数值，但不会改变最优决策。前面的 $1/2$ 只是为了求导方便——当 $Q$ 对称时，$\frac12x^TQx$ 的梯度恰好是 $Qx$。
+
+$Q\succeq0$ 的意思是对任意方向 $z$ 都有 $z^TQz\ge0$。直观地说，从任何方向切开目标曲面，都不会看到向下弯的部分，因此不会出现“眼前是局部低点，远处还有一个更低谷底”的情况。
+
+做一个能手算的例子：
+
+$$Q=\begin{bmatrix}2&1\\1&2\end{bmatrix},\qquad q=\begin{bmatrix}-6\\-6\end{bmatrix}.$$
+
+在 $x=(1,1)^T$ 处，梯度为
+
+$$
+\nabla f(x)=Qx+q
+=\begin{bmatrix}2&1\\1&2\end{bmatrix}
+\begin{bmatrix}1\\1\end{bmatrix}
++\begin{bmatrix}-6\\-6\end{bmatrix}
+=\begin{bmatrix}-3\\-3\end{bmatrix}.
+$$
+
+两个分量都是负数，说明此时稍微增加任一变量都会让目标下降。解 $Qx+q=0$ 得到 $x=(2,2)^T$。$Q$ 的特征值为 1 和 3，均为正，所以它是唯一的无约束最优点。如果新增约束 $x_1+x_2\le3$，$(2,2)$ 就不可行，最优点会被推到边界上。接下来 KKT 乘子所解释的，正是“这条边界让我们付出了多少代价”。
 
 最小二乘就是典型 QP：
 

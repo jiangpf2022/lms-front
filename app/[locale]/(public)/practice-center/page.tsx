@@ -4,6 +4,7 @@ import type { Metadata } from 'next'
 import manifest from '@/content/mathematical-modeling/manifest.json'
 import { PracticeCenter } from '@/components/modeling/practice-center'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
+import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
 
 export const dynamic = 'force-static'
 
@@ -34,6 +35,7 @@ export default async function PracticeCenterPage({ params }: { params: Promise<{
       chapters: chapters.en.map((chapter, index) => ({
         title: chapter.title,
         titleZh: chapters.zh[index]?.title ?? chapter.title,
+        questions: buildChapterQuiz(lesson.number, index, chapter.title, chapter.source, chapters.zh[index]?.source),
       })),
     }
   }))

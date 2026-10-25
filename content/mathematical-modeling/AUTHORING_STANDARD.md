@@ -13,6 +13,20 @@ This course assumes an intelligent reader with **no prior knowledge of the named
 7. Explain how to validate the method and which baseline makes the comparison meaningful.
 8. End by reconnecting the method to the original decision rather than merely listing formulas.
 
+## Formula-first review gate
+
+An article may not introduce a named algorithm with its final compact formula. Before every central equation it must:
+
+1. pose the smallest concrete problem that needs the equation;
+2. define each variable in words, including units and decision time;
+3. construct the scalar or one-step form before matrix notation;
+4. decode dimensions, indices, coefficients, signs, and inequality direction;
+5. calculate one small instance by hand and expose at least one intermediate value;
+6. explain what would change if an assumption or constraint changed;
+7. only then present the general algorithm and implementation advice.
+
+This gate applies especially to LP, QP, KKT, SOCP, convex optimization, robust optimization, metaheuristics, differential equations, time series, data preparation, and evaluation methods.
+
 ## Structure and voice
 
 - Use no more than eight top-level learning chapters (`##`) per language after grouping.

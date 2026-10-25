@@ -398,6 +398,9 @@
   color: #234f3b;
 }
 .modeling-article-surface .prose img {
+  display: block;
+  width: min(100%, 56rem);
+  height: auto;
   margin: 1.8rem auto;
   border: 1px solid rgba(255, 255, 255, 0.9);
   border-radius: 1.25rem;

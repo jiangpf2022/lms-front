@@ -251,7 +251,181 @@ function chapterFocus(title?: string) {
   return null
 }
 
-export function buildChapterQuiz(lessonNumber: number, chapterIndex: number, chapterTitle?: string) {
+const groundedPrompts = [
+  {
+    en: (title: string) => `Core idea — which statement is supported by the “${title}” chapter?`,
+    zh: (title: string) => `核心概念——“${title}”这一章支持下面哪项陈述？`,
+  },
+  {
+    en: (title: string) => `Mechanism — which claim follows the reasoning developed in “${title}”?`,
+    zh: (title: string) => `作用机制——哪项结论符合“${title}”这一章的推理？`,
+  },
+  {
+    en: (title: string) => `Boundary — which interpretation stays within the assumptions of “${title}”?`,
+    zh: (title: string) => `适用边界——哪种解释没有超出“${title}”中的假设？`,
+  },
+  {
+    en: (title: string) => `Evidence — which statement matches the checks described in “${title}”?`,
+    zh: (title: string) => `证据判断——哪项陈述符合“${title}”中介绍的检查方法？`,
+  },
+  {
+    en: (title: string) => `Transfer — which conclusion can be defended using only “${title}” and earlier chapters?`,
+    zh: (title: string) => `迁移理解——只利用“${title}”及此前章节，哪项结论可以得到支持？`,
+  },
+]
+
+function sourceStatements(source?: string) {
+  if (!source) return []
+  const plain = source
+    .replace(/```[\s\S]*?```/g, ' ')
+    .replace(/\$\$[\s\S]*?\$\$/g, ' ')
+    .replace(/\$[^$\n]+\$/g, ' ')
+    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/^#{1,6}\s+/gm, '')
+    .replace(/[*_`~>|]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  const statements = plain
+    .split(/(?<=[.!?。！？])\s+/)
+    .map((value) => value.trim())
+    .filter((value) => value.length >= 55 && value.length <= 230)
+    .filter((value) => !/^(figure|table|source|image|code)\b/i.test(value))
+
+  return [...new Set(statements)]
+}
+
+function evenlySpaced<T>(items: T[], count: number) {
+  if (items.length <= count) return items
+  return Array.from({ length: count }, (_, index) => items[Math.round((index * (items.length - 1)) / (count - 1))])
+}
+
+function distortStatement(statement: string, variant: number, chapterTitle: string, language: 'en' | 'zh') {
+  if (language === 'zh') {
+    const replacements: [RegExp, string][] = [
+      [/必须/g, '完全不需要'],
+      [/不能/g, '总是可以'],
+      [/增加/g, '必然减少'],
+      [/减少/g, '必然增加'],
+      [/可行/g, '无条件最优'],
+      [/局部/g, '无条件全局'],
+    ]
+    const [pattern, replacement] = replacements[variant % replacements.length]
+    const changed = statement.replace(pattern, replacement)
+    if (changed !== statement) return changed
+    return [
+      `“${chapterTitle}”中的结论不需要任何假设、单位或适用范围。`,
+      `只要计算结果有很多小数位，就足以证明“${chapterTitle}”中的模型正确。`,
+      `在“${chapterTitle}”中，复杂度本身就是选择方法的充分理由。`,
+      `“${chapterTitle}”中的所有结论都可以直接推广到任意数据和情景。`,
+    ][variant % 4]
+  }
+
+  const replacements: [RegExp, string][] = [
+    [/\bmust\b/i, 'never needs to'],
+    [/\bcannot\b/i, 'can always'],
+    [/\bincrease(s|d)?\b/i, 'always decreases'],
+    [/\bdecrease(s|d)?\b/i, 'always increases'],
+    [/\bfeasible\b/i, 'unconditionally optimal'],
+    [/\blocal\b/i, 'unconditionally global'],
+  ]
+  const [pattern, replacement] = replacements[variant % replacements.length]
+  const changed = statement.replace(pattern, replacement)
+  if (changed !== statement) return changed
+  return [
+    `The conclusions in “${chapterTitle}” require no assumptions, units, or scope conditions.`,
+    `A result with many decimal places is sufficient proof that the model in “${chapterTitle}” is correct.`,
+    `In “${chapterTitle}”, complexity alone is a sufficient reason to choose a method.`,
+    `Every conclusion in “${chapterTitle}” transfers unchanged to arbitrary data and scenarios.`,
+  ][variant % 4]
+}
+
+function mathFocus(lessonNumber: number, chapterTitle: string) {
+  const title = chapterTitle.toLowerCase()
+  const rules: Record<number, [RegExp, number][]> = {
+    1: [[/model foundations|baseline|dining|study|language/, 0], [/assumption|validation/, 3]],
+    2: [[/toolchain|worked case/, 2], [/award paper/, 1], [/chatgpt|algorithm library/, 3]],
+    3: [[/comparison/, 0], [/time|forecast/, 1], [/distribution|risk/, 3], [/diagnostic/, 4]],
+    4: [[/mathematical program|lp geometry|crop/, 0], [/dual/, 1], [/quadratic/, 2], [/kkt/, 3], [/cone/, 4]],
+    5: [[/convexity/, 0], [/smooth|condition/, 1], [/subgradient/, 2], [/proximal|splitting/, 3], [/var|cvar|risk/, 4]],
+    6: [[/multiple objective/, 1], [/pareto/, 0], [/robust counterpart/, 2], [/robust vs|stochastic/, 4], [/worked case/, 3]],
+    7: [[/genetic/, 0], [/particle swarm/, 1], [/anneal/, 2], [/constraint|penalt|crop/, 3], [/fair experiment/, 4]],
+    9: [[/well-posed/, 1], [/pendulum/, 3], [/population/, 2], [/numerical/, 4], [/therapy|drainage|scaling/, 0]],
+    10: [[/compartment/, 4], [/epidemic|diagnostic/, 1], [/stability/, 2], [/predator|population/, 3], [/diffusion|reflow/, 0]],
+    13: [[/pattern|timeline|dependence/, 0], [/smoothing/, 1], [/arima/, 2], [/validation|decision/, 3], [/uncertainty/, 4]],
+    15: [[/grain|type|case/, 0], [/transform/, 1], [/missing/, 2], [/outlier/, 3], [/split|pipeline/, 4]],
+    17: [[/criteria|weight/, 0], [/ahp/, 1], [/topsis/, 3], [/alternative/, 2], [/sensitivity|validation|case/, 4]],
+    19: [[/result/, 0], [/architecture|method/, 1], [/validation/, 2], [/editing|audit/, 3], [/example/, 4]],
+    20: [[/problem|argument/, 1], [/assumption|notation/, 3], [/model|solution/, 0], [/evidence|discussion/, 2], [/conclusion|review/, 4]],
+  }
+  return rules[lessonNumber]?.find(([pattern]) => pattern.test(title))?.[1] ?? null
+}
+
+function groundedChapterQuiz(
+  lessonNumber: number,
+  chapterIndex: number,
+  chapterTitle: string,
+  sourceEn?: string,
+  sourceZh?: string,
+) {
+  const english = evenlySpaced(sourceStatements(sourceEn), 5)
+  const chinese = evenlySpaced(sourceStatements(sourceZh), 5)
+  const focus = mathFocus(lessonNumber, chapterTitle)
+  const groundedCount = focus === null ? 5 : 4
+  const questions = Array.from({ length: groundedCount }, (_, index) => {
+    const fallbackEn = `A defensible use of ${chapterTitle} keeps the stated objective, assumptions, units, and validation evidence connected.`
+    const fallbackZh = `合理使用“${chapterTitle}”时，必须让目标、假设、单位和验证证据保持一致。`
+    const correctEn = english[index % Math.max(english.length, 1)] ?? fallbackEn
+    const correctZh = chinese[index % Math.max(chinese.length, 1)] ?? fallbackZh
+    const correctPosition = [1, 3, 0, 2, 1][index]
+    const distractorsEn = [0, 1, 2].map((variant) => distortStatement(correctEn, index + variant, chapterTitle, 'en'))
+    const distractorsZh = [0, 1, 2].map((variant) => distortStatement(correctZh, index + variant, chapterTitle, 'zh'))
+    const optionsEn = [...distractorsEn]
+    const optionsZh = [...distractorsZh]
+    optionsEn.splice(correctPosition, 0, correctEn)
+    optionsZh.splice(correctPosition, 0, correctZh)
+    const prompt = groundedPrompts[index]
+
+    return question(
+      `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-grounded-${index + 1}`,
+      { en: prompt.en(chapterTitle), zh: prompt.zh(chapterTitle) },
+      { en: optionsEn, zh: optionsZh },
+      correctPosition,
+      {
+        en: `This statement is grounded in the current chapter. The alternatives remove its conditions, reverse its mechanism, or substitute numerical appearance for evidence.`,
+        zh: `这项陈述直接来自当前章节；其余选项删除了适用条件、颠倒了作用机制，或把数值形式误当成证据。`,
+      },
+    )
+  })
+
+  if (focus !== null) {
+    const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-math`
+    const worked = (builders[lessonNumber] ?? generalQuestions)(chapterIndex + 1, id)[focus]
+    questions.push({
+      ...worked,
+      prompt: {
+        en: `Worked calculation for “${chapterTitle}” — ${worked.prompt.en}`,
+        zh: `“${chapterTitle}”计算题——${worked.prompt.zh}`,
+      },
+    })
+  }
+
+  return questions
+}
+
+export function buildChapterQuiz(
+  lessonNumber: number,
+  chapterIndex: number,
+  chapterTitle?: string,
+  sourceEn?: string,
+  sourceZh?: string,
+) {
+  if (chapterTitle && sourceEn) {
+    return groundedChapterQuiz(lessonNumber, chapterIndex, chapterTitle, sourceEn, sourceZh)
+  }
+
   const builder = builders[lessonNumber] ?? generalQuestions
   const focus = chapterFocus(chapterTitle)
   const questionOrder = focus === null

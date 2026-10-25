@@ -17,8 +17,11 @@ import {
 import { cn } from '@/lib/utils'
 import {
   modelingLevelDotClasses,
+  modelingLevelIconClasses,
   modelingLevelPanelClasses,
+  modelingLevelRowClasses,
   modelingLevelTextClasses,
+  modelingLevelTitleClasses,
 } from '@/lib/modeling/level-styles'
 
 const display = Bricolage_Grotesque({
@@ -232,7 +235,7 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
             const isPublished = lesson.status === 'published'
             const content = (
               <div className="grid gap-4 px-5 py-5 sm:grid-cols-[52px_1fr_auto] sm:items-center sm:px-7">
-                <span className={cn(display.className, 'flex h-11 w-11 items-center justify-center rounded-2xl text-sm font-extrabold', isPublished ? 'bg-emerald-900 text-amber-300 dark:bg-emerald-300 dark:text-emerald-950' : 'bg-black/5 text-black/35 dark:bg-white/5 dark:text-white/30')}>
+                <span className={cn(display.className, 'flex h-11 w-11 items-center justify-center rounded-2xl border text-sm font-extrabold shadow-lg', modelingLevelIconClasses(lesson.level), !isPublished && 'grayscale opacity-55')}>
                   {String(lesson.sequence).padStart(2, '0')}
                 </span>
                 <div className="min-w-0">
@@ -244,7 +247,7 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                       {lesson.summary?.split('·')[0]?.trim() || `Level ${lesson.level}`}
                     </span>
                   </div>
-                  <h3 className={cn(display.className, 'text-lg font-bold sm:text-xl')}>{lesson.title}</h3>
+                  <h3 className={cn(display.className, 'text-lg font-extrabold sm:text-xl', modelingLevelTitleClasses(lesson.level))}>{lesson.title}</h3>
                   {lesson.description && <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#657168] dark:text-white/50">{lesson.description}</p>}
                 </div>
                 <div className="flex items-center gap-3 sm:justify-end">
@@ -259,11 +262,11 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
             )
 
             return isPublished ? (
-              <Link key={lesson.id} href={`/${locale}/courses/${courseId}/lessons/${lesson.id}`} prefetch className="block border-b border-black/8 transition hover:bg-amber-200/20 last:border-0 dark:border-white/8 dark:hover:bg-white/[.045]">
+              <Link key={lesson.id} href={`/${locale}/courses/${courseId}/lessons/${lesson.id}`} prefetch className={cn('block border-b border-black/8 transition last:border-0 dark:border-white/8', modelingLevelRowClasses(lesson.level))}>
                 {content}
               </Link>
             ) : (
-              <div key={lesson.id} className="border-b border-black/8 opacity-70 last:border-0 dark:border-white/8">{content}</div>
+              <div key={lesson.id} className={cn('border-b border-black/8 opacity-70 last:border-0 dark:border-white/8', modelingLevelRowClasses(lesson.level))}>{content}</div>
             )
           })}
         </div>

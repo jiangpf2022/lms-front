@@ -9,7 +9,7 @@ export type LessonChapterLanguages = {
   zh: LessonChapterSource[]
 }
 
-const FINAL_QUIZ_TITLES = /^(knowledge check|lesson quiz|final quiz|quiz|课后测验|知识检验|知识检查|综合测验)$/i
+const FINAL_QUIZ_TITLES = /^(knowledge check|lesson quiz|final quiz|checkpoint quiz|quiz|课后测验|知识检验|知识检查|综合测验|综合检查)$/i
 
 // Each entry groups the source article's existing units (overview is index 0)
 // into a course-friendly sequence of no more than eight chapters.  The body is
