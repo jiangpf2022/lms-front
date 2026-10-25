@@ -68,8 +68,8 @@ const definitions = [
   {
     term: 'Validation',
     zh: '验证',
-    body: 'Evidence that the equations, code, and conclusions behave correctly for the question we actually asked.',
-    bodyZh: '用证据检查方程、代码和结论是否真正回答了我们提出的问题。',
+    body: 'Evidence that the equations, code, and conclusions behave correctly for the actual question being studied.',
+    bodyZh: '用证据检查方程、代码和结论是否真正回答了正在研究的实际问题。',
     icon: CheckCircle2,
   },
   {
@@ -129,16 +129,16 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
           <div className="max-w-3xl text-white">
             <p className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/25 bg-white/10 px-4 py-2 text-sm font-semibold backdrop-blur">
               <Sparkles className="h-4 w-4 text-amber-300" />
-              {t('Bilingual · Competition-oriented · Evidence-first', '中英双语 · 面向竞赛 · 证据优先')}
+              {t('Bilingual · Competition-oriented · Evidence-based', '中英双语 · 竞赛导向 · 证据驱动')}
             </p>
             <h1 className={cn(display.className, 'text-[clamp(3.25rem,7vw,6.5rem)] font-extrabold leading-[.92] tracking-[-.055em]')}>
               {isChinese ? '数学建模' : <>Mathematical<br /><span className="text-amber-300">Modeling</span></>}
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-white/78 sm:text-xl">
-              {t('Built from years of award-winning competition coaching: the slides, team notes, model revisions, and lessons learned from guiding real teams are reorganized here into one coherent course.', '这套课程来自多次带队获奖的真实经验：历年的 PPT、团队笔记、模型修改记录和赛后复盘，都由我重新整理并汇聚成一条完整的学习路线。')}
+              {t('This curriculum is derived from years of award-winning competition coaching. Slides, team notes, model revisions, and post-competition reviews have been systematically reorganized by MCM/ICM Outstanding Winners into a coherent learning framework.', '本课程体系源于多届数学建模竞赛的获奖指导实践。历年课件、团队笔记、模型修订记录与赛后复盘均由美赛 O 奖选手系统整理，并构建为结构完整的学习体系。')}
             </p>
             <p className="mt-3 max-w-2xl text-base leading-7 text-white/60">
-              {t('I am an MCM/ICM Outstanding Winner, and every piece of teaching material on this site is personally selected, rewritten, and checked. You may be starting from zero or returning with years of competition experience; there is a suitable route for both.', '我曾获得美赛 Outstanding Winner，并亲自筛选、重写和核对这里的全部带队资料。无论你是从零开始，还是已经有丰富的参赛经验，都可以在这里找到适合自己的内容。')}
+              {t('All teaching resources are selected, rewritten, and verified by MCM/ICM Outstanding Winners. The curriculum provides differentiated learning paths for both complete beginners and experienced competitors.', '网站中的全部教学资料均由美赛 O 奖选手筛选、重写与核验，并分别为零基础学习者与具有参赛经验的学习者提供差异化学习路径。')}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="#syllabus" className="inline-flex h-13 items-center gap-2 rounded-full bg-amber-300 px-6 font-bold text-[#14231c] transition hover:-translate-y-0.5 hover:bg-amber-200">
@@ -154,9 +154,9 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
 
           <div className="grid grid-cols-2 gap-3 self-end pb-4 lg:self-center">
             {[
-              [Target, t('Outstanding-led', 'Outstanding 获奖者主理'), t('Competition judgment grounded in real results', '来自真实竞赛结果的判断与经验')],
+              [Target, t('Outstanding-curated', 'O 奖选手整理'), t('Competition methodology validated through award-winning practice', '经获奖实践检验的竞赛方法体系')],
               [BookOpen, t('Coaching archive', '带队资料沉淀'), t('Slides, notes, revisions, and postmortems', 'PPT、笔记、修改记录与赛后复盘')],
-              [BrainCircuit, t('Zero to advanced', '从零基础到进阶'), t('Different routes for different starting points', '不同基础都有合适的学习路线')],
+              [BrainCircuit, t('Structured progression', '分级进阶体系'), t('Differentiated routes for distinct starting points', '针对不同基础设置差异化学习路径')],
               [FileQuestion, t('Practice every chapter', '每章都有练习'), t('Concepts, mathematics, and modeling decisions', '巩固概念、数学与建模判断')],
             ].map(([Icon, title, body]) => {
               const FeatureIcon = Icon as typeof Target
@@ -176,7 +176,7 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
         <div className="max-w-3xl">
           <p className="text-sm font-bold uppercase tracking-[.22em] text-emerald-700 dark:text-emerald-300">{t('The modeling vocabulary', '建模的基本语言')}</p>
           <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight sm:text-6xl')}>
-            {t('Learn the language before chasing the algorithm.', '先学会建模语言，再追求算法。')}
+            {t('Modeling principles precede algorithm selection.', '建模原则应先于算法选择。')}
           </h2>
           <p className="mt-5 text-lg leading-8 text-[#526158] dark:text-white/60">
             {t('A strong paper is not a list of methods. It is a chain of decisions: what to simplify, what to preserve, what to test, and what the evidence actually supports.', '一篇有说服力的论文不是方法清单，而是一条连续的决策链：简化什么、保留什么、检验什么，以及证据究竟支持到哪里。')}
@@ -243,8 +243,8 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
           <div className="grid lg:grid-cols-[.85fr_1.15fr]">
             <div className="bg-[#163f2c] p-8 text-white sm:p-12">
               <p className="text-sm font-black uppercase tracking-[.22em] text-amber-300">{t('Access promise', '课程开放原则')}</p>
-              <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight')}>{t('Most experience stays open.', '大多数经验，始终公开。')}</h2>
-              <p className="mt-5 leading-7 text-white/68">{t('Most of my previous teaching content, competition notes, and coaching experience remain openly readable. Level 1 is designed to be effectively free for learners who seriously complete the path and help improve it.', '我过往的大多数教学内容、竞赛笔记与带队经验都会保持公开。Level 1 希望真正学习、并愿意帮助课程改进的同学最终可以免费完成。')}</p>
+              <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight')}>{t('Open access with accountable participation.', '以公开共享为基础，以有效参与为原则。')}</h2>
+              <p className="mt-5 leading-7 text-white/68">{t('Most previous teaching materials, competition notes, and coaching experience remain openly accessible. The Level 1 refund policy is intended to support learners who complete the curriculum or make substantive contributions to its continued improvement.', '历年的大多数教学内容、竞赛笔记与带队经验将保持公开。Level 1 的退款机制面向完成全部课程，或对课程持续改进作出实质贡献的学习者。')}</p>
               <div className="mt-7 inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 font-black text-amber-200">
                 {t('Level 1 · RMB ¥9.9 / USD $1.99 refundable fee', 'Level 1 · 9.9 元人民币 / 1.99 美元可退学习费用')}
               </div>
@@ -267,22 +267,22 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                 <details className="group mt-4 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]" open>
                   <summary className="cursor-pointer list-none font-black marker:hidden">{t('Why charge a small Level 1 fee?', '为什么 Level 1 要收取一笔很小的费用？')}</summary>
                   <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
-                    {t('We know that RMB ¥9.9 may still stop some people, and that small amount of friction is intentional. In years of coaching, I repeatedly saw that when material is obtained too easily—especially as a giant drive full of files—it is often saved and never seriously read. ¥9.9 is not meant to be a profit barrier. It is a small commitment that we hope will help you keep going, finish the course, and turn the material into actual ability.', '我们清楚，9.9 元仍然可能挡住一部分人，而这一点点门槛正是有意设置的。根据我过去多年的教学与带队经验，当资料获得得过于轻易——例如直接拿到一个堆满文件的大网盘——很多人反而只是收藏，却很少真正读完。9.9 元不是为了把知识变成昂贵商品，而是希望它能成为一个很小的学习承诺，提醒你坚持把课程学完，并真正把资料变成自己的能力。')}
+                    {t('The RMB ¥9.9 fee establishes a modest commitment threshold. Coaching experience accumulated by MCM/ICM Outstanding Winners indicates that unstructured collections obtained without commitment are frequently archived rather than studied systematically. The fee is not designed as a profit barrier; it supports sustained participation, curriculum completion, and the conversion of materials into demonstrable modeling ability.', '9.9 元费用用于建立适度的学习承诺门槛。美赛 O 奖选手长期积累的教学与带队经验表明，缺乏学习承诺的大型资料集合往往只被保存，难以形成系统学习。该费用并非以盈利或限制知识获取为目的，而是用于促进持续参与、完成课程，并将资料转化为可验证的建模能力。')}
                   </p>
                 </details>
                 <details className="group mt-3 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]">
                   <summary className="cursor-pointer list-none font-black marker:hidden">{t('Why can constructive feedback earn a full refund?', '为什么提出建设性意见也可以获得全额退款？')}</summary>
                   <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
-                    {t('A useful course should improve with every serious learner. We sincerely hope that participants will help maintain this community: point out unclear explanations, catch errors, suggest better examples, and leave a clearer path for the people who come later. Having five constructive suggestions adopted is therefore treated as a real contribution, not a coupon trick, and it independently qualifies for a full refund.', '一门真正有生命力的课程，应该因为每一位认真学习的人而变得更好。我们真诚希望大家一起维护这个社区：指出不清楚的解释、发现错误、提出更好的例子，也为后来学习的人留下一条更顺畅的路。因此，至少有 5 条建设性意见被采纳，本身就代表你对课程作出了真实贡献；它不是营销优惠，而是可以独立获得全额退款的条件。')}
+                    {t('Constructive feedback directly improves the accuracy, clarity, and usability of the curriculum. Reports of unclear explanations, factual errors, inadequate examples, or missing functionality create measurable value for subsequent learners. Five adopted suggestions therefore constitute a substantive contribution and independently satisfy the full-refund requirement.', '建设性意见能够直接提高课程的准确性、清晰度与可用性。对表述不清、内容错误、案例不足或功能缺失的具体反馈，将为后续学习者创造可衡量的价值。因此，至少 5 条建议被采纳即视为对课程作出实质贡献，并可独立满足全额退款条件。')}
                   </p>
                 </details>
                 <details className="group mt-3 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]">
                   <summary className="cursor-pointer list-none font-black marker:hidden">{t('What counts as constructive feedback?', '什么属于建设性意见？')}</summary>
                   <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
-                    {t('Constructive feedback includes, but is not limited to, finding an error in an article, proposing a useful site feature, or explaining that a particular derivation, example, or paragraph is difficult to understand. Anything that helps us improve the course can count. Please describe the location, problem, and your reasoning as specifically as possible so that we can act on it rather than guess what went wrong.', '建设性意见包括但不限于：发现文章中的勘误、希望网站推出更实用的功能，或者指出某个推导、例子或段落不容易理解。只要能够帮助我们改善课程，都可以属于建设性意见。请尽可能具体地说明位置、问题与理由，让我们能够直接着手改进，而不必猜测问题究竟在哪里。')}
+                    {t('Constructive feedback includes, but is not limited to, identifying an error, proposing a useful platform feature, or documenting why a derivation, example, or paragraph is difficult to understand. A valid submission should specify the relevant location, observed problem, and supporting rationale so that the course team can evaluate and implement the proposal efficiently.', '建设性意见包括但不限于：指出文章勘误、提出具有实际价值的平台功能，或具体说明某项推导、案例或段落难以理解的原因。有效建议应明确相关位置、所发现的问题及判断依据，以便课程团队高效评估并实施改进。')}
                   </p>
                   <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
-                    {t('We read every submission carefully, and you will be notified if your suggestion is adopted. In most cases, feedback that is sincere, specific, and not submitted merely to fill a quota will be accepted, and we will reply as quickly as we can. Please remember, however, that we are a very small team. Even when we move as fast as possible, careful review and implementation still take time.', '我们会认真阅读每一条意见；如果建议被采纳，你也会收到通知。通常情况下，只要意见是真诚、具体的，而不是随意填写或为了凑数，我们都会尽量予以通过，并尽快回复。也请理解，我们目前仍是一个很小的团队；即使会快马加鞭，认真核对、回复与实现建议仍然需要一定时间。')}
+                    {t('Every submission is reviewed, and contributors are notified when a suggestion is adopted. Specific, well-supported feedback submitted in good faith will receive priority consideration. Because the course is maintained by a small team, verification, response, and implementation may require additional processing time.', '每一条意见均会经过审核；建议被采纳后，提交者将收到通知。内容具体、依据充分且出于善意的反馈将获得优先处理。由于课程由小型团队维护，核验、回复与实施可能需要一定处理时间。')}
                   </p>
                 </details>
               </div>
