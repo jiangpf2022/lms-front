@@ -2174,6 +2174,10 @@ The ten questions below move from basic chart selection to competition-level evi
 
 视觉层级也必须与论证层级一致。最重要的比较使用最清晰的位置或线条，不重要的背景信息降低饱和度。若所有元素颜色都很亮、线条都很粗，等于没有重点。
 
+下面十张教学示意图与英文版的前十张完全一致。请先遮住图注，用十秒钟判断每张图希望你看到什么，再阅读图下的说明。
+
+<VisualEvidenceGallery groups="claim" language="zh" start={1} />
+
 ## 比较与时间
 
 比较类别时，位置通常比面积和角度更容易准确判断。若要比较多个方案的一个指标，排序点图往往比饼图清楚；若要比较基线与改进，可使用哑铃图；若同时报告估计与不确定性，可使用点区间图。
@@ -2184,6 +2188,10 @@ The ten questions below move from basic chart selection to competition-level evi
 
 多条时间线不要无限叠加。先问真正的比较对象是什么。若重点是不同方案相对基线的变化，可以画差值；若重点是各地区模式，可以使用小倍图，但每个面板必须共用尺度，否则视觉差异会被夸大。
 
+下面依次给出英文版中“比较”和“时间与预测”的二十个获奖论文案例，图片顺序和来源保持一致。
+
+<VisualEvidenceGallery groups="comparison,time" language="zh" start={11} />
+
 ## 分布与风险
 
 平均值会隐藏分布。模型涉及等待时间、损失、风险或公平性时，至少检查中位数、尾部和异常区域。箱线图适合紧凑比较，但应解释四分位数；小提琴图能显示密度形状，却可能在小样本时制造虚假平滑；经验分布函数能够直接回答“低于某阈值的比例是多少”。
@@ -2191,6 +2199,10 @@ The ten questions below move from basic chart selection to competition-level evi
 如果决策关心超过阈值的概率，就把阈值画出来。假设安全容量为 100，方案 A 的均值为 80、标准差为 8，方案 B 的均值为 76、标准差为 18。B 的均值更低，却可能有更大的超限概率。此时尾部阴影或超限概率条形图比只报均值更有意义。
 
 颜色不能替代数值解释。连续变量使用顺序色板，正负偏差使用发散色板，类别使用可区分的定性色板。不要用彩虹色把相邻数值制造成不连续的视觉边界，也不要只依赖红绿区分关键状态。
+
+下面十张图与英文版“分布与风险”部分逐张对应。
+
+<VisualEvidenceGallery groups="distribution" language="zh" start={31} />
 
 ## 诊断与验证
 
@@ -2200,6 +2212,10 @@ The ten questions below move from basic chart selection to competition-level evi
 
 对算法比较，不能只展示最好的一次运行。随机算法至少画出多次运行的分布或置信区间，并报告可行率与运行时间。若两种方法目标值差异小于运行间波动，论文就不应宣称一方显著优越。
 
+下面十张图与英文版“模型诊断”部分逐张对应。
+
+<VisualEvidenceGallery groups="diagnostics" language="zh" start={41} />
+
 ## 地图、网络与流程
 
 地图适合表达真正的空间关系，而不是给所有地区指标增加地理背景。面积着色图应使用比例或标准化指标，不能直接用总量比较人口规模差异巨大的区域；点图适合事件位置；等值线适合连续场；路线图需要区分起点、终点、方向和不可行区域。
@@ -2207,6 +2223,10 @@ The ten questions below move from basic chart selection to competition-level evi
 网络图首先要回答节点与边代表什么。节点很多时，不要让力导向布局决定全部解释。可以按照社区、层级或地理位置布局，并用边宽表达流量。若论文关注关键节点，应该用中心性或流量指标解释其重要性，而不是仅凭节点在图中央。
 
 模型流程图要展示信息如何移动：原始数据经过何种处理，哪些参数进入哪个模块，输出怎样进入决策。箭头方向必须一致，反馈回路清楚标注。方框内部使用动词和对象，例如“估计需求分布”，而不是只写“模型一”。
+
+下面三组共三十张图分别对应英文版的“地图与几何”“网络与流量”和“模型结构”。图片保持单列，避免缩小后看不清论文中的标注。
+
+<VisualEvidenceGallery groups="maps,networks,architecture" language="zh" start={51} />
 
 ## 科学图形与排版
 
@@ -2216,6 +2236,10 @@ The ten questions below move from basic chart selection to competition-level evi
 
 完成图后进行三个测试：缩放到论文中的真实尺寸；打印或模拟灰度；让不了解该图的队友只看十秒，然后复述它的结论。如果队友只记住颜色而说不出比较关系，说明图还没有完成。
 
+下面十张图与英文版“科学图形”部分逐张对应。
+
+<VisualEvidenceGallery groups="scientific" language="zh" start={81} />
+
 ## 获奖论文的阅读方法
 
 学习国赛和美赛论文中的图时，不要复制外观。记录比赛年份、题号、论文与页码，先指出图要支持的结论，再分析位置、颜色、标注和布局怎样共同服务于这个结论。最后说明如果删掉某个元素会失去什么。
@@ -2223,6 +2247,10 @@ The ten questions below move from basic chart selection to competition-level evi
 同一张图不要在文章多个地方重复出现。若一个案例同时涉及地图和时间序列，应在相应知识点出现一次，并在其他位置通过文字引用。图片质量必须足以看清轴标签和图例；无法识别信息的截图即使来源优秀，也没有教学价值。
 
 优秀页面往往包含一张主图和少量辅助证据，而不是把所有计算输出堆在一起。主图回答最重要的问题，辅助图解释原因或验证稳健性。页面留白不是浪费，它帮助读者区分证据层级。
+
+下面十张图与英文版“获奖论文页面”部分逐张对应，用来观察一整页中主证据、辅助证据和留白如何配合。
+
+<VisualEvidenceGallery groups="award-pages" language="zh" start={91} />
 
 ## 复现与审核
 

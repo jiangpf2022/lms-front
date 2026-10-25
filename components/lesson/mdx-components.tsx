@@ -38,6 +38,7 @@ import {
 
 import { mdxComponents as uiComponents } from '@/components/ui/mdx-components'
 import { LessonCheckpoint } from './checkpoints/lesson-checkpoint'
+import { VisualEvidenceGallery } from './visual-evidence-gallery'
 
 /**
  * MDX Components map for lesson content
@@ -135,6 +136,7 @@ export const lessonMdxComponents: MDXComponents = {
   // Bilingual course content
   LanguageTabs,
   LanguagePanel,
+  VisualEvidenceGallery,
 
   // Lesson checkpoints (issue #392) — inline placements
   LessonCheckpoint,
