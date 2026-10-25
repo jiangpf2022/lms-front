@@ -8,7 +8,7 @@ import { serializeLessonMdx } from '@/app/[locale]/dashboard/student/courses/[co
 import type { Metadata } from 'next'
 import { buildPageMetadata } from '@/lib/seo'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
-import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
+import { buildChapterQuiz, buildLessonFinalQuiz } from '@/lib/modeling/math-quiz-bank'
 import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
 import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
@@ -162,6 +162,7 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
             lessonDescription={lesson.description}
             lessonDescriptionZh={MODELING_DESCRIPTIONS_ZH[lesson.sequence]}
             chapters={{ en: english, zh: chinese }}
+            checkpointBank={buildLessonFinalQuiz(lesson.sequence)}
             nextLesson={nextPreview}
         />
     )

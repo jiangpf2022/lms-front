@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
 import {
   ArrowLeft,
@@ -92,6 +92,10 @@ export function ModelingQuiz({
   description,
   submitLabel,
   previousScore,
+  startRequired = false,
+  durationSeconds = 0,
+  startLabel,
+  onRequestNewSet,
   onSubmit,
 }: {
   questions: ModelingQuizQuestion[]
@@ -100,11 +104,18 @@ export function ModelingQuiz({
   description: string
   submitLabel: string
   previousScore?: number
+  startRequired?: boolean
+  durationSeconds?: number
+  startLabel?: string
+  onRequestNewSet?: () => void
   onSubmit: (score: number) => void
 }) {
   const [answers, setAnswers] = useState<Record<string, number[]>>({})
   const [submitted, setSubmitted] = useState(false)
   const [score, setScore] = useState(previousScore ?? 0)
+  const [started, setStarted] = useState(!startRequired)
+  const [remainingSeconds, setRemainingSeconds] = useState(durationSeconds)
+  const [deadlineMs, setDeadlineMs] = useState<number | null>(null)
 
   function toggle(question: ModelingQuizQuestion, option: number) {
     if (submitted) return
@@ -120,7 +131,8 @@ export function ModelingQuiz({
     })
   }
 
-  function checkAnswers() {
+  const checkAnswers = useCallback(() => {
+    if (submitted) return
     const points = questions.reduce(
       (total, item) => total + (sameAnswers(answers[item.id] ?? [], item.correct) ? 1 : 0),
       0
@@ -129,6 +141,31 @@ export function ModelingQuiz({
     setScore(percent)
     setSubmitted(true)
     onSubmit(percent)
+  }, [answers, onSubmit, questions, submitted])
+
+  useEffect(() => {
+    if (!startRequired || !started || submitted || deadlineMs === null) return
+    const updateClock = () => {
+      const next = Math.max(0, Math.ceil((deadlineMs - Date.now()) / 1000))
+      setRemainingSeconds(next)
+      if (next === 0) window.setTimeout(checkAnswers, 0)
+    }
+    const timer = window.setInterval(updateClock, 500)
+    return () => window.clearInterval(timer)
+  }, [checkAnswers, deadlineMs, startRequired, started, submitted])
+
+  function startTimedQuiz() {
+    setRemainingSeconds(durationSeconds)
+    setDeadlineMs(Date.now() + durationSeconds * 1000)
+    setStarted(true)
+  }
+
+  function restart() {
+    setAnswers({})
+    setSubmitted(false)
+    setStarted(!startRequired)
+    setRemainingSeconds(durationSeconds)
+    setDeadlineMs(null)
   }
 
   const allAnswered = questions.every((item) => (answers[item.id] ?? []).length > 0)
@@ -151,10 +188,43 @@ export function ModelingQuiz({
               <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/70 dark:text-emerald-200/60">{language === 'zh' ? '得分' : 'score'}</div>
             </div>
           )}
+          {startRequired && started && !submitted && (
+            <div className={cn(
+              'rounded-2xl border px-4 py-2 text-center tabular-nums',
+              remainingSeconds <= 120
+                ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-400/30 dark:bg-rose-400/10 dark:text-rose-200'
+                : 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-200'
+            )}>
+              <div className="text-xl font-black">{Math.floor(remainingSeconds / 60)}:{String(remainingSeconds % 60).padStart(2, '0')}</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest">{language === 'zh' ? '剩余时间' : 'time left'}</div>
+            </div>
+          )}
         </div>
       </div>
 
       <div className="relative space-y-7 p-5 sm:p-7">
+        {startRequired && !started ? (
+          <div className="mx-auto max-w-2xl py-8 text-center">
+            <Clock3 className="mx-auto h-12 w-12 text-amber-600 dark:text-amber-300" />
+            <h3 className="mt-4 text-2xl font-black text-[#18231e] dark:text-white">{language === 'zh' ? '15 分钟限时测验' : '15-minute timed quiz'}</h3>
+            <p className="mx-auto mt-3 max-w-xl text-sm leading-7 text-muted-foreground">
+              {language === 'zh'
+                ? '点击开始后才会显示题目并启动倒计时。时间结束时系统会自动提交，未作答题目按错误计算。'
+                : 'Questions and the countdown appear only after you start. The quiz is submitted automatically when time expires, and unanswered questions count as incorrect.'}
+            </p>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+              {onRequestNewSet && (
+                <Button variant="outline" onClick={onRequestNewSet} className="rounded-full bg-white/75 dark:bg-white/5">
+                  <RotateCcw className="mr-2 h-4 w-4" /> {language === 'zh' ? '换一组题' : 'Draw another set'}
+                </Button>
+              )}
+              <Button onClick={startTimedQuiz} className="rounded-full bg-[#163f2c] px-7 text-white hover:bg-[#0f3021]">
+                {startLabel ?? (language === 'zh' ? '开始测验' : 'Start Quiz')}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <>
         {questions.map((item, questionIndex) => {
           const selected = answers[item.id] ?? []
           const isCorrect = submitted && sameAnswers(selected, item.correct)
@@ -208,11 +278,13 @@ export function ModelingQuiz({
               {submitLabel}
             </Button>
           ) : (
-            <Button variant="outline" onClick={() => { setAnswers({}); setSubmitted(false) }} className="rounded-full">
+            <Button variant="outline" onClick={restart} className="rounded-full">
               <RotateCcw className="mr-2 h-4 w-4" /> {language === 'zh' ? '重新作答' : 'Try again'}
             </Button>
           )}
         </div>
+          </>
+        )}
       </div>
     </section>
   )
@@ -231,6 +303,7 @@ export function ModelingLessonReader({
   lessonDescription,
   lessonDescriptionZh,
   chapters,
+  checkpointBank,
   nextLesson,
 }: {
   locale: string
@@ -245,6 +318,7 @@ export function ModelingLessonReader({
   lessonDescription: string | null
   lessonDescriptionZh?: string
   chapters: { en: SerializedChapter[]; zh: SerializedChapter[] }
+  checkpointBank: ModelingQuizQuestion[]
   nextLesson: { id: number; title: string } | null
 }) {
   const [language, setLanguage] = useState<ReaderLanguage>(locale.toLowerCase().startsWith('zh') ? 'zh' : 'en')
@@ -272,12 +346,26 @@ export function ModelingLessonReader({
     [chapters.en]
   )
   const checkpointQuestions = useMemo(() => {
-    return sampleQuestions(
+    const reviewQuestions = sampleQuestions(
       checkpointPool,
-      Math.min(15, checkpointPool.length),
+      Math.min(5, checkpointPool.length),
       lessonId * 7919 + checkpointVersion * 104729,
     )
-  }, [checkpointPool, checkpointVersion, lessonId])
+    const reviewPrompts = new Set(checkpointPool.map((item) => item.prompt.en.trim().toLowerCase()))
+    const exclusiveQuestions = checkpointBank.filter(
+      (item) => !reviewPrompts.has(item.prompt.en.trim().toLowerCase())
+    )
+    const newQuestions = sampleQuestions(
+      exclusiveQuestions,
+      Math.min(10, exclusiveQuestions.length),
+      lessonId * 15485863 + checkpointVersion * 32452843,
+    )
+    return sampleQuestions(
+      [...reviewQuestions, ...newQuestions],
+      reviewQuestions.length + newQuestions.length,
+      lessonId * 49979687 + checkpointVersion * 67867967,
+    )
+  }, [checkpointBank, checkpointPool, checkpointVersion, lessonId])
   const questions = useMemo(
     () => isFinalQuiz ? checkpointQuestions : (chapters.en[activeIndex]?.quiz ?? activeChapter.quiz),
     [activeChapter.quiz, activeIndex, chapters.en, checkpointQuestions, isFinalQuiz]
@@ -529,11 +617,6 @@ export function ModelingLessonReader({
                 <Clock3 className="h-4 w-4" /> {Math.max(8, Math.round(45 / Math.max(1, localized.length)) + 8)} {language === 'zh' ? '分钟' : 'min'}
               </div>
               {activeIndex === 0 && localizedLessonDescription && <p className="mt-6 max-w-3xl text-base leading-7 text-[#526259] dark:text-white/60">{localizedLessonDescription}</p>}
-              <div className="mt-6 rounded-2xl border border-[#d8e7dc] bg-white/55 px-4 py-3 text-sm leading-6 text-[#4d6257] shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.035] dark:text-white/65">
-                {language === 'zh'
-                  ? '你不需要预先认识本章的算法或符号。先跟着问题与直觉走；每个新概念都会先说明“它在解决什么”，再给定义、推导、算例与验证方法。'
-                  : 'You are not expected to know this chapter’s algorithm or notation in advance. We begin with the problem and intuition, then introduce each definition, derivation, worked calculation, and validation step.'}
-              </div>
             </header>
             <LessonContent mdx={activeChapter.mdx} videoUrl={null} embedCode={null} embedMode="sandboxed" />
             </div>
@@ -543,10 +626,7 @@ export function ModelingLessonReader({
             <Trophy className="mx-auto h-12 w-12 text-amber-500" />
             <p className="mt-5 text-xs font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">{language === 'zh' ? '本篇测验' : 'Blog assessment'}</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{language === 'zh' ? '综合检查' : 'Checkpoint Quiz'}</h2>
-            <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? `从 ${checkpointPool.length} 道题的题库中抽取 15 道，覆盖整篇 Blog 的概念、计算与模型判断。` : `Fifteen questions are drawn from a ${checkpointPool.length}-question bank spanning concepts, calculations, and modeling decisions.`}</p>
-            <Button variant="outline" onClick={() => setCheckpointVersion((value) => value + 1)} className="mt-5 rounded-full bg-white/75 dark:bg-white/5">
-              <RotateCcw className="mr-2 h-4 w-4" /> {language === 'zh' ? '换一组题' : 'Draw another set'}
-            </Button>
+            <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? `测验共 15 题：从 ${checkpointPool.length} 道章节练习中抽取 5 道复习题，再从 ${checkpointBank.length} 道 Checkpoint 专属新题中抽取 10 道。开始后限时 15 分钟。` : `The 15-question quiz contains five review questions drawn from ${checkpointPool.length} chapter questions and ten unseen questions drawn from a separate ${checkpointBank.length}-question checkpoint bank. The time limit is 15 minutes.`}</p>
           </section>
         )}
 
@@ -558,6 +638,10 @@ export function ModelingLessonReader({
           description={isFinalQuiz ? (language === 'zh' ? '完成全部 15 道题，检查你是否能够把各章节连接成完整的建模思路。' : 'Complete all 15 questions to test whether you can connect the chapters into one modeling argument.') : (language === 'zh' ? '5 道题不只检查记忆，还要求计算、判断假设并解释模型。' : 'Five questions test calculation, assumptions, and model judgment—not just recall.')}
           submitLabel={language === 'zh' ? '检查答案' : 'Check answers'}
           previousScore={progress.scores[itemId]}
+          startRequired={isFinalQuiz}
+          durationSeconds={isFinalQuiz ? 15 * 60 : 0}
+          startLabel={language === 'zh' ? '开始测验' : 'Start Quiz'}
+          onRequestNewSet={isFinalQuiz ? () => setCheckpointVersion((value) => value + 1) : undefined}
           onSubmit={recordScore}
         />
 

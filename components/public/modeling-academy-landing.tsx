@@ -135,10 +135,10 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
               {isChinese ? '数学建模' : <>Mathematical<br /><span className="text-amber-300">Modeling</span></>}
             </h1>
             <p className="mt-7 max-w-2xl text-lg leading-8 text-white/78 sm:text-xl">
-              {t('From an ambiguous real-world question to a defensible model, tested algorithm, clear figure, and decision-ready conclusion.', '从模糊的现实问题出发，建立可辩护的模型、经过检验的算法、清晰的图表与可以支持决策的结论。')}
+              {t('Built from years of award-winning competition coaching: the slides, team notes, model revisions, and lessons learned from guiding real teams are reorganized here into one coherent course.', '这套课程来自多次带队获奖的真实经验：历年的 PPT、团队笔记、模型修改记录和赛后复盘，都由我重新整理并汇聚成一条完整的学习路线。')}
             </p>
             <p className="mt-3 max-w-2xl text-base leading-7 text-white/60">
-              {t('Learn to connect variables, assumptions, evidence, and communication into one reproducible argument.', '把变量、假设、证据与表达连接成一条可复查、可复现的完整论证。')}
+              {t('I am an MCM/ICM Outstanding Winner, and every piece of teaching material on this site is personally selected, rewritten, and checked. You may be starting from zero or returning with years of competition experience; there is a suitable route for both.', '我曾获得美赛 Outstanding Winner，并亲自筛选、重写和核对这里的全部带队资料。无论你是从零开始，还是已经有丰富的参赛经验，都可以在这里找到适合自己的内容。')}
             </p>
             <div className="mt-9 flex flex-wrap gap-3">
               <Link href="#syllabus" className="inline-flex h-13 items-center gap-2 rounded-full bg-amber-300 px-6 font-bold text-[#14231c] transition hover:-translate-y-0.5 hover:bg-amber-200">
@@ -154,16 +154,20 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
 
           <div className="grid grid-cols-2 gap-3 self-end pb-4 lg:self-center">
             {[
-              ['21', t('planned topics', '规划主题')],
-              [String(published.length), t('public blogs', '已公开博客')],
-              [String(quizCount), t('quiz banks', '测验题库')],
-              [t('EN / 中文', '中文 / EN'), t('bilingual reading', '双语阅读')],
-            ].map(([value, label]) => (
-              <div key={label} className="rounded-3xl border border-white/20 bg-black/25 p-5 text-white backdrop-blur-md">
-                <div className={cn(display.className, 'text-3xl font-extrabold text-amber-300')}>{value}</div>
-                <div className="mt-1 text-sm text-white/65">{label}</div>
-              </div>
-            ))}
+              [Target, t('Outstanding-led', 'Outstanding 获奖者主理'), t('Competition judgment grounded in real results', '来自真实竞赛结果的判断与经验')],
+              [BookOpen, t('Coaching archive', '带队资料沉淀'), t('Slides, notes, revisions, and postmortems', 'PPT、笔记、修改记录与赛后复盘')],
+              [BrainCircuit, t('Zero to advanced', '从零基础到进阶'), t('Different routes for different starting points', '不同基础都有合适的学习路线')],
+              [FileQuestion, t('Practice every chapter', '每章都有练习'), t('Concepts, mathematics, and modeling decisions', '巩固概念、数学与建模判断')],
+            ].map(([Icon, title, body]) => {
+              const FeatureIcon = Icon as typeof Target
+              return (
+                <div key={String(title)} className="rounded-3xl border border-white/20 bg-black/25 p-5 text-white backdrop-blur-md">
+                  <FeatureIcon className="h-6 w-6 text-amber-300" />
+                  <div className={cn(display.className, 'mt-5 text-lg font-extrabold text-amber-300')}>{String(title)}</div>
+                  <div className="mt-1 text-sm leading-5 text-white/65">{String(body)}</div>
+                </div>
+              )
+            })}
           </div>
         </div>
       </section>
@@ -200,7 +204,7 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
             <div>
               <p className="text-sm font-bold uppercase tracking-[.22em] text-amber-300">{t('Learning levels', '学习级别')}</p>
               <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl')}>{t('A path with a clear destination.', '每一级都有明确的学习目标。')}</h2>
-              <p className="mt-5 leading-7 text-white/60">{t('Levels describe prerequisite depth and competition ambition—not a paywall or a measure of talent.', '级别表示前置知识与竞赛目标，不代表天赋高低，也不等同于付费门槛。')}</p>
+              <p className="mt-5 leading-7 text-white/60">{t('Levels describe prerequisite depth, competition ambition, and the amount of guidance provided. They are not a measure of talent.', '级别表示前置知识、竞赛目标与指导深度，不代表天赋高低。')}</p>
             </div>
             <div className="grid gap-3">
               {levels.map((item) => (
@@ -229,6 +233,51 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                   <p className="text-sm leading-6 text-white/62">{isChinese ? item.bodyZh : item.body}</p>
                 </article>
               ))}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <section id="access" className="mx-auto max-w-[1240px] px-6 py-24 lg:px-10">
+        <div className="overflow-hidden rounded-[36px] border border-emerald-900/10 bg-white/75 shadow-[0_30px_90px_-55px_rgba(22,63,44,.45)] dark:border-white/10 dark:bg-white/[.04]">
+          <div className="grid lg:grid-cols-[.85fr_1.15fr]">
+            <div className="bg-[#163f2c] p-8 text-white sm:p-12">
+              <p className="text-sm font-black uppercase tracking-[.22em] text-amber-300">{t('Access promise', '课程开放原则')}</p>
+              <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight')}>{t('Most experience stays open.', '大多数经验，始终公开。')}</h2>
+              <p className="mt-5 leading-7 text-white/68">{t('Most of my previous teaching content, competition notes, and coaching experience remain openly readable. Level 1 is designed to be effectively free for learners who seriously complete the path and help improve it.', '我过往的大多数教学内容、竞赛笔记与带队经验都会保持公开。Level 1 希望真正学习、并愿意帮助课程改进的同学最终可以免费完成。')}</p>
+              <div className="mt-7 inline-flex rounded-full border border-amber-300/30 bg-amber-300/10 px-4 py-2 font-black text-amber-200">
+                {t('Level 1 · RMB ¥9.9 / USD $1.99 refundable fee', 'Level 1 · 9.9 元人民币 / 1.99 美元可退学习费用')}
+              </div>
+            </div>
+            <div className="p-8 sm:p-12">
+              <h3 className={cn(display.className, 'text-2xl font-extrabold')}>{t('Full-refund requirements', '全额退款条件')}</h3>
+              <p className="mt-3 leading-7 text-[#5d6962] dark:text-white/60">{t('The Level 1 enrollment fee is refunded in full after either one of the following conditions is satisfied:', '以下两项条件任选其一完成，Level 1 学习费用即可全额退还：')}</p>
+              <ol className="mt-6 space-y-4">
+                <li className="flex gap-4 rounded-2xl border border-emerald-900/10 bg-emerald-50/70 p-5 dark:border-emerald-300/15 dark:bg-emerald-300/[.06]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-800 font-black text-white">1</span>
+                  <p className="text-sm leading-6">{t('After studying through this course, earn at least a CUMCM provincial second prize or an MCM/ICM Honorable Mention.', '通过本课程学习后，获得国赛省二等奖及以上，或美赛 H 奖及以上。')}</p>
+                </li>
+                <li className="flex gap-4 rounded-2xl border border-emerald-900/10 bg-emerald-50/70 p-5 dark:border-emerald-300/15 dark:bg-emerald-300/[.06]">
+                  <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-emerald-800 font-black text-white">2</span>
+                  <p className="text-sm leading-6">{t('Complete all Level 1 content and have at least five constructive course suggestions adopted.', '完成 Level 1 的全部内容，并且至少有 5 条建设性课程建议被采纳。')}</p>
+                </li>
+              </ol>
+              <div className="mt-8 border-t border-emerald-900/10 pt-7 dark:border-white/10">
+                <p className="text-xs font-black uppercase tracking-[.2em] text-emerald-800 dark:text-emerald-300">Q&amp;A</p>
+                <details className="group mt-4 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]" open>
+                  <summary className="cursor-pointer list-none font-black marker:hidden">{t('Why charge a small Level 1 fee?', '为什么 Level 1 要收取一笔很小的费用？')}</summary>
+                  <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
+                    {t('We know that RMB ¥9.9 may still stop some people, and that small amount of friction is intentional. In years of coaching, I repeatedly saw that when material is obtained too easily—especially as a giant drive full of files—it is often saved and never seriously read. ¥9.9 is not meant to be a profit barrier. It is a small commitment that we hope will help you keep going, finish the course, and turn the material into actual ability.', '我们清楚，9.9 元仍然可能挡住一部分人，而这一点点门槛正是有意设置的。根据我过去多年的教学与带队经验，当资料获得得过于轻易——例如直接拿到一个堆满文件的大网盘——很多人反而只是收藏，却很少真正读完。9.9 元不是为了把知识变成昂贵商品，而是希望它能成为一个很小的学习承诺，提醒你坚持把课程学完，并真正把资料变成自己的能力。')}
+                  </p>
+                </details>
+                <details className="group mt-3 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]">
+                  <summary className="cursor-pointer list-none font-black marker:hidden">{t('Why can constructive feedback earn a full refund?', '为什么提出建设性意见也可以获得全额退款？')}</summary>
+                  <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
+                    {t('A useful course should improve with every serious learner. We sincerely hope that participants will help maintain this community: point out unclear explanations, catch errors, suggest better examples, and leave a clearer path for the people who come later. Having five constructive suggestions adopted is therefore treated as a real contribution, not a coupon trick, and it independently qualifies for a full refund.', '一门真正有生命力的课程，应该因为每一位认真学习的人而变得更好。我们真诚希望大家一起维护这个社区：指出不清楚的解释、发现错误、提出更好的例子，也为后来学习的人留下一条更顺畅的路。因此，至少有 5 条建设性意见被采纳，本身就代表你对课程作出了真实贡献；它不是营销优惠，而是可以独立获得全额退款的条件。')}
+                  </p>
+                </details>
+              </div>
+              <p className="mt-6 text-sm leading-6 text-[#68756d] dark:text-white/50">{t('Level 2 and Level 3 will provide deeper methods and more direct guidance. Pricing, access, and any refund policy will be explained when those levels launch.', 'Level 2 与 Level 3 将提供更深入的方法与更多针对性指导；具体价格、开放方式与退款规则会在正式推出时另行说明。')}</p>
             </div>
           </div>
         </div>

@@ -157,6 +157,70 @@ function competition(seed: number, id: string): ModelingQuizQuestion[] {
   ]
 }
 
+function competitionChapterQuiz(chapterIndex: number): ModelingQuizQuestion[] {
+  const id = `lesson-2-chapter-${chapterIndex + 1}`
+  const chapters: ModelingQuizQuestion[][] = [
+    [
+      question(`${id}-1`, { en: 'A team estimates that Problem A has a 0.70 chance of scoring 82 and otherwise scores 55; Problem B has a 0.90 chance of scoring 72 and otherwise scores 60. Which has the larger expected score?', zh: '团队估计：选题 A 有 0.70 的概率得到 82 分，否则得 55 分；选题 B 有 0.90 的概率得到 72 分，否则得 60 分。哪个选题的期望得分更高？' }, { en: ['A, with 73.9', 'A, with 82', 'B, with 70.8', 'B, with 72'], zh: ['A，期望 73.9', 'A，期望 82', 'B，期望 70.8', 'B，期望 72'] }, 0, { en: 'E[A]=0.7×82+0.3×55=73.9; E[B]=0.9×72+0.1×60=70.8.', zh: 'E[A]=0.7×82+0.3×55=73.9；E[B]=0.9×72+0.1×60=70.8。' }),
+      question(`${id}-2`, { en: 'A draft is graded 30% on modeling, 25% on validation, 25% on communication, and 20% on implementation. Scores are 84, 60, 76, and 90. What is the weighted score?', zh: '一份论文的模型、验证、表达、实现分别占 30%、25%、25%、20%，对应得分为 84、60、76、90。加权总分是多少？' }, { en: ['75.2', '77.2', '78.6', '81.0'], zh: ['75.2', '77.2', '78.6', '81.0'] }, 1, { en: '0.30×84+0.25×60+0.25×76+0.20×90=77.2.', zh: '0.30×84+0.25×60+0.25×76+0.20×90=77.2。' }),
+      question(`${id}-3`, { en: 'Two candidate problems are compared on expected quality and completion risk. A is better in quality but worse in risk. What is the correct conclusion before preferences are specified?', zh: '比较两个候选题时，A 的预期质量更高，但完赛风险也更高。在尚未给定偏好权重时，正确结论是什么？' }, { en: ['A strictly dominates B', 'B strictly dominates A', 'Neither dominates; the trade-off must be made explicit', 'Choose the one with more data columns'], zh: ['A 严格支配 B', 'B 严格支配 A', '二者互不支配，必须明确权衡', '选择数据列更多的一题'] }, 2, { en: 'Improvement in one criterion is purchased with deterioration in another, so dominance alone cannot decide.', zh: '一个指标的改善伴随另一个指标的恶化，因此仅凭支配关系无法决定。' }),
+      question(`${id}-4`, { en: 'A 72-hour plan reserves 8 hours for final checks and 10 hours for writing integration. If modeling, coding, and visualization receive the remaining time in ratio 3:2:1, how many hours go to coding?', zh: '72 小时赛程中预留 8 小时终检、10 小时整合写作。剩余时间按 3:2:1 分给建模、编程、可视化，编程得到多少小时？' }, { en: ['9', '18', '27', '36'], zh: ['9', '18', '27', '36'] }, 1, { en: 'The remaining 54 hours contain six ratio parts; coding receives 2/6×54=18 hours.', zh: '剩余 54 小时共有 6 份，编程得到 2/6×54=18 小时。' }),
+      question(`${id}-5`, { en: 'Select all items that belong in a competition evidence trail.', zh: '选择所有应进入竞赛证据链的内容。' }, { en: ['Data source and preprocessing decisions', 'Model assumptions and failure tests', 'Random seeds and software versions', 'Only the final score'], zh: ['数据来源与预处理决策', '模型假设与失效检验', '随机种子与软件版本', '只有最终分数'] }, [0, 1, 2], { en: 'A reviewer should be able to trace the path from source data and assumptions to computation and validation.', zh: '评审应能从数据与假设一路追溯到计算和验证。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A CUMCM prompt asks for a feasible production schedule under machine-hour and material limits. What is the primary mathematical structure?', zh: '国赛题目要求在机器工时与原料限制下制定可行生产计划。它首先对应哪类数学结构？' }, { en: ['Constrained optimization', 'Unsupervised clustering', 'Image segmentation', 'Pure hypothesis testing'], zh: ['约束优化', '无监督聚类', '图像分割', '纯假设检验'] }, 0, { en: 'The team chooses a schedule while respecting hard resource limits and optimizing an objective.', zh: '团队需要在硬资源约束下选择排程并优化目标，因此首先是约束优化问题。' }),
+      question(`${id}-2`, { en: 'A three-day contest allocates 12 hours to problem selection and cleaning, 30 to modeling and experiments, 20 to writing, and 6 to final verification. How many unallocated hours remain?', zh: '三天竞赛中，选题与清洗用 12 小时，建模与实验用 30 小时，写作用 20 小时，终检用 6 小时。还剩多少未分配时间？' }, { en: ['2', '4', '6', '10'], zh: ['2', '4', '6', '10'] }, 1, { en: '72−12−30−20−6=4 hours.', zh: '72−12−30−20−6=4 小时。' }),
+      question(`${id}-3`, { en: 'A policy model is fitted on all provincial observations and then evaluated on the same rows. What is the main defect?', zh: '某政策模型使用全部省份观测拟合，又在同一批数据上评估。主要缺陷是什么？' }, { en: ['The sample is too geographical', 'Training performance is being mistaken for out-of-sample evidence', 'The model has too few decimal places', 'Province names should be encoded as integers'], zh: ['样本具有地理属性', '把训练表现误当成样本外证据', '小数位太少', '省份名称应编码成整数'] }, 1, { en: 'Evaluation on reused observations cannot test whether the model generalizes.', zh: '在重复使用的观测上评估，无法检验模型是否能够泛化。' }),
+      question(`${id}-4`, { en: 'Demand is 480 units. Two plants have capacities 210 and 250. Which statement is correct?', zh: '需求为 480 单位，两座工厂产能分别为 210 与 250。下面哪项正确？' }, { en: ['The demand is feasible with 20 units of slack', 'The demand is infeasible by 20 units', 'The demand is exactly feasible', 'Capacity is irrelevant'], zh: ['可行且有 20 单位余量', '缺少 20 单位产能，不可行', '恰好可行', '产能无关'] }, 1, { en: 'Total capacity is 460, which is 20 below demand.', zh: '总产能为 460，比需求少 20。' }),
+      question(`${id}-5`, { en: 'Which result would most strengthen a CUMCM recommendation?', zh: '哪项结果最能增强一项国赛建议的可信度？' }, { en: ['The preferred plan remains feasible under ±15% demand changes', 'The code uses many packages', 'The report contains more pages', 'The objective is printed to twelve decimals'], zh: ['需求上下波动 15% 时首选方案仍可行', '代码使用很多软件包', '论文页数更多', '目标值保留十二位小数'] }, 0, { en: 'Stress stability addresses whether the recommendation survives plausible uncertainty.', zh: '压力测试稳定性直接说明建议能否承受合理的不确定性。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'An MCM problem asks a team to design a rule that can be used by cities of very different sizes. Which validation is most informative?', zh: '美赛题目要求设计一套可供不同规模城市使用的规则。哪种验证最有信息量？' }, { en: ['Test one average city only', 'Test small, medium, and large-city scenarios', 'Increase font size', 'Remove all units'], zh: ['只测试一个平均城市', '分别测试小、中、大城市情景', '增大字号', '删除全部单位'] }, 1, { en: 'The claim is about transfer across scales, so validation must span those scales.', zh: '结论声称可以跨规模迁移，因此验证也必须覆盖不同规模。' }),
+      question(`${id}-2`, { en: 'A 96-hour schedule reserves the last 12 hours for editing. The remaining time is split 25% for framing, 50% for modeling, and 25% for validation. How long is modeling?', zh: '96 小时赛程预留最后 12 小时编辑。剩余时间按 25%、50%、25% 分给问题界定、建模、验证。建模时间是多少？' }, { en: ['36 h', '42 h', '48 h', '54 h'], zh: ['36 小时', '42 小时', '48 小时', '54 小时'] }, 1, { en: 'After reserving 12 hours, 84 remain; 0.5×84=42 hours.', zh: '扣除 12 小时后剩 84 小时，0.5×84=42 小时。' }),
+      question(`${id}-3`, { en: 'Select all statements that should be explicit when a model is intended for an international setting.', zh: '当模型面向国际情境时，选择所有应明确说明的内容。' }, { en: ['Currency and unit conversions', 'Which local regulations are assumed', 'Whether parameters transfer across regions', 'The author’s preferred color palette'], zh: ['货币与单位换算', '采用了哪些当地法规假设', '参数能否跨地区迁移', '作者偏好的配色'] }, [0, 1, 2], { en: 'Cross-region use depends on comparable units, institutions, and parameter transportability.', zh: '跨地区使用依赖单位、制度以及参数可迁移性的可比性。' }),
+      question(`${id}-4`, { en: 'A score is normalized as z=(x−20)/(80−20). What is z when x=65?', zh: '某指标按 z=(x−20)/(80−20) 归一化。当 x=65 时，z 是多少？' }, { en: ['0.25', '0.50', '0.75', '1.25'], zh: ['0.25', '0.50', '0.75', '1.25'] }, 2, { en: '(65−20)/60=0.75.', zh: '(65−20)/60=0.75。' }),
+      question(`${id}-5`, { en: 'A one-page executive summary claims that Plan A is best but gives neither a comparison metric nor uncertainty. What is missing?', zh: '一页摘要声称方案 A 最优，却既不给比较指标，也不说明不确定性。缺少的核心内容是什么？' }, { en: ['Decorative icons', 'A traceable evidence chain and the claim boundary', 'More abbreviations', 'A longer title'], zh: ['装饰图标', '可追溯的证据链与结论边界', '更多缩写', '更长的标题'] }, 1, { en: 'A decision claim needs a metric, comparison, uncertainty, and stated scope.', zh: '决策结论需要指标、比较、不确定性与适用范围。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'Four problems receive feasibility scores 8, 6, 9, 5 and impact scores 5, 9, 6, 8. With equal weights, which problem ranks first?', zh: '四道题的可行性得分为 8、6、9、5，影响力得分为 5、9、6、8。两项等权时，哪道题排名第一？' }, { en: ['Problem 1', 'Problems 2 and 3 tie', 'Problem 3 only', 'Problem 4'], zh: ['第 1 题', '第 2、3 题并列', '只有第 3 题', '第 4 题'] }, 1, { en: 'The totals are 13, 15, 15, and 13.', zh: '四题总分依次为 13、15、15、13。' }),
+      question(`${id}-2`, { en: 'What should a team produce before committing to a problem in the first ninety minutes?', zh: '在最初九十分钟正式锁定选题之前，团队最应该产出什么？' }, { en: ['A complete polished paper', 'A problem map, baseline route, data audit, and failure risks', 'A final award prediction', 'A list of unrelated algorithms'], zh: ['完整精修论文', '问题地图、基线路线、数据审计与失败风险', '最终获奖预测', '无关算法清单'] }, 1, { en: 'These artifacts expose feasibility while change is still cheap.', zh: '这些产物能在切换成本仍低时暴露可行性问题。' }),
+      question(`${id}-3`, { en: 'A baseline can be coded in 25 minutes; a complex alternative needs 4 hours and cannot yet be validated. What is the defensible first move?', zh: '基线模型可在 25 分钟内实现，复杂方案需要 4 小时且暂时无法验证。合理的第一步是什么？' }, { en: ['Build the baseline and use it as a reference', 'Start the complex model and skip checks', 'Write the conclusion first', 'Choose randomly'], zh: ['先建立基线作为参照', '直接做复杂模型并跳过检查', '先写结论', '随机选择'] }, 0, { en: 'A fast baseline tests the pipeline and gives later complexity something measurable to beat.', zh: '快速基线可以检验流程，也给后续复杂模型提供可衡量的比较对象。' }),
+      question(`${id}-4`, { en: 'Three teammates independently estimate completion probabilities 0.8, 0.6, and 0.7. Using their mean as a crude consensus, what probability is recorded?', zh: '三名队员独立估计完赛概率为 0.8、0.6、0.7。若用均值形成粗略共识，应记录多少？' }, { en: ['0.60', '0.65', '0.70', '0.80'], zh: ['0.60', '0.65', '0.70', '0.80'] }, 2, { en: '(0.8+0.6+0.7)/3=0.7.', zh: '(0.8+0.6+0.7)/3=0.7。' }),
+      question(`${id}-5`, { en: 'Which observation is a valid early kill criterion for a proposed route?', zh: '下面哪项可以作为早期放弃某条方案路线的有效标准？' }, { en: ['The required data cannot be obtained or approximated credibly', 'One teammate dislikes the variable names', 'The first chart is not colorful', 'The method has a long name'], zh: ['关键数据无法获得，也无法可信近似', '一名队员不喜欢变量名', '第一张图不够鲜艳', '方法名称太长'] }, 0, { en: 'A route that cannot be identified or validated from available evidence is structurally unsafe.', zh: '如果现有证据无法识别或验证一条路线，它在结构上就不可靠。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A teammate clones the project but obtains different package behavior. Which artifact should be checked first?', zh: '队友克隆项目后得到不同的软件包行为。首先应该检查哪个文件？' }, { en: ['Dependency lockfile and environment specification', 'Figure caption', 'Author biography', 'Page margin'], zh: ['依赖锁文件与环境说明', '图注', '作者简介', '页边距'] }, 0, { en: 'Pinned dependencies make the computational environment reproducible.', zh: '固定依赖版本才能复现计算环境。' }),
+      question(`${id}-2`, { en: 'A Monte Carlo estimate uses 400 independent samples and has sample SD 12. What is its estimated standard error?', zh: 'Monte Carlo 估计使用 400 个独立样本，样本标准差为 12。估计标准误是多少？' }, { en: ['0.03', '0.6', '12', '240'], zh: ['0.03', '0.6', '12', '240'] }, 1, { en: 'SE=12/√400=12/20=0.6.', zh: 'SE=12/√400=12/20=0.6。' }),
+      question(`${id}-3`, { en: 'Select all practices that reduce merge conflicts in a three-person team.', zh: '选择所有能够减少三人团队合并冲突的做法。' }, { en: ['Assign clear file ownership', 'Commit small coherent changes', 'Pull before starting a new block of work', 'Email different copies of the same file'], zh: ['明确文件负责人', '提交小而完整的改动', '开始新任务前先拉取更新', '通过邮件传递同一文件的不同副本'] }, [0, 1, 2], { en: 'Clear ownership and frequent synchronized commits reduce overlapping edits.', zh: '明确分工并频繁同步小提交，可以减少重叠修改。' }),
+      question(`${id}-4`, { en: 'A function should return 17 on a hand-computed miniature case but returns 19. What should happen next?', zh: '某函数在手算的小型案例上应返回 17，却返回 19。下一步应该怎么做？' }, { en: ['Treat the mismatch as a failed unit test and inspect the implementation', 'Average 17 and 19', 'Hide the test', 'Increase plot resolution'], zh: ['把差异视为单元测试失败并检查实现', '把 17 与 19 取平均', '隐藏测试', '提高图片分辨率'] }, 0, { en: 'A hand-verifiable case is an executable statement of the intended mechanism.', zh: '可手算案例是对预期机制的可执行说明。' }),
+      question(`${id}-5`, { en: 'A script reads meters but the input column is centimeters. If the value is 250 cm, what value should enter the meter-based model?', zh: '脚本按米读取数据，但输入列单位是厘米。250 cm 应以什么数值进入按米建模的模型？' }, { en: ['0.25', '2.5', '25', '250'], zh: ['0.25', '2.5', '25', '250'] }, 1, { en: '250 cm=2.5 m.', zh: '250 cm=2.5 m。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'An award paper reports a 14% improvement but does not state the baseline denominator. What can be concluded?', zh: '一篇获奖论文报告“提升 14%”，却没有说明基准分母。可以得出什么结论？' }, { en: ['The claim is fully interpretable', 'The relative improvement cannot be audited without the baseline', 'The method is definitely optimal', 'The sample size must be 14'], zh: ['结论完全可解释', '没有基准就无法审计相对提升', '方法一定最优', '样本量一定是 14'] }, 1, { en: 'Relative change requires both the reference value and the new value.', zh: '相对变化必须同时给出参照值与新值。' }),
+      question(`${id}-2`, { en: 'A reported model has RMSE 6.0; a reproduced run gives 6.3 on the same split. What is the relative difference from the reported value?', zh: '论文报告 RMSE=6.0，在同一划分上复现得到 6.3。相对论文结果的差异是多少？' }, { en: ['0.3%', '3%', '5%', '30%'], zh: ['0.3%', '3%', '5%', '30%'] }, 2, { en: '(6.3−6.0)/6.0=0.05=5%.', zh: '(6.3−6.0)/6.0=0.05=5%。' }),
+      question(`${id}-3`, { en: 'Which reading note is most useful for later modeling?', zh: '哪种论文阅读记录对后续建模最有用？' }, { en: ['“This paper is good”', 'Claim → method → evidence → limitation → reusable idea', 'Only the paper title', 'A screenshot without source'], zh: ['“这篇论文很好”', '结论→方法→证据→局限→可复用想法', '只有论文题目', '没有来源的截图'] }, 1, { en: 'The structured note preserves why an idea works and where it may fail.', zh: '结构化记录保留了方法为何有效以及可能在哪里失效。' }),
+      question(`${id}-4`, { en: 'Select all acceptable ways to reuse an idea from a prior paper.', zh: '选择所有合理复用既有论文思想的方式。' }, { en: ['Cite the source', 'Re-derive and adapt the method to the new setting', 'Validate the adapted method independently', 'Copy its paragraph and remove the citation'], zh: ['引用来源', '重新推导并适配新情境', '独立验证适配后的方法', '复制原文并删除引用'] }, [0, 1, 2], { en: 'Reuse requires attribution, understanding, adaptation, and fresh evidence.', zh: '合理复用需要归因、理解、适配与新的证据。' }),
+      question(`${id}-5`, { en: 'A paper’s conclusion changes when one weight moves from 0.30 to 0.31. What should a careful reader infer?', zh: '某论文的结论在权重从 0.30 改为 0.31 时就发生变化。严谨读者应如何判断？' }, { en: ['The decision is highly sensitive near that value', 'The extra decimal proves accuracy', 'Sensitivity analysis is unnecessary', 'The lower-ranked plan is impossible'], zh: ['决策在该权重附近高度敏感', '多一位小数证明了准确性', '不需要敏感性分析', '排名较低方案不可行'] }, 0, { en: 'A tiny plausible perturbation that reverses the decision is evidence of fragility.', zh: '微小且合理的扰动就逆转决策，说明结论脆弱。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'The response is binary, observations are labeled, and calibrated probabilities matter. Which baseline is most appropriate?', zh: '响应变量是二元的，样本有标签，并且需要校准概率。哪种基线最合适？' }, { en: ['Logistic regression', 'K-means', 'Principal component analysis', 'A shortest-path algorithm'], zh: ['逻辑回归', 'K-means', '主成分分析', '最短路算法'] }, 0, { en: 'Logistic regression directly models a labeled binary outcome and produces probabilities.', zh: '逻辑回归直接建模有标签的二元结果并输出概率。' }),
+      question(`${id}-2`, { en: 'Five-fold cross-validation produces errors 4, 5, 6, 5, and 10. What is the mean validation error?', zh: '五折交叉验证的误差为 4、5、6、5、10。平均验证误差是多少？' }, { en: ['5', '6', '7', '10'], zh: ['5', '6', '7', '10'] }, 1, { en: '(4+5+6+5+10)/5=6.', zh: '(4+5+6+5+10)/5=6。' }),
+      question(`${id}-3`, { en: 'A graph has 120 vertices and 360 undirected edges. What is its average degree?', zh: '某无向图有 120 个顶点、360 条边。平均度是多少？' }, { en: ['3', '6', '9', '12'], zh: ['3', '6', '9', '12'] }, 1, { en: 'Average degree is 2E/V=720/120=6.', zh: '平均度为 2E/V=720/120=6。' }),
+      question(`${id}-4`, { en: 'A sophisticated model improves validation error from 8.0 to 7.9 but multiplies runtime by 30. What must be discussed?', zh: '复杂模型把验证误差从 8.0 降到 7.9，却使运行时间增加 30 倍。必须讨论什么？' }, { en: ['Whether the small gain justifies the computational cost', 'Only the algorithm’s name', 'Why validation should be removed', 'How to hide runtime'], zh: ['微小提升是否值得计算成本', '只讨论算法名称', '为什么应删除验证', '如何隐藏运行时间'] }, 0, { en: 'Model choice is a trade-off among accuracy, robustness, interpretability, and cost.', zh: '模型选择需要权衡精度、稳健性、可解释性与成本。' }),
+      question(`${id}-5`, { en: 'Select all reasons not to choose an algorithm merely because it is fashionable.', zh: '选择所有“不应仅因算法流行就采用它”的理由。' }, { en: ['Its assumptions may not match the mechanism', 'Available data may not identify its parameters', 'A simpler baseline may perform equally well', 'Popularity guarantees correctness'], zh: ['假设可能不符合机制', '现有数据可能无法识别参数', '简单基线可能同样有效', '流行度保证正确性'] }, [0, 1, 2], { en: 'The method must fit the question, evidence, and constraints—not the current fashion.', zh: '方法必须适配问题、证据与约束，而不是追随流行。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A campus has 1,000 study seats. Mean occupancy is 820 and the stressed 95th-percentile occupancy is 1,070. What does the stress result imply?', zh: '校园有 1,000 个自习座位，平均占用 820，压力情景下 95% 分位占用为 1,070。压力结果说明什么？' }, { en: ['Average capacity is sufficient in every case', 'A 70-seat tail shortage should be addressed', 'There are always 180 empty seats', 'The percentile cannot exceed capacity'], zh: ['平均容量意味着任何时候都够用', '尾部情景存在 70 个座位缺口，需要处理', '始终有 180 个空座', '分位数不可能超过容量'] }, 1, { en: 'The high-demand tail exceeds capacity by 1,070−1,000=70 seats.', zh: '高需求尾部比容量多 1,070−1,000=70 个座位。' }),
+      question(`${id}-2`, { en: 'A shuttle plan uses x buses, each carrying 40 passengers on 3 trips per hour. Which constraint guarantees hourly demand D is served?', zh: '班车方案使用 x 辆车，每辆载 40 人、每小时运行 3 趟。哪个约束保证小时需求 D 得到满足？' }, { en: ['40x≤D', '3x≤D', 'D≤120x', 'D=43x'], zh: ['40x≤D', '3x≤D', 'D≤120x', 'D=43x'] }, 2, { en: 'Each bus provides 40×3=120 passenger-trips per hour.', zh: '每辆车每小时提供 40×3=120 个客运位。' }),
+      question(`${id}-3`, { en: 'Plan A costs 50 and leaves expected shortage 8; Plan B costs 70 and leaves shortage 2. If each shortage unit costs 4, which has lower total modeled cost?', zh: '方案 A 成本 50、预计短缺 8；方案 B 成本 70、预计短缺 2。每单位短缺代价为 4，哪个方案的模型总成本更低？' }, { en: ['A: 82', 'A: 58', 'B: 78', 'They tie at 78'], zh: ['A：82', 'A：58', 'B：78', '二者均为 78'] }, 2, { en: 'A totals 50+4×8=82; B totals 70+4×2=78, so B is lower.', zh: 'A 的总成本为 50+4×8=82；B 为 70+4×2=78，因此 B 更低。' }),
+      question(`${id}-4`, { en: 'A model recommends opening an overflow room only when demand exceeds 900. Which test probes the decision boundary most efficiently?', zh: '模型仅在需求超过 900 时建议开放备用教室。哪组测试最有效地检查决策边界？' }, { en: ['Demand 899, 900, and 901', 'Demand 100, 200, and 300', 'Run 900 three times with no changes', 'Change the report font'], zh: ['需求取 899、900、901', '需求取 100、200、300', '不改变任何条件重复运行 900 三次', '更换报告字体'] }, 0, { en: 'Values immediately around the threshold reveal whether the rule and inequality direction are implemented correctly.', zh: '阈值两侧紧邻值最能检验规则及不等号方向是否实现正确。' }),
+      question(`${id}-5`, { en: 'Which closing sentence is most defensible?', zh: '哪种结尾表述最严谨？' }, { en: ['Plan B is always best', 'Under the stated demand range and shortage cost, Plan B has the lowest tested cost; the ranking changes if shortage cost falls below the reported threshold', 'Our code proves reality', 'More pages make Plan B correct'], zh: ['方案 B 永远最好', '在给定需求范围与短缺成本下，B 的测试成本最低；若短缺成本低于所报告阈值，排序会改变', '代码证明了现实', '页数更多使 B 正确'] }, 1, { en: 'It states the decision, evidence scope, and a condition under which the conclusion changes.', zh: '它同时说明决策、证据范围以及结论改变的条件。' }),
+    ],
+  ]
+
+  return chapters[chapterIndex] ?? chapters[chapterIndex % chapters.length]
+}
+
 function visual(seed: number, id: string): ModelingQuizQuestion[] {
   const mean = 40 + seed
   const se = 2 + seed / 5
@@ -342,6 +406,7 @@ function domainChapterQuiz(
   chapterTitle: string,
 ) {
   if (lessonNumber === 1) return foundationsChapterQuiz(chapterIndex)
+  if (lessonNumber === 2) return competitionChapterQuiz(chapterIndex)
 
   const builder = builders[lessonNumber] ?? generalQuestions
   const focus = mathFocus(lessonNumber, chapterTitle)
@@ -349,10 +414,29 @@ function domainChapterQuiz(
     ? [0, 1, 2, 3, 4]
     : [focus, (focus + 1) % 5, (focus + 2) % 5, (focus + 3) % 5, (focus + 4) % 5]
 
+  const chapterLeads = [
+    { en: 'At the opening audit, ', zh: '在开篇审查中，' },
+    { en: `In the ${chapterTitle} analysis, `, zh: `在“${chapterTitle}”的分析中，` },
+    { en: `While testing the ${chapterTitle} mechanism, `, zh: `在检验“${chapterTitle}”机制时，` },
+    { en: `For a worked ${chapterTitle} case, `, zh: `对于“${chapterTitle}”算例，` },
+    { en: `During a ${chapterTitle} stress test, `, zh: `在“${chapterTitle}”压力测试中，` },
+    { en: `When validating ${chapterTitle}, `, zh: `在验证“${chapterTitle}”时，` },
+    { en: `In a decision based on ${chapterTitle}, `, zh: `在依据“${chapterTitle}”作决策时，` },
+    { en: `For the final ${chapterTitle} review, `, zh: `在“${chapterTitle}”终检中，` },
+  ]
+  const lead = chapterLeads[chapterIndex % chapterLeads.length]
+
   return order.map((questionIndex, variant) => {
     const seed = chapterIndex * 5 + variant + 1
     const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-question-${variant + 1}`
-    return builder(seed, id)[questionIndex]
+    const item = builder(seed, id)[questionIndex]
+    return {
+      ...item,
+      prompt: {
+        en: `${lead.en}${item.prompt.en.charAt(0).toLowerCase()}${item.prompt.en.slice(1)}`,
+        zh: `${lead.zh}${item.prompt.zh}`,
+      },
+    }
   })
 }
 
@@ -376,7 +460,21 @@ export function buildChapterQuiz(
 }
 
 export function buildLessonFinalQuiz(lessonNumber: number) {
-  return [0, 1, 2, 3, 4, 5].flatMap((variant) =>
-    (builders[lessonNumber] ?? generalQuestions)(variant + 1, `lesson-${lessonNumber}-final-${variant + 1}`)
+  const contexts = [
+    { en: 'In an independent assessment case, ', zh: '在一个独立的综合案例中，' },
+    { en: 'During a new stress-test scenario, ', zh: '在一个新的压力测试情景中，' },
+    { en: 'A second team checks the model and asks: ', zh: '另一支团队复核模型时提出：' },
+    { en: 'For an unseen decision case, ', zh: '面对一个未见过的决策案例，' },
+    { en: 'In a fresh numerical experiment, ', zh: '在一项新的数值实验中，' },
+    { en: 'During the final model audit, ', zh: '在最终模型审计中，' },
+  ]
+  return contexts.flatMap((context, variant) =>
+    (builders[lessonNumber] ?? generalQuestions)(11 + variant, `lesson-${lessonNumber}-final-${variant + 1}`).map((item) => ({
+      ...item,
+      prompt: {
+        en: `${context.en}${item.prompt.en.charAt(0).toLowerCase()}${item.prompt.en.slice(1)}`,
+        zh: `${context.zh}${item.prompt.zh}`,
+      },
+    }))
   )
 }
