@@ -74,7 +74,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
             <div className="container mx-auto flex h-16 items-center gap-2 px-3 md:gap-6 md:px-6">
 
                 {/* Logo + Tenant Branding */}
-                <div className="flex shrink-0 items-center gap-3">
+                <div className={isModelingAcademy ? "hidden shrink-0 items-center gap-3 md:flex" : "flex shrink-0 items-center gap-3"}>
                     <Link href={isModelingAcademy ? localized('') : '/'} prefetch className="flex items-center space-x-2">
                         {logoUrl ? (
                             <img src={logoUrl} alt={brandName} className="w-8 h-8 rounded-lg object-cover" />
@@ -97,20 +97,20 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                 </div>
 
                 {/* Center Links */}
-                <div className={isModelingAcademy ? "flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-2 lg:gap-6" : "hidden md:flex items-center space-x-8"}>
+                <div className={isModelingAcademy ? "flex min-w-0 flex-1 items-center justify-center gap-0 sm:gap-1 lg:gap-3" : "hidden md:flex items-center space-x-8"}>
                     {isModelingAcademy ? (
                         <>
-                            <Link href={localized('')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
+                            <Link href={localized('')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 {isChinese ? '首页' : 'Home'}
                             </Link>
-                            <Link href={localized('/courses/1')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
-                                {isChinese ? '数学建模课程' : 'Mathematical Modeling Course'}
+                            <Link href={localized('/courses/1')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
+                                <span className="lg:hidden">{isChinese ? '课程' : 'Course'}</span><span className="hidden lg:inline">{isChinese ? '数学建模课程' : 'Mathematical Modeling Course'}</span>
                             </Link>
-                            <Link href={localized('/practice-center')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
-                                {isChinese ? '练习中心' : 'Practice Center'}
+                            <Link href={localized('/practice-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
+                                <span className="lg:hidden">{isChinese ? '练习' : 'Practice'}</span><span className="hidden lg:inline">{isChinese ? '练习中心' : 'Practice Center'}</span>
                             </Link>
-                            <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
-                                {isChinese ? '学习中心' : 'Learning Center'}
+                            <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
+                                <span className="lg:hidden">{isChinese ? '学习' : 'Learning'}</span><span className="hidden lg:inline">{isChinese ? '学习中心' : 'Learning Center'}</span>
                             </Link>
                         </>
                     ) : isMainPlatform ? (
