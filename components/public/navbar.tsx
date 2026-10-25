@@ -112,7 +112,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                 <span className="lg:hidden">{isChinese ? '练习' : 'Practice'}</span><span className="hidden lg:inline">{isChinese ? '练习中心' : 'Practice Center'}</span>
                             </Link>
                             <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
-                                <span className="lg:hidden">{isChinese ? '学习' : 'Learning'}</span><span className="hidden lg:inline">{isChinese ? '学习中心' : 'Learning Center'}</span>
+                                <span className="lg:hidden">{isChinese ? '面板' : 'Dashboard'}</span><span className="hidden lg:inline">{isChinese ? '学习面板' : 'Dashboard'}</span>
                             </Link>
                             {isDeveloper && <Link href={localized('/developer-center')} prefetch className="whitespace-nowrap rounded-full bg-rose-100 px-2 py-2 text-[10px] font-black text-rose-800 transition-colors hover:bg-rose-200 dark:bg-rose-400/10 dark:text-rose-200 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '开发' : 'Dev'}</span><span className="hidden lg:inline">{isChinese ? '开发者中心' : 'Developer Center'}</span>
@@ -156,7 +156,11 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
 
                     {userId ? (
                         <div className="flex items-center gap-2">
-                            {!isModelingAcademy && <Button variant="outline" render={<Link href={localized('/dashboard/student')} />}>
+                            {isModelingAcademy ? (
+                                <Button variant="outline" className="hidden xl:inline-flex" render={<Link href={localized('/learning-center')} prefetch />}>
+                                    {isChinese ? '我的学习' : 'My Dashboard'}
+                                </Button>
+                            ) : <Button variant="outline" render={<Link href={localized('/dashboard/student')} />}>
                                 {t('dashboard')}
                             </Button>}
                         </div>

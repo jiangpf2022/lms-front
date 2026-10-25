@@ -12,6 +12,10 @@ import { AccessCutoffBanner } from "@/components/shared/access-cutoff-banner"
 import { FeeStandingBanner } from "@/components/admin/platform-fees/fee-standing-banner"
 import { NotificationBell } from "@/components/notification-bell"
 import { NotificationCountsProvider } from "@/components/notifications/notification-counts"
+import { APP_NAME } from "@/lib/app-name"
+import { BookOpenCheck, Home } from "lucide-react"
+import { getLocale } from "next-intl/server"
+import Link from "next/link"
 import type { Metadata } from "next"
 
 export const metadata: Metadata = {
@@ -23,8 +27,9 @@ export default async function DashboardLayout({
 }: {
     children: React.ReactNode
 }) {
-    const role = await getUserRole()
-    const user = await getSessionUser()
+    const [role, user, locale] = await Promise.all([getUserRole(), getSessionUser(), getLocale()])
+    const isModelingAcademy = APP_NAME.toLowerCase().includes('modeling academy')
+    const isChinese = locale.toLowerCase().startsWith('zh')
 
     return (
         // One unread-count poll for the sidebar Community badge and the
@@ -36,6 +41,14 @@ export default async function DashboardLayout({
                     <header className="flex h-16 min-w-0 shrink-0 items-center gap-2 border-b px-4">
                         <SidebarTrigger className="-ml-1" />
                         <Separator orientation="vertical" className="mr-2 h-4" />
+                        <div className="flex min-w-0 items-center gap-1">
+                            <Link href={`/${locale}`} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground sm:px-3 sm:text-sm">
+                                <Home className="h-4 w-4" /> <span className="hidden sm:inline">{isChinese ? '返回首页' : 'Home'}</span>
+                            </Link>
+                            {isModelingAcademy && <Link href={`/${locale}/learning-center`} className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-2 text-xs font-bold text-muted-foreground transition hover:bg-muted hover:text-foreground sm:px-3 sm:text-sm">
+                                <BookOpenCheck className="h-4 w-4" /> <span className="hidden md:inline">{isChinese ? '学习面板' : 'Learning Dashboard'}</span>
+                            </Link>}
+                        </div>
                         <div className="ml-auto flex min-w-0 items-center gap-4">
                             {/* #586: gated at `lg`, not `md`. The desktop sidebar
                                 arrives at `md` and takes 256px, which leaves the
