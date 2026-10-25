@@ -35,6 +35,25 @@ type SerializedChapter = {
 
 export type ReaderLanguage = 'en' | 'zh'
 
+function sampleQuestions(
+  questions: ModelingQuizQuestion[],
+  count: number,
+  seed: number,
+) {
+  const shuffled = [...questions]
+  let state = seed >>> 0
+  const random = () => {
+    state = (Math.imul(state, 1664525) + 1013904223) >>> 0
+    return state / 4294967296
+  }
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const target = Math.floor(random() * (index + 1))
+    ;[shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]]
+  }
+  return shuffled.slice(0, count)
+}
+
 type StoredProgress = {
   completed: string[]
   scores: Record<string, number>
@@ -224,6 +243,7 @@ export function ModelingLessonReader({
 }) {
   const [language, setLanguage] = useState<ReaderLanguage>(locale.toLowerCase().startsWith('zh') ? 'zh' : 'en')
   const [activeIndex, setActiveIndex] = useState(0)
+  const [checkpointVersion, setCheckpointVersion] = useState(1)
   const [progress, setProgress] = useState<StoredProgress>(emptyProgress)
   const [saved, setSaved] = useState(false)
   const [feedbackOpen, setFeedbackOpen] = useState(false)
@@ -238,16 +258,17 @@ export function ModelingLessonReader({
   const progressKey = `modeling-learning-progress:${lessonId}`
   const bookmarkKey = 'modeling-learning-bookmarks'
   const itemId = isFinalQuiz ? 'final-quiz' : `chapter-${activeIndex + 1}`
+  const checkpointPool = useMemo(
+    () => chapters.en.flatMap((chapter) => chapter.quiz),
+    [chapters.en]
+  )
   const checkpointQuestions = useMemo(() => {
-    const chapterQuestions = chapters.en.map((chapter) => chapter.quiz)
-    // Interleave by difficulty instead of exhausting early chapters first.
-    // Question 0 checks the chapter's central idea; question 4 is the mapped
-    // calculation whenever that chapter introduces a mathematical method.
-    const conceptPass = chapterQuestions.map((items) => items[0]).filter(Boolean)
-    const calculationPass = chapterQuestions.map((items) => items[4]).filter(Boolean)
-    const transferPass = chapterQuestions.flatMap((items) => items.slice(1, 4))
-    return [...conceptPass, ...calculationPass, ...transferPass].slice(0, 15)
-  }, [chapters.en])
+    return sampleQuestions(
+      checkpointPool,
+      Math.min(15, checkpointPool.length),
+      lessonId * 7919 + checkpointVersion * 104729,
+    )
+  }, [checkpointPool, checkpointVersion, lessonId])
   const questions = useMemo(
     () => isFinalQuiz ? checkpointQuestions : (chapters.en[activeIndex]?.quiz ?? activeChapter.quiz),
     [activeChapter.quiz, activeIndex, chapters.en, checkpointQuestions, isFinalQuiz]
@@ -513,12 +534,15 @@ export function ModelingLessonReader({
             <Trophy className="mx-auto h-12 w-12 text-amber-500" />
             <p className="mt-5 text-xs font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">{language === 'zh' ? '本篇测验' : 'Blog assessment'}</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{language === 'zh' ? '综合检查' : 'Checkpoint Quiz'}</h2>
-            <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? '15 道题覆盖整篇 Blog 的核心概念、计算与模型判断。题目由易到难，后续可以继续由作者审核和迭代。' : 'Fifteen questions connect the whole blog: concepts, calculations, and modeling judgment. They progress from foundations to deeper transfer.'}</p>
+            <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? `从 ${checkpointPool.length} 道题的题库中抽取 15 道，覆盖整篇 Blog 的概念、计算与模型判断。` : `Fifteen questions are drawn from a ${checkpointPool.length}-question bank spanning concepts, calculations, and modeling decisions.`}</p>
+            <Button variant="outline" onClick={() => setCheckpointVersion((value) => value + 1)} className="mt-5 rounded-full bg-white/75 dark:bg-white/5">
+              <RotateCcw className="mr-2 h-4 w-4" /> {language === 'zh' ? '换一组题' : 'Draw another set'}
+            </Button>
           </section>
         )}
 
         <ModelingQuiz
-          key={`${language}-${itemId}`}
+          key={`${language}-${itemId}-${isFinalQuiz ? checkpointVersion : 0}`}
           questions={questions}
           language={language}
           title={isFinalQuiz ? (language === 'zh' ? '本讲综合检查' : 'Checkpoint Quiz') : (language === 'zh' ? '章节练习' : 'Chapter Checkpoint')}

@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { CheckCircle2, Clock3, Eye, EyeOff, MessageSquareText, RefreshCcw, ShieldCheck } from 'lucide-react'
+import { ArrowUpDown, BookOpenText, CheckCircle2, Clock3, Eye, EyeOff, LayoutDashboard, MessageSquareText, RefreshCcw, ShieldCheck } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ModelingVisibility } from '@/lib/modeling/developer-settings'
 
@@ -40,6 +40,9 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
+  const [activePanel, setActivePanel] = useState<'library' | 'feedback'>('library')
+  const [sortKey, setSortKey] = useState<'sequence' | 'title' | 'level' | 'visibility'>('sequence')
+  const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
   const refresh = useCallback(async () => {
     const [settingsResponse, feedbackResponse] = await Promise.all([
@@ -62,6 +65,31 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
     String(lesson.sequence),
     states[String(lesson.sequence)] ?? (lesson.databaseStatus === 'published' ? 'public' : 'hidden'),
   ])) as Record<string, ModelingVisibility>, [lessons, states])
+
+  const sortedLessons = useMemo(() => [...lessons].sort((left, right) => {
+    const leftValue = sortKey === 'visibility'
+      ? resolvedStates[String(left.sequence)]
+      : sortKey === 'title'
+        ? (isChinese ? left.titleZh : left.title)
+        : left[sortKey]
+    const rightValue = sortKey === 'visibility'
+      ? resolvedStates[String(right.sequence)]
+      : sortKey === 'title'
+        ? (isChinese ? right.titleZh : right.title)
+        : right[sortKey]
+    const result = typeof leftValue === 'number' && typeof rightValue === 'number'
+      ? leftValue - rightValue
+      : String(leftValue).localeCompare(String(rightValue), isChinese ? 'zh-CN' : 'en-US')
+    return sortDirection === 'asc' ? result : -result
+  }), [isChinese, lessons, resolvedStates, sortDirection, sortKey])
+
+  function changeSort(nextKey: typeof sortKey) {
+    if (sortKey === nextKey) setSortDirection((value) => value === 'asc' ? 'desc' : 'asc')
+    else {
+      setSortKey(nextKey)
+      setSortDirection('asc')
+    }
+  }
 
   async function saveStates() {
     setSaving(true)
@@ -86,47 +114,75 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
 
   return (
     <div className="relative min-h-screen bg-[#f4f1e8] pt-16 text-[#18231e] dark:bg-[#08110e] dark:text-white">
-      <div className="pointer-events-none fixed inset-0 bg-[url('/mathematical-modeling/course-cover.webp')] bg-cover bg-center opacity-[0.07] dark:opacity-[0.05]" />
-      <main className="relative mx-auto max-w-[1280px] px-5 py-12 sm:px-8 lg:py-16">
-        <header className="flex flex-wrap items-end justify-between gap-5">
-          <div>
-            <p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.24em] text-rose-700 dark:text-rose-300"><ShieldCheck className="h-4 w-4" /> {t('Developer only', '仅开发者可见')}</p>
-            <h1 className="mt-3 text-4xl font-black tracking-[-0.04em] sm:text-6xl">{t('Developer Center', '开发者中心')}</h1>
-            <p className="mt-4 max-w-3xl leading-7 text-muted-foreground">{t('Control what readers can discover, review suggestions, and decide which ideas are adopted. These controls are protected by server-side account verification.', '管理读者能够发现的课程、查看读者建议，并标记哪些建议已被采纳。这里的权限由服务端账号验证保护。')}</p>
+      <div className="pointer-events-none fixed inset-0 bg-[url('/mathematical-modeling/course-cover.webp')] bg-cover bg-center opacity-[0.055] dark:opacity-[0.04]" />
+      <main className="relative mx-auto grid max-w-[1440px] gap-6 px-4 py-8 sm:px-6 lg:grid-cols-[230px_minmax(0,1fr)] lg:px-8 lg:py-10">
+        <aside className="h-fit rounded-2xl border border-white/80 bg-white/88 p-3 shadow-lg backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1713]/90 lg:sticky lg:top-24">
+          <div className="border-b border-border px-3 pb-4 pt-2">
+            <p className="flex items-center gap-2 text-[10px] font-black uppercase tracking-[0.2em] text-rose-700 dark:text-rose-300"><ShieldCheck className="h-3.5 w-3.5" /> {t('Developer only', '仅开发者')}</p>
+            <h1 className="mt-2 text-xl font-black tracking-tight">{t('Developer Center', '开发者中心')}</h1>
           </div>
-          <button onClick={() => { void refresh() }} className="inline-flex h-11 items-center gap-2 rounded-full border border-border bg-white/80 px-5 text-sm font-black dark:bg-white/5"><RefreshCcw className="h-4 w-4" /> {t('Refresh', '刷新')}</button>
-        </header>
+          <nav className="mt-3 grid gap-1">
+            <button onClick={() => setActivePanel('library')} className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'library' ? 'bg-[#163f2c] text-white' : 'text-muted-foreground hover:bg-muted')}><BookOpenText className="h-4 w-4" /> {t('Course Library', '课程库')}</button>
+            <button onClick={() => setActivePanel('feedback')} className={cn('flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'feedback' ? 'bg-indigo-700 text-white' : 'text-muted-foreground hover:bg-muted')}><span className="flex items-center gap-3"><MessageSquareText className="h-4 w-4" /> {t('Feedback', '意见反馈')}</span>{feedback.filter((item) => item.status === 'pending').length > 0 && <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">{feedback.filter((item) => item.status === 'pending').length}</span>}</button>
+          </nav>
+          <div className="mt-3 border-t border-border pt-3">
+            <Link href={`/${locale}`} className="flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-bold text-muted-foreground hover:bg-muted"><LayoutDashboard className="h-4 w-4" /> {t('Back to site', '返回网站')}</Link>
+          </div>
+        </aside>
 
-        <section className="mt-9 rounded-[30px] border border-white/80 bg-white/85 p-5 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.045] sm:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-4">
-            <div><p className="text-xs font-black uppercase tracking-[0.2em] text-emerald-700 dark:text-emerald-300">{t('Publication states', '发布状态')}</p><h2 className="mt-1 text-2xl font-black">{t('Course Library', '课程库')}</h2></div>
-            <button onClick={() => { void saveStates() }} disabled={saving} className="rounded-full bg-[#163f2c] px-6 py-2.5 text-sm font-black text-white disabled:opacity-50">{saving ? t('Saving…', '保存中…') : saved ? t('Saved', '已保存') : t('Save visibility', '保存发布状态')}</button>
-          </div>
-          <div className="mt-6 grid gap-3">
-            {lessons.map((lesson) => {
-              const selected = resolvedStates[String(lesson.sequence)]
-              return <article key={lesson.sequence} className="grid gap-4 rounded-2xl border border-border bg-background/70 p-4 lg:grid-cols-[1fr_auto] lg:items-center">
-                <div><div className="text-[10px] font-black uppercase tracking-widest text-muted-foreground">{isChinese ? `博客 ${String(lesson.sequence).padStart(2, '0')} · 级别 ${lesson.level}` : `Blog ${String(lesson.sequence).padStart(2, '0')} · Level ${lesson.level}`}</div><h3 className="mt-1 text-lg font-black">{isChinese ? lesson.titleZh : lesson.title}</h3></div>
-                <div className="flex flex-wrap gap-2">
-                  {visibilityOptions.map((option) => <button key={option.value} onClick={() => { setStates((current) => ({ ...current, [String(lesson.sequence)]: option.value })); setSaved(false) }} className={cn('inline-flex items-center gap-1.5 rounded-full border px-3 py-2 text-xs font-black transition', selected === option.value ? option.classes : 'border-border bg-transparent text-muted-foreground opacity-55 hover:opacity-100')}><option.icon className="h-3.5 w-3.5" /> {isChinese ? option.zh : option.en}</button>)}
-                  <Link href={`/${locale}/courses/1/lessons/${lesson.id}`} className="rounded-full border border-border px-3 py-2 text-xs font-black hover:bg-muted">{t('Preview', '预览')}</Link>
-                </div>
-              </article>
-            })}
-          </div>
-        </section>
+        <div className="min-w-0">
+          <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+            <div><h2 className="text-3xl font-black tracking-[-0.035em]">{activePanel === 'library' ? t('Course Library', '课程库') : t('Reader Feedback', '意见反馈')}</h2><p className="mt-1 text-sm text-muted-foreground">{activePanel === 'library' ? t('Sort lessons and manage publication status in one compact table.', '用紧凑表格排序课程并管理公开状态。') : t('Review suggestions and record whether they were adopted.', '查看读者建议并记录是否采纳。')}</p></div>
+            <button onClick={() => { void refresh() }} className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-white/80 px-4 text-xs font-black dark:bg-white/5"><RefreshCcw className="h-3.5 w-3.5" /> {t('Refresh', '刷新')}</button>
+          </header>
 
-        <section className="mt-9 rounded-[30px] border border-white/80 bg-white/85 p-5 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.045] sm:p-7">
-          <div><p className="flex items-center gap-2 text-xs font-black uppercase tracking-[0.2em] text-indigo-700 dark:text-indigo-300"><MessageSquareText className="h-4 w-4" /> {t('Reader feedback', '读者反馈')}</p><h2 className="mt-1 text-2xl font-black">{t('Suggestions', '建议')}</h2></div>
-          <div className="mt-6 space-y-3">
-            {feedback.map((item) => <article key={`${item.userId}:${item.id}`} className="rounded-2xl border border-border bg-background/70 p-5">
-              <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs font-black text-indigo-700 dark:text-indigo-300">{item.lessonTitle} · {item.chapterTitle}</div><div className="mt-1 text-[11px] text-muted-foreground">{item.user.name || item.user.email || item.userId} · {new Date(item.createdAt).toLocaleString(isChinese ? 'zh-CN' : 'en-US')}</div></div><span className={cn('rounded-full px-3 py-1 text-[10px] font-black uppercase', item.status === 'adopted' ? 'bg-emerald-100 text-emerald-800' : item.status === 'reviewed' ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800')}>{isChinese ? ({ pending: '待处理', adopted: '已采纳', reviewed: '已查看' } as const)[item.status] : item.status}</span></div>
-              <p className="mt-4 whitespace-pre-wrap text-sm leading-7">{item.message}</p>
-              <div className="mt-4 flex gap-2"><button onClick={() => { void updateFeedback(item, 'adopted') }} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-2 text-xs font-black text-white"><CheckCircle2 className="h-3.5 w-3.5" /> {t('Adopt', '采纳')}</button><button onClick={() => { void updateFeedback(item, 'reviewed') }} className="rounded-full border border-border px-4 py-2 text-xs font-black">{t('Mark reviewed', '标记已查看')}</button></div>
-            </article>)}
-            {feedback.length === 0 && <div className="rounded-2xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{t('No reader suggestions yet.', '暂时还没有读者建议。')}</div>}
-          </div>
-        </section>
+          {activePanel === 'library' && <section className="overflow-hidden rounded-2xl border border-white/80 bg-white/90 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.045]">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-border px-4 py-3">
+              <p className="text-xs text-muted-foreground">{t(`${lessons.length} lessons · click a column header to sort`, `${lessons.length} 门课程 · 点击表头即可排序`)}</p>
+              <button onClick={() => { void saveStates() }} disabled={saving} className="rounded-full bg-[#163f2c] px-5 py-2 text-xs font-black text-white disabled:opacity-50">{saving ? t('Saving…', '保存中…') : saved ? t('Saved', '已保存') : t('Save changes', '保存更改')}</button>
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full min-w-[780px] border-collapse text-sm">
+                <thead className="bg-[#eef3ee] text-left text-[10px] font-black uppercase tracking-[0.14em] text-[#56665d] dark:bg-white/[0.04] dark:text-white/55">
+                  <tr>
+                    {([
+                      ['sequence', t('No.', '编号')],
+                      ['title', t('Course', '课程名称')],
+                      ['level', 'Level'],
+                      ['visibility', t('Visibility', '公开状态')],
+                    ] as const).map(([key, label]) => <th key={key} className="px-4 py-3"><button onClick={() => changeSort(key)} className="inline-flex items-center gap-1.5 hover:text-foreground">{label}<ArrowUpDown className={cn('h-3 w-3', sortKey === key ? 'opacity-100' : 'opacity-35')} /></button></th>)}
+                    <th className="px-4 py-3 text-right">{t('Actions', '操作')}</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-border">
+                  {sortedLessons.map((lesson) => {
+                    const selected = resolvedStates[String(lesson.sequence)]
+                    const selectedOption = visibilityOptions.find((option) => option.value === selected) ?? visibilityOptions[2]
+                    const SelectedIcon = selectedOption.icon
+                    return <tr key={lesson.sequence} className="transition hover:bg-[#f5f8f5] dark:hover:bg-white/[0.025]">
+                      <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-black text-muted-foreground">{String(lesson.sequence).padStart(2, '0')}</td>
+                      <td className="px-4 py-3"><div className="max-w-xl font-bold">{isChinese ? lesson.titleZh : lesson.title}</div></td>
+                      <td className="whitespace-nowrap px-4 py-3"><span className={cn('rounded-full px-2.5 py-1 text-[10px] font-black', lesson.level === 1 ? 'bg-emerald-100 text-emerald-800' : lesson.level === 2 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>Level {lesson.level}</span></td>
+                      <td className="px-4 py-3"><label className={cn('inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5', selectedOption.classes)}><SelectedIcon className="h-3.5 w-3.5" /><select aria-label={t(`Visibility for ${lesson.title}`, `${lesson.titleZh} 的公开状态`)} value={selected} onChange={(event) => { setStates((current) => ({ ...current, [String(lesson.sequence)]: event.target.value as ModelingVisibility })); setSaved(false) }} className="bg-transparent text-xs font-black outline-none"><option value="public">{t('Public', '完全公开')}</option><option value="coming-soon">{t('Coming soon', '准备公开')}</option><option value="hidden">{t('Hidden', '完全隐藏')}</option></select></label></td>
+                      <td className="whitespace-nowrap px-4 py-3 text-right"><Link href={`/${locale}/courses/1/lessons/${lesson.id}`} className="rounded-full border border-border px-3 py-1.5 text-xs font-black hover:bg-muted">{t('Preview', '预览')}</Link></td>
+                    </tr>
+                  })}
+                </tbody>
+              </table>
+            </div>
+          </section>}
+
+          {activePanel === 'feedback' && <section className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.045] sm:p-5">
+            <div className="space-y-3">
+              {feedback.map((item) => <article key={`${item.userId}:${item.id}`} className="rounded-xl border border-border bg-background/70 p-4">
+                <div className="flex flex-wrap items-start justify-between gap-3"><div><div className="text-xs font-black text-indigo-700 dark:text-indigo-300">{item.lessonTitle} · {item.chapterTitle}</div><div className="mt-1 text-[11px] text-muted-foreground">{item.user.name || item.user.email || item.userId} · {new Date(item.createdAt).toLocaleString(isChinese ? 'zh-CN' : 'en-US')}</div></div><span className={cn('rounded-full px-3 py-1 text-[10px] font-black uppercase', item.status === 'adopted' ? 'bg-emerald-100 text-emerald-800' : item.status === 'reviewed' ? 'bg-sky-100 text-sky-800' : 'bg-amber-100 text-amber-800')}>{isChinese ? ({ pending: '待处理', adopted: '已采纳', reviewed: '已查看' } as const)[item.status] : item.status}</span></div>
+                <p className="mt-3 whitespace-pre-wrap text-sm leading-6">{item.message}</p>
+                <div className="mt-3 flex gap-2"><button onClick={() => { void updateFeedback(item, 'adopted') }} className="inline-flex items-center gap-1.5 rounded-full bg-emerald-700 px-4 py-1.5 text-xs font-black text-white"><CheckCircle2 className="h-3.5 w-3.5" /> {t('Adopt', '采纳')}</button><button onClick={() => { void updateFeedback(item, 'reviewed') }} className="rounded-full border border-border px-4 py-1.5 text-xs font-black">{t('Mark reviewed', '标记已查看')}</button></div>
+              </article>)}
+              {feedback.length === 0 && <div className="rounded-xl border border-dashed border-border p-8 text-center text-sm text-muted-foreground">{t('No reader suggestions yet.', '暂时还没有读者建议。')}</div>}
+            </div>
+          </section>}
+        </div>
       </main>
     </div>
   )

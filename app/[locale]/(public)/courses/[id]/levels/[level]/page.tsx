@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import type { Metadata } from 'next'
-import { ArrowRight, Clock3, LockKeyhole } from 'lucide-react'
+import { BookOpenText, Clock3, ClipboardCheck, LockKeyhole } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentTenantId } from '@/lib/supabase/tenant'
 import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
@@ -71,9 +71,12 @@ export default async function ModelingLevelPage({ params }: { params: Promise<{ 
           const card = <article className={cn('grid gap-5 rounded-[26px] border border-border bg-white/80 p-5 shadow-sm backdrop-blur transition dark:bg-white/[0.045] sm:grid-cols-[64px_1fr_auto] sm:items-center', modelingLevelRowClasses(levelNumber), !publicLesson && 'grayscale opacity-70')}>
             <span className={cn('flex h-14 w-14 items-center justify-center rounded-2xl border text-lg font-black shadow-lg', modelingLevelIconClasses(levelNumber))}>{String(lesson.sequence).padStart(2, '0')}</span>
             <div><h2 className={cn('text-xl font-black', modelingLevelTitleClasses(levelNumber))}>{isChinese ? lesson.titleZh : lesson.title}</h2><p className="mt-2 text-sm leading-6 text-muted-foreground">{isChinese ? MODELING_DESCRIPTIONS_ZH[lesson.sequence] : (lesson.description || lesson.excerpt)}</p></div>
-            {publicLesson ? <ArrowRight className="h-5 w-5" /> : <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-2 text-xs font-black text-amber-800 dark:bg-amber-300/10 dark:text-amber-200"><Clock3 className="h-4 w-4" /> {isChinese ? '即将发布' : 'Coming soon'}</span>}
+            {publicLesson ? <div className="flex flex-wrap gap-2 sm:justify-end">
+              <Link href={`/${locale}/courses/${id}/lessons/${lesson.id}`} className="inline-flex items-center gap-2 rounded-full bg-[#163f2c] px-4 py-2 text-xs font-black text-white transition hover:bg-[#0f3021]"><BookOpenText className="h-4 w-4" /> {isChinese ? '阅读文章' : 'Read blog'}</Link>
+              <Link href={`/${locale}/courses/${id}/lessons/${lesson.id}?chapter=final`} className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-4 py-2 text-xs font-black text-amber-900 transition hover:bg-amber-100 dark:border-amber-300/25 dark:bg-amber-300/10 dark:text-amber-200"><ClipboardCheck className="h-4 w-4" /> {isChinese ? '综合测验' : 'Checkpoint Quiz'}</Link>
+            </div> : <span className="inline-flex items-center gap-2 rounded-full bg-amber-100 px-3 py-2 text-xs font-black text-amber-800 dark:bg-amber-300/10 dark:text-amber-200"><Clock3 className="h-4 w-4" /> {isChinese ? '即将发布' : 'Coming soon'}</span>}
           </article>
-          return publicLesson ? <Link key={lesson.sequence} href={`/${locale}/courses/${id}/lessons/${lesson.id}`}>{card}</Link> : <div key={lesson.sequence}>{card}</div>
+          return <div key={lesson.sequence}>{card}</div>
         })}
         {lessons.length === 0 && <div className="rounded-[26px] border border-dashed border-border bg-background/60 p-12 text-center text-muted-foreground"><LockKeyhole className="mx-auto mb-4 h-8 w-8" />{isChinese ? '这个级别的课程仍在课程库中准备，暂时没有公开内容。' : 'This level is still being prepared in the course library; no items are public yet.'}</div>}
       </section>

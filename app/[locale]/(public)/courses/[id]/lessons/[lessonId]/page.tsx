@@ -135,15 +135,14 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
     const serialize = async (
         chapter: (typeof sourceChapters.en)[number],
         chapterIndex: number,
-        translatedSource?: string,
     ) => ({
         id: chapter.id,
         title: chapter.title,
         mdx: await serializeLessonMdx(chapter.source),
-        quiz: buildChapterQuiz(lesson.sequence, chapterIndex, chapter.title, chapter.source, translatedSource),
+        quiz: buildChapterQuiz(lesson.sequence, chapterIndex, chapter.title),
     })
     const [english, chinese] = await Promise.all([
-        Promise.all(sourceChapters.en.map((chapter, index) => serialize(chapter, index, sourceChapters.zh[index]?.source))),
+        Promise.all(sourceChapters.en.map((chapter, index) => serialize(chapter, index))),
         Promise.all(sourceChapters.zh.map((chapter, index) => serialize(chapter, index, chapter.source))),
     ])
 

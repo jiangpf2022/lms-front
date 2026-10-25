@@ -23,16 +23,29 @@ type TeachingFigure = {
 }
 
 const teachingFigures: TeachingFigure[] = [
-  { src: '001-baseline-before-decoration.svg', en: 'Baseline before decoration: the proposal changes the full distribution, not merely one average.', zh: '先画基线，再谈装饰：新方案改变的是完整分布，而不只是一个平均值。' },
-  { src: '002-one-chart-one-question.svg', en: 'One chart, one question: which district has the largest shortage under stress?', zh: '一张图只回答一个核心问题：压力情景下，哪个地区的短缺最严重？' },
-  { src: '003-evidence-chain.svg', en: 'Evidence chain: demand estimation feeds simulation, then the staffing decision.', zh: '证据链：需求估计进入仿真，再由仿真支持人员配置决策。' },
-  { src: '004-decision-before-method.svg', en: 'Decision before method: a slightly dearer plan stays feasible in every tested disruption.', zh: '先呈现决策，再介绍方法：略贵的方案在所有测试扰动下仍然可行。' },
-  { src: '005-caption-as-a-result.svg', en: 'Write the caption as a result: the intervention reduces the held-out evening peak by 18%.', zh: '让图注直接陈述结果：干预使留出周的晚高峰下降了 18%。' },
-  { src: '006-a-fair-before-and-after.svg', en: 'A fair before-and-after comparison shows that the policy shifts demand rather than removing it.', zh: '公平的前后对照表明：政策只是转移了需求，并没有让需求消失。' },
-  { src: '007-show-the-counterfactual.svg', en: 'Show the counterfactual: without intervention, congestion keeps rising after 17:00.', zh: '画出反事实：如果不采取干预，17:00 后拥堵仍会继续上升。' },
-  { src: '008-make-the-constraint-visible.svg', en: 'Make the constraint visible: only three designs satisfy budget and reliability together.', zh: '把约束画出来：只有三个候选设计同时满足预算与可靠性要求。' },
-  { src: '009-scale-to-the-decision.svg', en: 'Scale the chart to the decision: errors near the safety threshold matter most.', zh: '尺度应服务于决策：靠近安全阈值的小误差，可能比其他位置的大误差更重要。' },
-  { src: '010-close-the-loop.svg', en: 'Close the loop: validation changes the recommendation after an assumption fails.', zh: '闭合证据链：当一项假设失效时，验证结果应当能够改变最终建议。' },
+  { src: 'ppt/ppt-01-slide-3.webp', en: '2020 MCM Problem A: pair a profit trend with a bankruptcy-time distribution so that expected performance and tail risk are read together.', zh: '2020 MCM A 题：把收益趋势与破产时间分布并列，让读者同时看到期望表现与尾部风险。' },
+  { src: 'ppt/ppt-02-slide-4.webp', en: '2020 MCM Problem D: several performance indicators share one time axis, making trade-offs and regime changes directly comparable.', zh: '2020 MCM D 题：多个性能指标共享同一时间轴，便于直接比较权衡关系与阶段变化。' },
+  { src: 'ppt/ppt-03-slide-5.webp', en: 'Competition-paper composite: three-dimensional summaries and site maps connect numerical patterns to their spatial setting.', zh: '竞赛论文组合图：三维统计与场地图并列，把数值模式重新放回空间情境。' },
+  { src: 'ppt/ppt-04-slide-7.webp', en: '2020 MCM Problem A workflow: the figure separates three models, then shows how their outputs support one final decision.', zh: '2020 MCM A 题流程图：先区分三个模型，再说明各模型输出如何共同支持最终决策。' },
+  { src: 'ppt/ppt-05-slide-8.webp', en: 'UAV geometry: every coordinate, angle, and displacement used in the equations is made visible in one consistent frame.', zh: '无人机几何示意图：把方程中的坐标、角度和位移放进同一个一致的参考系。' },
+  { src: 'ppt/ppt-06-slide-9.webp', en: 'Competition workflow: data, classification, clustering, optimization, and sensitivity analysis are arranged as an evidence chain.', zh: '竞赛建模流程：数据、分类、聚类、优化与敏感性分析被组织成完整证据链。' },
+  { src: 'ppt/ppt-07-slide-30.webp', en: 'A policy framework uses arrows only where information or decisions actually move between modules.', zh: '政策框架图只在信息或决策真正流动的位置使用箭头，避免装饰性连线。' },
+  { src: 'ppt/ppt-08-slide-32.webp', en: 'A self-supervised vision pipeline distinguishes pretraining, clustering, and iterative refinement by both position and color.', zh: '自监督视觉流程同时利用位置与颜色区分预训练、聚类和迭代更新。' },
+  { src: 'ppt/ppt-09-slide-35.webp', en: '2020 MCM Problem D: a soccer formation makes the graph structure interpretable before any network metric is reported.', zh: '2020 MCM D 题：先用足球阵型解释网络结构，再报告网络指标，读者更容易理解节点与边。' },
+  { src: 'ppt/ppt-10-slide-37.webp', en: '2023 MCM Problem A: the human–land system is decomposed into coupled subsystems before a strategy-evaluation model is introduced.', zh: '2023 MCM A 题：先把人地系统拆成相互耦合的子系统，再引入策略评价模型。' },
+]
+
+const scientificFigures: TeachingFigure[] = [
+  { src: 'ppt/ppt-11-slide-13.webp', en: 'A terrain surface uses height, shading, and a restrained color scale to communicate one geometric quantity.', zh: '地形曲面同时使用高度、阴影和克制的色标表达同一个几何量。' },
+  { src: 'ppt/ppt-12-slide-14.webp', en: 'A violin plot keeps distribution shape, median, and spread visible instead of collapsing every group to one bar.', zh: '小提琴图保留分布形状、中位数与离散程度，不把每组数据压缩成一根柱子。' },
+  { src: 'ppt/ppt-13-slide-21.webp', en: 'A tensor-oriented diagram combines small time-series panels with explicit data-organization axes.', zh: '张量示意图把时间序列小图与明确的数据组织轴结合起来。' },
+  { src: 'ppt/ppt-14-slide-40.webp', en: 'A neural-network schematic labels the role of each layer while keeping the computational direction unambiguous.', zh: '神经网络示意图标注每层作用，同时保持计算方向清晰。' },
+  { src: 'ppt/ppt-15-slide-41.webp', en: 'A hybrid sequence architecture separates recurrent, convolutional, fully connected, and output modules by structure.', zh: '混合序列模型按结构区分循环、卷积、全连接与输出模块。' },
+  { src: 'ppt/ppt-16-slide-46.webp', en: 'Training curves compare both loss trajectories and parameter-space paths, connecting convergence evidence with mechanism.', zh: '训练曲线同时比较损失轨迹与参数空间路径，把收敛证据和算法机制联系起来。' },
+  { src: 'ppt/ppt-17-slide-48.webp', en: 'A multi-scale network diagram shows how information travels across resolution levels rather than listing layer names.', zh: '多尺度网络图强调信息如何跨分辨率流动，而不是只罗列层名称。' },
+  { src: 'ppt/ppt-18-slide-51.webp', en: 'A dense convolutional architecture remains readable because repeated blocks, dimensions, and skip paths use consistent encoding.', zh: '复杂卷积结构依靠一致的模块、尺寸与跳连编码保持可读性。' },
+  { src: 'ppt/ppt-19-slide-56.webp', en: 'A biochemical pathway uses spatial grouping and color families to separate reaction stages without breaking continuity.', zh: '生化通路用空间分组与颜色家族区分反应阶段，同时保持过程连续。' },
+  { src: 'ppt/ppt-20-slide-60.webp', en: 'A protein-mechanism plate combines molecular structure with localized callouts so the reader can move from object to mechanism.', zh: '蛋白机制图把分子结构与局部标注结合，使读者能够从对象自然过渡到机制。' },
 ]
 
 const awardIds: Record<Exclude<GalleryGroup, 'claim'>, string[]> = {
@@ -138,6 +151,11 @@ export function VisualEvidenceGallery({ groups, language = 'en', start = 1 }: Vi
               src: `/mathematical-modeling/visual-evidence/${figure.src}`,
               caption: figure[language],
             }))
+          : group === 'scientific'
+            ? scientificFigures.map((figure) => ({
+                src: `/mathematical-modeling/visual-evidence/${figure.src}`,
+                caption: figure[language],
+              }))
           : awardIds[group].map((id) => ({
               src: `/mathematical-modeling/visual-evidence/award/award-${id}.webp`,
               caption: awardSource(id, language),

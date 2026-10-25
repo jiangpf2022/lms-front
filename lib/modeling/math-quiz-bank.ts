@@ -80,6 +80,70 @@ function foundations(seed: number, id: string): ModelingQuizQuestion[] {
   ]
 }
 
+function foundationsChapterQuiz(chapterIndex: number): ModelingQuizQuestion[] {
+  const id = `lesson-1-chapter-${chapterIndex + 1}`
+  const chapters: ModelingQuizQuestion[][] = [
+    [
+      question(`${id}-1`, { en: 'A city asks whether to add buses during the morning peak. Which statement is a decision-ready modeling objective?', zh: '某城市想判断早高峰是否需要增加公交车。下面哪一项是可以直接用于建模的目标？' }, { en: ['Describe traffic in general', 'Minimize the 95th-percentile passenger wait subject to a fleet budget', 'Collect as much data as possible', 'Use a queueing model'], zh: ['总体描述交通状况', '在车队预算约束下最小化乘客等待时间的 95% 分位数', '收集尽可能多的数据', '使用排队模型'] }, 1, { en: 'It names a decision metric and a constraint. A method is not an objective.', zh: '它同时给出了决策指标与约束；“使用某个模型”只是方法，不是目标。' }),
+      question(`${id}-2`, { en: 'Water in a tank obeys S(t+1)=S(t)+inflow−outflow. If S=120 L, inflow=35 L, and outflow=50 L, what is the next state?', zh: '水箱满足 S(t+1)=S(t)+流入−流出。若当前有 120 L，流入 35 L，流出 50 L，下一时刻水量是多少？' }, { en: ['35 L', '85 L', '105 L', '205 L'], zh: ['35 L', '85 L', '105 L', '205 L'] }, 2, { en: '120+35−50=105 L.', zh: '120+35−50=105 L。' }),
+      question(`${id}-3`, { en: 'Distance d is modeled by d=v+t, where v is km/h and t is h. What is wrong?', zh: '有人写出距离模型 d=v+t，其中 v 的单位是 km/h，t 的单位是 h。问题在哪里？' }, { en: ['Nothing is wrong', 'The right-hand terms have incompatible units', 'd must be dimensionless', 'Only the numerical values matter'], zh: ['没有问题', '右侧两项量纲不同，不能相加', 'd 必须没有单位', '只要数值正确，单位不重要'] }, 1, { en: 'Terms added together must have the same dimension. A valid simple relation would be d=vt.', zh: '相加的量必须具有相同量纲；一个简单且量纲正确的关系是 d=vt。' }),
+      question(`${id}-4`, { en: 'Which observation most directly falsifies a model that assumes a fixed service rate of 30 customers/hour?', zh: '某模型假设服务率恒为 30 人/小时。下面哪项观测最直接说明这一假设不成立？' }, { en: ['The shop has a blue sign', 'Measured service rates repeatedly fall to 12/hour during lunch', 'The fitted curve has three decimals', 'The report contains ten figures'], zh: ['店铺招牌是蓝色的', '午餐时段实测服务率反复降到 12 人/小时', '拟合曲线保留三位小数', '报告中有十张图'] }, 1, { en: 'A repeated, condition-specific violation attacks the assumed mechanism directly.', zh: '这一观测在特定条件下反复违背固定服务率假设，直接否定了模型机制。' }),
+      question(`${id}-5`, { en: 'A ski lift delivers 360 skiers/hour. The runs can safely absorb only 240 skiers/hour in steady state. Ignoring other limits, what admission rate is feasible?', zh: '缆车每小时可输送 360 名滑雪者，但雪道在稳态下每小时只能安全消化 240 人。忽略其他限制，可行的最大入场率是多少？' }, { en: ['120/hour', '240/hour', '360/hour', '600/hour'], zh: ['120 人/小时', '240 人/小时', '360 人/小时', '600 人/小时'] }, 1, { en: 'The system throughput is limited by the bottleneck: min(360,240)=240 per hour.', zh: '系统吞吐量由瓶颈决定：min(360,240)=240 人/小时。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'For a campus-shuttle model, which boundary is best if the decision concerns only waiting at two stops during 8–9 a.m.?', zh: '若研究目标只是分析早上 8–9 点两个站点的候车情况，哪一种系统边界最合适？' }, { en: ['All transportation in the city for a year', 'The two stops, arriving passengers, and shuttle movements during 8–9 a.m.', 'Only the color of each shuttle', 'Every student activity on campus'], zh: ['全市一整年的所有交通', '8–9 点两个站点、到达乘客以及班车运行', '只考虑班车颜色', '校园内所有学生活动'] }, 1, { en: 'A useful boundary contains the flows that can change the target quantity without importing irrelevant systems.', zh: '合理边界应包含会改变目标量的流动，同时排除与决策无关的系统。' }),
+      question(`${id}-2`, { en: 'Which variable is a state rather than a flow?', zh: '下面哪个量是“状态量”而不是“流量”？' }, { en: ['Passengers arriving per minute', 'Passengers boarding per minute', 'Passengers currently waiting', 'Bus departures per hour'], zh: ['每分钟到达人数', '每分钟上车人数', '当前正在等待的人数', '每小时发车次数'] }, 2, { en: 'A state is the accumulated condition at an instant; the other quantities are rates.', zh: '状态量描述某一时刻的累积状况，其他三项都是变化率。' }),
+      question(`${id}-3`, { en: 'A queue contains 18 people. During the next five minutes, 11 arrive and 20 board. Assuming the queue cannot be negative, how many remain?', zh: '队列中原有 18 人，随后五分钟内到达 11 人、上车 20 人。假设队列人数不能为负，还剩多少人？' }, { en: ['0', '9', '27', '49'], zh: ['0', '9', '27', '49'] }, 1, { en: 'The update is max(0,18+11−20)=9.', zh: '状态更新为 max(0,18+11−20)=9。' }),
+      question(`${id}-4`, { en: 'A café serves 24 customers/hour, and an average customer spends 0.5 hour in the system. Under steady conditions, what is the average number in the system?', zh: '某咖啡店每小时服务 24 人，顾客平均在系统中停留 0.5 小时。稳态下系统内平均有多少人？' }, { en: ['12', '24', '36', '48'], zh: ['12', '24', '36', '48'] }, 0, { en: 'Little’s law gives L=λW=24×0.5=12.', zh: '由 Little 定律 L=λW=24×0.5=12。' }),
+      question(`${id}-5`, { en: 'Select all quantities sufficient to update a one-step inventory model with known deliveries and demand.', zh: '对于已知下一时段到货量与需求量的单步库存模型，选择所有足以完成状态更新的信息。' }, { en: ['Current inventory', 'Next-period deliveries', 'Next-period demand', 'The warehouse logo'], zh: ['当前库存', '下一时段到货量', '下一时段需求量', '仓库标志'] }, [0, 1, 2], { en: 'The next stock is current stock plus deliveries minus fulfilled demand; the logo has no causal role.', zh: '下一期库存由当前库存、到货量和需求共同决定；仓库标志不参与状态变化。' }),
+    ],
+    [
+      question(`${id}-1`, { en: '“Demand may rise by 20% next week.” What mathematical object should be added first?', zh: '“下周需求可能增加 20%。”首先应在模型中加入什么数学对象？' }, { en: ['A single unchanged average', 'A stressed-demand scenario equal to 1.2 times baseline demand', 'A new font', 'An unconstrained binary variable'], zh: ['一个不变的平均值', '等于基准需求 1.2 倍的压力情景', '一种新字体', '一个没有约束的二元变量'] }, 1, { en: 'The phrase describes uncertainty relative to a baseline, so it naturally becomes a scenario.', zh: '这句话描述了相对于基准值的不确定性，因此最自然的翻译是压力情景。' }),
+      question(`${id}-2`, { en: 'A planner chooses the number of buses x and the departure interval h. Which pair are decision variables?', zh: '规划者需要决定公交数量 x 与发车间隔 h。哪一组是决策变量？' }, { en: ['x and h', 'Observed passenger arrivals only', 'Yesterday’s weather and date', 'Predicted waiting time only'], zh: ['x 与 h', '仅观测到的乘客到达量', '昨天的天气与日期', '仅预测等待时间'] }, 0, { en: 'Decision variables are quantities the planner is allowed to choose.', zh: '决策变量是规划者可以主动选择的量。' }),
+      question(`${id}-3`, { en: 'Peak waiting times are 4, 5, 5, 6, and 20 minutes. Why is the mean alone a poor objective?', zh: '五个高峰等待时间为 4、5、5、6、20 分钟。为什么只优化均值可能不合适？' }, { en: ['The mean cannot be computed', 'It can hide the severe 20-minute tail', 'Means are always larger than maxima', 'All observations must be equal'], zh: ['均值无法计算', '均值可能掩盖严重的 20 分钟尾部等待', '均值总比最大值大', '所有观测必须相等'] }, 1, { en: 'The mean is 8 minutes, but it does not represent the unusually bad wait that may drive the decision.', zh: '均值为 8 分钟，却无法体现可能真正决定方案的极端等待。' }),
+      question(`${id}-4`, { en: 'A fleet has x buses, each with 40 seats, and makes 3 trips/hour. Which capacity constraint is correct for demand D?', zh: '车队有 x 辆公交，每辆 40 座，每小时运行 3 趟。对需求 D，哪个运力约束正确？' }, { en: ['D≤40x', 'D≤3x', 'D≤120x', 'D=120+x'], zh: ['D≤40x', 'D≤3x', 'D≤120x', 'D=120+x'] }, 2, { en: 'Each bus supplies 40×3=120 passenger-trips per hour.', zh: '每辆车每小时提供 40×3=120 个客运位。' }),
+      question(`${id}-5`, { en: 'Select all phrases that normally imply explicit constraints rather than objectives.', zh: '选择所有通常应被翻译为“约束”而不是“目标”的表述。' }, { en: ['At most 12 vehicles', 'No route may exceed 40 minutes', 'Minimize total waiting time', 'Every district must receive service'], zh: ['车辆数不超过 12', '任何线路都不能超过 40 分钟', '最小化总等待时间', '每个区域都必须得到服务'] }, [0, 1, 3], { en: '“At most,” “may not,” and “must” define feasibility. “Minimize” defines an objective.', zh: '“不超过”“不能”“必须”规定可行域，而“最小化”规定目标函数。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A demand model assumes identical arrival rates every hour. Which test most directly checks that assumption?', zh: '需求模型假设每小时到达率相同。哪种检验最直接？' }, { en: ['Compare estimated arrival rates across hours', 'Increase decimal precision', 'Rename the variables', 'Use a darker plot color'], zh: ['比较不同时段估计的到达率', '增加小数位数', '重新命名变量', '把图画得更深'] }, 0, { en: 'The assumption is about temporal homogeneity, so it must be checked across time.', zh: '这一假设描述的是时间上的一致性，因此应直接比较不同时段。' }),
+      question(`${id}-2`, { en: 'A model predicts y=ab. If a is fixed and b has ±10% uncertainty, what relative uncertainty does y inherit?', zh: '模型为 y=ab。若 a 固定、b 存在 ±10% 的不确定性，则 y 的相对不确定性是多少？' }, { en: ['±1%', '±5%', '±10%', '±20%'], zh: ['±1%', '±5%', '±10%', '±20%'] }, 2, { en: 'With a fixed, y changes in direct proportion to b.', zh: '当 a 固定时，y 与 b 成正比，因此相对变化相同。' }),
+      question(`${id}-3`, { en: 'Which is a controlled approximation?', zh: '下面哪项属于“受控近似”？' }, { en: ['Ignore travel time without checking its size', 'Treat a 20-second transfer as instantaneous in a two-hour process, then test sensitivity', 'Assume all missing values are zero', 'Delete inconvenient observations'], zh: ['直接忽略行程时间且不检查其大小', '在持续两小时的过程中把 20 秒转移视为瞬时，并做敏感性检验', '假设所有缺失值都等于零', '删除不方便的观测'] }, 1, { en: 'The neglected effect is small relative to the modeled scale, and its influence is checked.', zh: '被忽略的效应相对研究尺度很小，而且还会检验这一近似的影响。' }),
+      question(`${id}-4`, { en: 'Output y changes from 50 to 56 when parameter p changes from 10 to 12. What is the finite-difference sensitivity Δy/Δp?', zh: '参数 p 从 10 变到 12 时，输出 y 从 50 变到 56。有限差分敏感度 Δy/Δp 是多少？' }, { en: ['2', '3', '6', '12'], zh: ['2', '3', '6', '12'] }, 1, { en: '(56−50)/(12−10)=3.', zh: '(56−50)/(12−10)=3。' }),
+      question(`${id}-5`, { en: 'Select all assumptions that should be treated as high risk in a queue model.', zh: '在排队模型中，选择所有应被视为高风险的假设。' }, { en: ['An assumption strongly changes the decision when perturbed', 'An assumption lacks supporting data', 'An assumption only changes the third decimal place', 'An assumption contradicts observed peak behavior'], zh: ['稍微扰动就会明显改变决策', '缺少数据支持', '只会改变结果第三位小数', '与观测到的高峰行为矛盾'] }, [0, 1, 3], { en: 'Risk comes from decision impact, weak evidence, or contradiction—not merely from being an assumption.', zh: '假设风险来自对决策的影响、证据不足或与事实冲突，而不是因为它只是一个假设。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'Why build a baseline before adding a complex mechanism?', zh: '为什么应先建立基线模型，再增加复杂机制？' }, { en: ['A baseline is always the final model', 'It provides a checkable reference for measuring whether complexity adds value', 'Complex models cannot use data', 'A baseline removes the need for validation'], zh: ['基线模型永远就是最终模型', '基线提供可核验的参照，用于判断复杂度是否真正带来价值', '复杂模型不能使用数据', '有了基线就不再需要验证'] }, 1, { en: 'Without a baseline, improvement and failure are difficult to attribute.', zh: '没有基线，就很难判断改进来自哪里，也很难定位失败原因。' }),
+      question(`${id}-2`, { en: 'Baseline RMSE is 12 and an extended model has RMSE 9. What is the relative reduction?', zh: '基线模型 RMSE 为 12，扩展模型 RMSE 为 9。相对降幅是多少？' }, { en: ['3%', '20%', '25%', '33%'], zh: ['3%', '20%', '25%', '33%'] }, 2, { en: '(12−9)/12=25%.', zh: '(12−9)/12=25%。' }),
+      question(`${id}-3`, { en: 'An extension adds 20 parameters, lowers training error, but worsens held-out error. What is the best diagnosis?', zh: '扩展模型增加 20 个参数，训练误差下降，但留出集误差上升。最合理的诊断是什么？' }, { en: ['Guaranteed improvement', 'Likely overfitting', 'A unit conversion', 'Proof that validation is unnecessary'], zh: ['一定得到了改进', '很可能过拟合', '发生了单位换算', '证明不需要验证'] }, 1, { en: 'The extension fits training idiosyncrasies that do not transfer.', zh: '扩展部分很可能拟合了训练数据中的偶然特征，无法推广。' }),
+      question(`${id}-4`, { en: 'Model A predicts a constant mean. Model B adds a rush-hour indicator. Which comparison isolates the value of the new mechanism?', zh: '模型 A 只预测常数均值，模型 B 加入高峰时段指示变量。哪种比较最能隔离新机制的价值？' }, { en: ['Evaluate both on the same held-out periods with the same metric', 'Train them on different cities', 'Use a different metric for each', 'Compare only parameter counts'], zh: ['在相同留出时段、使用同一指标评估两者', '分别在不同城市训练', '每个模型使用不同指标', '只比较参数数量'] }, 0, { en: 'A controlled comparison changes the mechanism while holding evaluation conditions fixed.', zh: '受控比较只改变待检验的机制，同时保持评估条件一致。' }),
+      question(`${id}-5`, { en: 'Select all valid reasons to retain an extension.', zh: '选择所有保留模型扩展的合理理由。' }, { en: ['It improves out-of-sample decisions materially', 'It repairs a known physical or logical violation', 'It makes the equation longer', 'Its benefit remains under sensitivity checks'], zh: ['显著改善样本外决策', '修复已知的物理或逻辑错误', '让公式变得更长', '在敏感性检验下仍保持收益'] }, [0, 1, 3], { en: 'Useful complexity must improve evidence, mechanism, or decision robustness.', zh: '有价值的复杂度应改善证据、机制正确性或决策稳健性。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'Residuals on four held-out cases are −2, 1, 3, and −2. What is the mean error?', zh: '四个留出样本的残差为 −2、1、3、−2。平均误差是多少？' }, { en: ['−0.5', '0', '1', '2'], zh: ['−0.5', '0', '1', '2'] }, 1, { en: '(−2+1+3−2)/4=0.', zh: '(−2+1+3−2)/4=0。' }),
+      question(`${id}-2`, { en: 'For residuals 1, −2, and 2, what is RMSE?', zh: '残差为 1、−2、2 时，RMSE 是多少？' }, { en: ['√2', '√3', '5/3', '3'], zh: ['√2', '√3', '5/3', '3'] }, 1, { en: 'RMSE=√((1²+2²+2²)/3)=√3.', zh: 'RMSE=√((1²+2²+2²)/3)=√3。' }),
+      question(`${id}-3`, { en: 'Which validation design tests temporal generalization without leaking future information?', zh: '哪种验证设计可以检验时间泛化能力，同时避免未来信息泄漏？' }, { en: ['Randomly shuffle all dates', 'Train on earlier periods and test on later periods', 'Fit and test on the full series', 'Choose the best test period after seeing results'], zh: ['随机打乱所有日期', '使用早期数据训练、后期数据测试', '在完整序列上同时训练和测试', '看完结果后再挑最好看的测试期'] }, 1, { en: 'The split respects the information that would have been available at prediction time.', zh: '这种划分符合真实预测时能够获得的信息顺序。' }),
+      question(`${id}-4`, { en: 'A 90% prediction interval covers only 55% of held-out observations. What does this indicate?', zh: '一个标称 90% 的预测区间只覆盖了 55% 的留出观测。说明什么？' }, { en: ['The interval is too wide', 'The uncertainty is underestimated', 'The point predictions are necessarily unbiased', 'The sample size must be one'], zh: ['区间太宽', '模型低估了不确定性', '点预测一定无偏', '样本量一定为 1'] }, 1, { en: 'Observed coverage far below nominal coverage means the intervals are overconfident.', zh: '实际覆盖率远低于标称覆盖率，说明区间过于自信。' }),
+      question(`${id}-5`, { en: 'Select all independent layers of validation.', zh: '选择所有彼此不同但都重要的验证层次。' }, { en: ['Check equations and units', 'Compare predictions with held-out observations', 'Test decision stability under perturbations', 'Count the number of pages'], zh: ['检查方程与单位', '与留出观测比较', '扰动输入并检验决策稳定性', '统计报告页数'] }, [0, 1, 2], { en: 'Verification, empirical validation, and robustness answer different failure questions.', zh: '公式核验、经验验证与稳健性检验分别针对不同类型的失败。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A dining hall has two parallel counters serving 18 meals/minute each. Demand is 30 meals/minute. What is the nominal spare capacity?', zh: '食堂有两个并行窗口，每个每分钟服务 18 份餐，需求为每分钟 30 份。名义剩余能力是多少？' }, { en: ['−6 meals/min', '0 meals/min', '6 meals/min', '36 meals/min'], zh: ['−6 份/分钟', '0 份/分钟', '6 份/分钟', '36 份/分钟'] }, 2, { en: 'Total capacity is 36, so spare capacity is 36−30=6 meals/minute.', zh: '总能力为 36，因此剩余能力为 36−30=6 份/分钟。' }),
+      question(`${id}-2`, { en: 'Demand is 34/min and capacity is 36/min. What is utilization?', zh: '需求为 34 份/分钟，能力为 36 份/分钟。利用率是多少？' }, { en: ['0.06', '0.50', '0.94', '1.06'], zh: ['0.06', '0.50', '0.94', '1.06'] }, 2, { en: 'Utilization is 34/36≈0.94.', zh: '利用率为 34/36≈0.94。' }),
+      question(`${id}-3`, { en: 'Why can a system with utilization below 1 still experience long queues?', zh: '为什么利用率低于 1 的系统仍可能出现长队？' }, { en: ['Variability and short bursts can temporarily exceed service capacity', 'Queues require utilization above 2', 'Averages determine every minute exactly', 'Service capacity has no effect'], zh: ['随机波动和短时峰值可能暂时超过服务能力', '只有利用率超过 2 才会排队', '平均值会精确决定每一分钟', '服务能力对排队没有影响'] }, 0, { en: 'Average stability does not remove burstiness or waiting caused by variability.', zh: '平均意义上的稳定并不能消除波动和短时拥堵造成的等待。' }),
+      question(`${id}-4`, { en: 'If λ<μ in a simple single-server queue, how does utilization ρ=λ/μ change as μ increases with λ fixed?', zh: '在简单单服务台队列中 λ<μ。保持 λ 不变并提高 μ 时，利用率 ρ=λ/μ 如何变化？' }, { en: ['It increases linearly', 'It decreases', 'It remains one', 'It becomes negative'], zh: ['线性增加', '下降', '保持为 1', '变成负数'] }, 1, { en: 'The denominator increases while the numerator is fixed.', zh: '分母增加而分子不变，因此利用率下降。' }),
+      question(`${id}-5`, { en: 'Select all quantities worth stress-testing before recommending that one counter be closed.', zh: '在建议关闭一个窗口前，选择所有值得做压力测试的量。' }, { en: ['Peak arrival rate', 'Service-time variability', 'Counter downtime', 'The font used on the menu'], zh: ['高峰到达率', '服务时间波动', '窗口故障停机', '菜单字体'] }, [0, 1, 2], { en: 'Each selected quantity can materially change capacity or queue risk.', zh: '这三项都会实质改变服务能力或排队风险。' }),
+    ],
+    [
+      question(`${id}-1`, { en: 'A study room has 80 seats. Observed occupancies are 62, 75, 84, and 78. In how many periods is the hard capacity violated?', zh: '自习室有 80 个座位，四个时段观测占用人数为 62、75、84、78。多少个时段违反硬容量约束？' }, { en: ['0', '1', '2', '4'], zh: ['0', '1', '2', '4'] }, 1, { en: 'Only the period with 84 occupants exceeds 80.', zh: '只有占用人数为 84 的时段超过容量 80。' }),
+      question(`${id}-2`, { en: 'Demand is 100 students and capacity is 80 seats. If seats are allocated proportionally and every student has equal claim, what fraction can be served?', zh: '需求为 100 人，容量为 80 个座位。若所有人权利相同并按比例分配，可服务的比例是多少？' }, { en: ['20%', '50%', '80%', '125%'], zh: ['20%', '50%', '80%', '125%'] }, 2, { en: '80/100=0.8=80%.', zh: '80/100=0.8=80%。' }),
+      question(`${id}-3`, { en: 'Which objective best represents fairness across four student groups?', zh: '哪种目标最能表示四个学生群体之间的公平性？' }, { en: ['Minimize the maximum unmet-demand fraction among groups', 'Maximize only the largest group’s allocation', 'Ignore group identities and report total seats', 'Minimize the number of variables'], zh: ['最小化各群体未满足需求比例的最大值', '只最大化最大群体的分配量', '忽略群体差异，只报告总座位数', '最小化变量数量'] }, 0, { en: 'A minimax shortfall objective prevents one group from absorbing a disproportionate burden.', zh: '最小化最大缺口可以防止某一群体承担不成比例的损失。' }),
+      question(`${id}-4`, { en: 'Opening an overflow room adds 25 seats but costs 200 dollars. If shortage costs 12 dollars per student and expected shortage without it is 20 students, which option has lower modeled cost?', zh: '开放备用教室可增加 25 个座位，成本 200 美元；若不开启，预计有 20 名学生无座，每人短缺成本为 12 美元。按此模型哪种方案成本更低？' }, { en: ['Open the room: 200 dollars', 'Do not open: 200 dollars', 'Do not open: 240 dollars', 'The two options cost 440 dollars each'], zh: ['开放：成本 200 美元', '不开放：成本 200 美元', '不开放：成本 240 美元', '两种方案成本都为 440 美元'] }, 0, { en: 'Not opening costs 20×12=240 dollars, so opening at 200 dollars is cheaper.', zh: '不开启的成本为 20×12=240 美元，因此支付 200 美元开放备用教室更便宜。' }),
+      question(`${id}-5`, { en: 'Select all evidence needed before deploying a reservation policy.', zh: '在实施预约政策之前，选择所有需要收集的证据。' }, { en: ['No-show rate', 'Arrival-time distribution', 'Seat-use duration', 'The developer’s favorite color'], zh: ['爽约率', '到达时间分布', '座位使用时长', '开发者最喜欢的颜色'] }, [0, 1, 2], { en: 'These quantities determine effective capacity, congestion, and whether reservation rules improve access.', zh: '这些量决定有效容量、拥堵程度以及预约规则是否改善使用体验。' }),
+    ],
+  ]
+
+  return chapters[chapterIndex] ?? chapters[chapterIndex % chapters.length]
+}
+
 function competition(seed: number, id: string): ModelingQuizQuestion[] {
   const n = 16 + 4 * seed
   const sd = 8 + seed
@@ -251,97 +315,6 @@ function chapterFocus(title?: string) {
   return null
 }
 
-const groundedPrompts = [
-  {
-    en: (title: string) => `Core idea — which statement is supported by the “${title}” chapter?`,
-    zh: (title: string) => `核心概念——“${title}”这一章支持下面哪项陈述？`,
-  },
-  {
-    en: (title: string) => `Mechanism — which claim follows the reasoning developed in “${title}”?`,
-    zh: (title: string) => `作用机制——哪项结论符合“${title}”这一章的推理？`,
-  },
-  {
-    en: (title: string) => `Boundary — which interpretation stays within the assumptions of “${title}”?`,
-    zh: (title: string) => `适用边界——哪种解释没有超出“${title}”中的假设？`,
-  },
-  {
-    en: (title: string) => `Evidence — which statement matches the checks described in “${title}”?`,
-    zh: (title: string) => `证据判断——哪项陈述符合“${title}”中介绍的检查方法？`,
-  },
-  {
-    en: (title: string) => `Transfer — which conclusion can be defended using only “${title}” and earlier chapters?`,
-    zh: (title: string) => `迁移理解——只利用“${title}”及此前章节，哪项结论可以得到支持？`,
-  },
-]
-
-function sourceStatements(source?: string) {
-  if (!source) return []
-  const plain = source
-    .replace(/```[\s\S]*?```/g, ' ')
-    .replace(/\$\$[\s\S]*?\$\$/g, ' ')
-    .replace(/\$[^$\n]+\$/g, ' ')
-    .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
-    .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/^#{1,6}\s+/gm, '')
-    .replace(/[*_`~>|]/g, ' ')
-    .replace(/\s+/g, ' ')
-    .trim()
-
-  const statements = plain
-    .split(/(?<=[.!?。！？])\s+/)
-    .map((value) => value.trim())
-    .filter((value) => value.length >= 55 && value.length <= 230)
-    .filter((value) => !/^(figure|table|source|image|code)\b/i.test(value))
-
-  return [...new Set(statements)]
-}
-
-function evenlySpaced<T>(items: T[], count: number) {
-  if (items.length <= count) return items
-  return Array.from({ length: count }, (_, index) => items[Math.round((index * (items.length - 1)) / (count - 1))])
-}
-
-function distortStatement(statement: string, variant: number, chapterTitle: string, language: 'en' | 'zh') {
-  if (language === 'zh') {
-    const replacements: [RegExp, string][] = [
-      [/必须/g, '完全不需要'],
-      [/不能/g, '总是可以'],
-      [/增加/g, '必然减少'],
-      [/减少/g, '必然增加'],
-      [/可行/g, '无条件最优'],
-      [/局部/g, '无条件全局'],
-    ]
-    const [pattern, replacement] = replacements[variant % replacements.length]
-    const changed = statement.replace(pattern, replacement)
-    if (changed !== statement) return changed
-    return [
-      `“${chapterTitle}”中的结论不需要任何假设、单位或适用范围。`,
-      `只要计算结果有很多小数位，就足以证明“${chapterTitle}”中的模型正确。`,
-      `在“${chapterTitle}”中，复杂度本身就是选择方法的充分理由。`,
-      `“${chapterTitle}”中的所有结论都可以直接推广到任意数据和情景。`,
-    ][variant % 4]
-  }
-
-  const replacements: [RegExp, string][] = [
-    [/\bmust\b/i, 'never needs to'],
-    [/\bcannot\b/i, 'can always'],
-    [/\bincrease(s|d)?\b/i, 'always decreases'],
-    [/\bdecrease(s|d)?\b/i, 'always increases'],
-    [/\bfeasible\b/i, 'unconditionally optimal'],
-    [/\blocal\b/i, 'unconditionally global'],
-  ]
-  const [pattern, replacement] = replacements[variant % replacements.length]
-  const changed = statement.replace(pattern, replacement)
-  if (changed !== statement) return changed
-  return [
-    `The conclusions in “${chapterTitle}” require no assumptions, units, or scope conditions.`,
-    `A result with many decimal places is sufficient proof that the model in “${chapterTitle}” is correct.`,
-    `In “${chapterTitle}”, complexity alone is a sufficient reason to choose a method.`,
-    `Every conclusion in “${chapterTitle}” transfers unchanged to arbitrary data and scenarios.`,
-  ][variant % 4]
-}
-
 function mathFocus(lessonNumber: number, chapterTitle: string) {
   const title = chapterTitle.toLowerCase()
   const rules: Record<number, [RegExp, number][]> = {
@@ -363,68 +336,32 @@ function mathFocus(lessonNumber: number, chapterTitle: string) {
   return rules[lessonNumber]?.find(([pattern]) => pattern.test(title))?.[1] ?? null
 }
 
-function groundedChapterQuiz(
+function domainChapterQuiz(
   lessonNumber: number,
   chapterIndex: number,
   chapterTitle: string,
-  sourceEn?: string,
-  sourceZh?: string,
 ) {
-  const english = evenlySpaced(sourceStatements(sourceEn), 5)
-  const chinese = evenlySpaced(sourceStatements(sourceZh), 5)
+  if (lessonNumber === 1) return foundationsChapterQuiz(chapterIndex)
+
+  const builder = builders[lessonNumber] ?? generalQuestions
   const focus = mathFocus(lessonNumber, chapterTitle)
-  const groundedCount = focus === null ? 5 : 4
-  const questions = Array.from({ length: groundedCount }, (_, index) => {
-    const fallbackEn = `A defensible use of ${chapterTitle} keeps the stated objective, assumptions, units, and validation evidence connected.`
-    const fallbackZh = `合理使用“${chapterTitle}”时，必须让目标、假设、单位和验证证据保持一致。`
-    const correctEn = english[index % Math.max(english.length, 1)] ?? fallbackEn
-    const correctZh = chinese[index % Math.max(chinese.length, 1)] ?? fallbackZh
-    const correctPosition = [1, 3, 0, 2, 1][index]
-    const distractorsEn = [0, 1, 2].map((variant) => distortStatement(correctEn, index + variant, chapterTitle, 'en'))
-    const distractorsZh = [0, 1, 2].map((variant) => distortStatement(correctZh, index + variant, chapterTitle, 'zh'))
-    const optionsEn = [...distractorsEn]
-    const optionsZh = [...distractorsZh]
-    optionsEn.splice(correctPosition, 0, correctEn)
-    optionsZh.splice(correctPosition, 0, correctZh)
-    const prompt = groundedPrompts[index]
+  const order = focus === null
+    ? [0, 1, 2, 3, 4]
+    : [focus, (focus + 1) % 5, (focus + 2) % 5, (focus + 3) % 5, (focus + 4) % 5]
 
-    return question(
-      `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-grounded-${index + 1}`,
-      { en: prompt.en(chapterTitle), zh: prompt.zh(chapterTitle) },
-      { en: optionsEn, zh: optionsZh },
-      correctPosition,
-      {
-        en: `This statement is grounded in the current chapter. The alternatives remove its conditions, reverse its mechanism, or substitute numerical appearance for evidence.`,
-        zh: `这项陈述直接来自当前章节；其余选项删除了适用条件、颠倒了作用机制，或把数值形式误当成证据。`,
-      },
-    )
+  return order.map((questionIndex, variant) => {
+    const seed = chapterIndex * 5 + variant + 1
+    const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-question-${variant + 1}`
+    return builder(seed, id)[questionIndex]
   })
-
-  if (focus !== null) {
-    const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-math`
-    const worked = (builders[lessonNumber] ?? generalQuestions)(chapterIndex + 1, id)[focus]
-    questions.push({
-      ...worked,
-      prompt: {
-        en: `Worked calculation for “${chapterTitle}” — ${worked.prompt.en}`,
-        zh: `“${chapterTitle}”计算题——${worked.prompt.zh}`,
-      },
-    })
-  }
-
-  return questions
 }
 
 export function buildChapterQuiz(
   lessonNumber: number,
   chapterIndex: number,
   chapterTitle?: string,
-  sourceEn?: string,
-  sourceZh?: string,
 ) {
-  if (chapterTitle && sourceEn) {
-    return groundedChapterQuiz(lessonNumber, chapterIndex, chapterTitle, sourceEn, sourceZh)
-  }
+  if (chapterTitle) return domainChapterQuiz(lessonNumber, chapterIndex, chapterTitle)
 
   const builder = builders[lessonNumber] ?? generalQuestions
   const focus = chapterFocus(chapterTitle)
@@ -439,7 +376,7 @@ export function buildChapterQuiz(
 }
 
 export function buildLessonFinalQuiz(lessonNumber: number) {
-  return [0, 1, 2].flatMap((variant) =>
+  return [0, 1, 2, 3, 4, 5].flatMap((variant) =>
     (builders[lessonNumber] ?? generalQuestions)(variant + 1, `lesson-${lessonNumber}-final-${variant + 1}`)
   )
 }

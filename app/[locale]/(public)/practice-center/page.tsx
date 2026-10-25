@@ -37,7 +37,7 @@ export default async function PracticeCenterPage({ params }: { params: Promise<{
       chapters: chapters.en.map((chapter, index) => ({
         title: chapter.title,
         titleZh: chapters.zh[index]?.title ?? chapter.title,
-        questions: buildChapterQuiz(lesson.number, index, chapter.title, chapter.source, chapters.zh[index]?.source),
+        questions: buildChapterQuiz(lesson.number, index, chapter.title),
       })),
     }
   }))
