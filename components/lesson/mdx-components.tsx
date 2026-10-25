@@ -32,6 +32,8 @@ import {
   FillInTheBlank,
   MatchingPairs,
   Ordering,
+  LanguageTabs,
+  LanguagePanel,
 } from './index'
 
 import { mdxComponents as uiComponents } from '@/components/ui/mdx-components'
@@ -129,6 +131,10 @@ export const lessonMdxComponents: MDXComponents = {
   FillInTheBlank,
   MatchingPairs,
   Ordering,
+
+  // Bilingual course content
+  LanguageTabs,
+  LanguagePanel,
 
   // Lesson checkpoints (issue #392) — inline placements
   LessonCheckpoint,

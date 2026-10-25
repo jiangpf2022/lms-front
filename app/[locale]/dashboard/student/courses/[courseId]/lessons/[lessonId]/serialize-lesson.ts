@@ -1,6 +1,8 @@
 import { serialize } from 'next-mdx-remote-client/serialize'
 import type { SerializeResult } from 'next-mdx-remote-client'
 import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 import { inlineCodeBlockBodies } from '@/lib/lesson/mdx-source'
 
 /**
@@ -18,7 +20,8 @@ export async function serializeLessonMdx(
       source: inlineCodeBlockBodies(content),
       options: {
         mdxOptions: {
-          remarkPlugins: [remarkGfm],
+          remarkPlugins: [remarkGfm, remarkMath],
+          rehypePlugins: [rehypeKatex],
           development: process.env.NODE_ENV === 'development',
         },
       },

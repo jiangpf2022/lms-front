@@ -1,0 +1,422 @@
+{
+  "schemaVersion": 1,
+  "generatedAt": "2026-10-25T00:34:13.778Z",
+  "source": "OneDrive/jiangpf2022.github.io/blog-src",
+  "course": {
+    "title": "Mathematical Modeling",
+    "slug": "mathematical-modeling",
+    "description": "A bilingual, competition-oriented path from real problems to defensible mathematical models, algorithms, evidence, and technical writing.",
+    "cover": "/mathematical-modeling/course-cover.webp"
+  },
+  "lessons": [
+    {
+      "number": 1,
+      "title": "From Reality to a Model",
+      "titleZh": "从现实问题到数学模型",
+      "level": 1,
+      "studyTimeMinutes": 40,
+      "excerpt": "A disciplined route from an ambiguous real question to variables, assumptions, equations, validation, and an actionable conclusion.",
+      "tags": [
+        "Modeling Cycle",
+        "Assumptions",
+        "Problem Decomposition"
+      ],
+      "status": "published",
+      "contentFile": "lessons/01-from-reality-to-a-model.mdx",
+      "sourceFile": "Mathematical-Modeling-01-From-Reality-to-a-Model.md",
+      "translationFile": "Mathematical-Modeling-01-From-Reality-to-a-Model-zh.md",
+      "wordCount": 17783,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 2,
+      "title": "Competition Techniques",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 55,
+      "excerpt": "A practical competition guide to selecting problems, building a reliable toolchain, learning from strong papers, reproducing visual evidence, extending algorithms, and using AI without surrendering judgment.",
+      "tags": [
+        "Competition Strategy",
+        "Modeling Tools",
+        "AI for Modeling"
+      ],
+      "status": "published",
+      "contentFile": "lessons/02-ai-as-a-modeling-sparring-partner.mdx",
+      "sourceFile": "Mathematical-Modeling-02-AI-as-a-Modeling-Sparring-Partner.md",
+      "translationFile": null,
+      "wordCount": 20203,
+      "hasChinese": false,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 3,
+      "title": "Visual Evidence",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 80,
+      "excerpt": "A 100-figure field guide to charts, maps, diagrams, scientific graphics, visual diagnostics, and award-level evidence in mathematical modeling papers.",
+      "tags": [
+        "Data Visualization",
+        "Scientific Figures",
+        "Communication"
+      ],
+      "status": "published",
+      "contentFile": "lessons/03-visual-evidence.mdx",
+      "sourceFile": "Mathematical-Modeling-02-Visual-Evidence.md",
+      "translationFile": null,
+      "wordCount": 30287,
+      "hasChinese": false,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 4,
+      "title": "Linear, Quadratic & Conic Optimization",
+      "titleZh": "线性、二次与锥优化",
+      "level": 1,
+      "studyTimeMinutes": 150,
+      "excerpt": "Derive LP, QP, and SOCP models from decisions, solve them geometrically and algebraically, and audit a real CUMCM crop-planning case.",
+      "tags": [
+        "Linear Programming",
+        "Quadratic Programming",
+        "Conic Optimization"
+      ],
+      "status": "published",
+      "contentFile": "lessons/04-linear-quadratic-and-conic-optimization.mdx",
+      "sourceFile": "Mathematical-Modeling-03-Linear-Quadratic-and-Conic-Optimization.md",
+      "translationFile": "Mathematical-Modeling-03-Linear-Quadratic-and-Conic-Optimization-zh.md",
+      "wordCount": 19336,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 5,
+      "title": "Advanced Convex Optimization",
+      "titleZh": "高阶凸优化",
+      "level": 3,
+      "studyTimeMinutes": 170,
+      "excerpt": "Develop convexity, conjugate duality, proximal and splitting algorithms, and risk-aware models through proofs and a real CUMCM crop-planning case.",
+      "tags": [
+        "Convex Analysis",
+        "Duality",
+        "Proximal Algorithms"
+      ],
+      "status": "published",
+      "contentFile": "lessons/05-advanced-convex-optimization.mdx",
+      "sourceFile": "Mathematical-Modeling-04-Advanced-Convex-Optimization.md",
+      "translationFile": "Mathematical-Modeling-04-Advanced-Convex-Optimization-zh.md",
+      "wordCount": 2910,
+      "hasChinese": true,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 6,
+      "title": "Multi-Objective & Robust Optimization",
+      "titleZh": "多目标与鲁棒优化",
+      "level": 1,
+      "studyTimeMinutes": 160,
+      "excerpt": "Construct Pareto frontiers, expose stakeholder trade-offs, and derive decisions that remain feasible under uncertain inputs.",
+      "tags": [
+        "Multi-Objective Optimization",
+        "Robust Optimization",
+        "Decision Analysis"
+      ],
+      "status": "published",
+      "contentFile": "lessons/06-multi-objective-and-robust-optimization.mdx",
+      "sourceFile": "Mathematical-Modeling-05-Multi-Objective-and-Robust-Optimization.md",
+      "translationFile": "Mathematical-Modeling-05-Multi-Objective-and-Robust-Optimization-zh.md",
+      "wordCount": 15849,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 7,
+      "title": "Intelligent Optimization",
+      "titleZh": "智能优化方法",
+      "level": 1,
+      "studyTimeMinutes": 170,
+      "excerpt": "Understand GA, differential evolution, PSO, and simulated annealing through representation, constraints, convergence evidence, and a real CUMCM case.",
+      "tags": [
+        "Genetic Algorithms",
+        "Particle Swarm Optimization",
+        "Simulated Annealing"
+      ],
+      "status": "published",
+      "contentFile": "lessons/07-intelligent-optimization.mdx",
+      "sourceFile": "Mathematical-Modeling-06-Intelligent-Optimization.md",
+      "translationFile": "Mathematical-Modeling-06-Intelligent-Optimization-zh.md",
+      "wordCount": 21092,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 8,
+      "title": "Pose Graph Optimization",
+      "titleZh": null,
+      "level": 2,
+      "studyTimeMinutes": 10,
+      "excerpt": "Solve and diagnose an original synthetic pose-graph estimation case.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/08-pose-graph-optimization.mdx",
+      "sourceFile": "Mathematical-Modeling-07-Pose-Graph-Optimization.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 9,
+      "title": "Differential Equations 101",
+      "titleZh": "微分方程入门",
+      "level": 1,
+      "studyTimeMinutes": 180,
+      "excerpt": "Build differential-equation models from changing states, derive their governing laws, and test them against physical and population examples.",
+      "tags": [],
+      "status": "published",
+      "contentFile": "lessons/09-differential-equations-101.mdx",
+      "sourceFile": "Mathematical-Modeling-08-Differential-Equations-101.md",
+      "translationFile": "Mathematical-Modeling-08-Differential-Equations-101-zh.md",
+      "wordCount": 27477,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 10,
+      "title": "Coupled Differential-Equation Models",
+      "titleZh": "耦合微分方程模型",
+      "level": 1,
+      "studyTimeMinutes": 200,
+      "excerpt": "Model interacting populations and compartments, analyze equilibria and stability, and connect coupled dynamics to real competition decisions.",
+      "tags": [],
+      "status": "published",
+      "contentFile": "lessons/10-differential-equations-ii.mdx",
+      "sourceFile": "Mathematical-Modeling-09-Differential-Equations-II.md",
+      "translationFile": "Mathematical-Modeling-09-Differential-Equations-II-zh.md",
+      "wordCount": 19368,
+      "hasChinese": true,
+      "quizCount": 10,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 11,
+      "title": "Advanced Differential Equations",
+      "titleZh": null,
+      "level": 2,
+      "studyTimeMinutes": 10,
+      "excerpt": "Work with boundary conditions, distributed systems, stiffness, and sensitivity.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/11-advanced-differential-equations.mdx",
+      "sourceFile": "Mathematical-Modeling-10-Advanced-Differential-Equations.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 12,
+      "title": "Differential-Equation Competition Cases",
+      "titleZh": null,
+      "level": 3,
+      "studyTimeMinutes": 10,
+      "excerpt": "Build complete original cases from a physical mechanism to tested decisions.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/12-differential-equation-competition-cases.mdx",
+      "sourceFile": "Mathematical-Modeling-11-Differential-Equation-Competition-Cases.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 13,
+      "title": "Time Series 101",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 10,
+      "excerpt": "Audit the time index, isolate patterns, and forecast without information leakage.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/13-time-series-101.mdx",
+      "sourceFile": "Mathematical-Modeling-12-Time-Series-101.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 14,
+      "title": "Advanced Time Series",
+      "titleZh": null,
+      "level": 2,
+      "studyTimeMinutes": 10,
+      "excerpt": "Compare smoothing, ARIMA, volatility, and multivariate models over honest rolling origins.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/14-advanced-time-series.mdx",
+      "sourceFile": "Mathematical-Modeling-13-Advanced-Time-Series.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 15,
+      "title": "Data Preparation 101",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 10,
+      "excerpt": "Define what one row means before cleaning, transforming, or plotting it.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/15-data-preparation-101.mdx",
+      "sourceFile": "Mathematical-Modeling-14-Data-Preparation-101.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 16,
+      "title": "Advanced Data Analysis",
+      "titleZh": null,
+      "level": 2,
+      "studyTimeMinutes": 10,
+      "excerpt": "Connect regression diagnostics, dimension reduction, and clustering to defensible conclusions.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/16-advanced-data-analysis.mdx",
+      "sourceFile": "Mathematical-Modeling-15-Advanced-Data-Analysis.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 17,
+      "title": "Evaluation Models 101",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 10,
+      "excerpt": "Make ranking criteria, weights, admissibility, and rank sensitivity explicit.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/17-evaluation-models-101.mdx",
+      "sourceFile": "Mathematical-Modeling-16-Evaluation-Models-101.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 18,
+      "title": "Financial Market Volatility",
+      "titleZh": null,
+      "level": 3,
+      "studyTimeMinutes": 10,
+      "excerpt": "Analyze a synthetic market-volatility case without confusing forecasts with investment advice.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/18-financial-market-volatility.mdx",
+      "sourceFile": "Mathematical-Modeling-17-Financial-Market-Volatility.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 19,
+      "title": "Writing the Abstract",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 10,
+      "excerpt": "Write concise claims that trace to methods, results, evidence, and limitations.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/19-writing-the-abstract.mdx",
+      "sourceFile": "Mathematical-Modeling-18-Writing-the-Abstract.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 20,
+      "title": "Writing the Main Text",
+      "titleZh": null,
+      "level": 1,
+      "studyTimeMinutes": 10,
+      "excerpt": "Write a modeling paper whose assumptions, equations, results, and checks form one argument.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/20-writing-the-main-text.mdx",
+      "sourceFile": "Mathematical-Modeling-19-Writing-the-Main-Text.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    },
+    {
+      "number": 21,
+      "title": "Competition Mindset & Preparation",
+      "titleZh": null,
+      "level": 3,
+      "studyTimeMinutes": 10,
+      "excerpt": "Prepare the team, time budget, tools, and decision habits for a modeling competition.",
+      "tags": [
+        "Mathematical Modeling"
+      ],
+      "status": "draft",
+      "contentFile": "lessons/21-competition-mindset-and-preparation.mdx",
+      "sourceFile": "Mathematical-Modeling-20-Competition-Mindset-and-Preparation.md",
+      "translationFile": null,
+      "wordCount": 27,
+      "hasChinese": false,
+      "quizCount": 0,
+      "cover": "/mathematical-modeling/course-cover.webp"
+    }
+  ]
+}

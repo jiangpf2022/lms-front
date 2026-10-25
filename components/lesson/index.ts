@@ -40,3 +40,6 @@ export { FlashcardSet } from './flashcard-set'
 export { FillInTheBlank } from './fill-in-the-blank'
 export { MatchingPairs } from './matching-pairs'
 export { Ordering } from './ordering'
+
+// Bilingual lesson content
+export { LanguageTabs, LanguagePanel } from './language-tabs'

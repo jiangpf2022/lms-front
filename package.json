@@ -2,6 +2,9 @@
   "name": "lms-front",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "workspaces": [
     "packages/*"
   ],
@@ -29,6 +32,9 @@
     "restore-course": "tsx scripts/restore-english-course.ts",
     "show-jwt-fix": "tsx scripts/show-jwt-fix.ts",
     "gen:puck-fields": "tsx scripts/gen-puck-fields-manifest.ts",
+    "content:modeling:export": "node scripts/import-mathematical-modeling-source.mjs",
+    "content:modeling:verify": "node scripts/verify-mathematical-modeling-content.mjs",
+    "content:modeling:seed": "tsx scripts/seed-mathematical-modeling.ts",
     "demo:720": "DEMO_RES=720 npx playwright test --config tests/demos/playwright.demo.config.ts",
     "demo:1080": "DEMO_RES=1080 npx playwright test --config tests/demos/playwright.demo.config.ts",
     "demo:single": "DEMO_RES=720 npx playwright test --config tests/demos/playwright.demo.config.ts -g",
@@ -103,6 +109,7 @@
     "driver.js": "^1.10.1",
     "embla-carousel-react": "^8.6.0",
     "form-data": "^4.0.6",
+    "katex": "^0.19.1",
     "litesvm": "^1.6.0",
     "lru-cache": "^11.5.3",
     "lucide-react": "^1.57.0",
@@ -124,8 +131,10 @@
     "react-markdown": "^10.1.0",
     "recharts": "^3.10.1",
     "rehype-autolink-headings": "^7.1.0",
+    "rehype-katex": "^7.0.1",
     "rehype-slug": "^6.0.0",
     "remark-gfm": "^4.0.1",
+    "remark-math": "^6.0.0",
     "shadcn": "^4.21.5",
     "sharp": "^0.35.5",
     "shiki": "^3.23.0",

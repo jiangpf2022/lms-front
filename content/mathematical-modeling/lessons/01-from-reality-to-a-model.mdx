@@ -1,0 +1,1701 @@
+<LanguageTabs>
+
+<LanguagePanel language="en" label="English">
+
+
+Welcome—come in, take a seat, and make yourself comfortable.
+
+Every equation in this blog will be tied to a concrete decision, a unit, and a test. A plausible number is not enough: we need to know what generated it, where it applies, and which observation could overturn it.
+
+Relax. This is the first blog post in the series; you do not need a solver, a clever algorithm, or a long list of formulas. We will begin with one ordinary commuter puzzle and discover how to turn a situation into a small question we can actually test.
+
+Imagine a commuter who is usually picked up at 6:00 p.m. Today he arrives thirty minutes early, walks toward home, meets the car on the road, and gets home ten minutes ahead of schedule. **How long did he walk?** Write down a guess before you look for a formula. We know neither driving speed nor walking speed. That is exactly why this is a good first modeling question: the right relationship may matter more than the missing numbers.
+
+Think of this post as a guided walk through a few real-looking problems. I will pose a concrete question, invite you to predict, make the assumptions visible, work through the smallest useful calculation, and ask what observation would overturn the result. The commuter is only our first puzzle. We will also ask how a field team can keep a sample box cool, how an automated campus cart should approach a timed gate, how a manager can staff a dining hall, and why a ski-resort owner might prefer a slower lift even though every skier asks for a faster one. Across all five, the common skill is turning a vague situation into a testable question.
+
+Mathematical modeling is not the act of attaching a fashionable algorithm to a dataset. It is the controlled replacement of a real system by a simpler mathematical object that is useful for a stated decision.
+
+Our commuter guess already contains the first modeling question: *what exactly are we trying to determine?* Before solving these examples, let us name the choices we will make in every one of them. Later, when the equations arrive, you can check whether each choice still matches the story.
+
+## Model Foundations
+
+### A model contract in operational language
+
+The five requirements in the highlighted model contract—purpose, boundary, state, mechanism, and evidence—should be written as statements another person can challenge. “Study the transportation system” is not a purpose. “Choose the number of evening shuttle departures so that the ninety-fifth percentile wait is below fifteen minutes without exceeding forty driver-hours per week” is much closer. It names a decision, a service criterion, and a resource limit.
+
+A boundary should be drawn in time and space. Does the shuttle model begin when a student arrives at a stop or when the student decides to leave a building? Does it end at boarding, at arrival on campus, or after a transfer? Does it cover weekdays only? A model that predicts stop waiting cannot claim it minimizes complete door-to-door travel unless the missing parts are added.
+
+State describes what must be known now to predict what happens next under the model. In a simple queue, the number of waiting people may be enough if arrivals and service have memoryless assumptions. In a bus network, we may also need bus positions, onboard loads, and current traffic. In a thermal box, temperature may be enough for a lumped model; if strong temperature gradients matter, one number is insufficient.
+
+Mechanism links state and decision. It may be conservation, a differential equation, a transition probability, a behavioral rule, or an empirical relationship. Evidence tells us how the mechanism can fail. If a model says one extra bus reduces waiting, evidence might be held-out arrival days and observed travel times. If a model says a box remains cold, evidence is a temperature trace under representative loading.
+
+Write the contract in a table:
+
+| Component | Operational statement | What could prove it inadequate? |
+|---|---|---|
+| Purpose | choose evening departures under a driver-hour budget | decision cannot be implemented or metric does not reflect service |
+| Boundary | three stops, 5–10 p.m., weekdays, wait through arrival | transfers and walking dominate total experience |
+| State | queue lengths, bus positions, onboard loads | two systems with same recorded state evolve differently |
+| Mechanism | arrivals add riders; buses remove them subject to capacity and travel time | observed queues violate predicted flow repeatedly |
+| Evidence | held-out days, peak scenarios, current schedule baseline | proposed schedule wins only on training days |
+
+This table is not decoration for the report. It is a debugging tool. If the decision line contains no controllable variable, there is nothing to optimize. If the evidence line only says “the result is reasonable,” validation has not been designed.
+
+### One ambiguous request, three different models
+
+Suppose a campus says, “The dining hall is too crowded. Build a model.” That sentence can produce several legitimate but incompatible projects.
+
+If the decision is staffing, let $s_t$ be servers assigned in time interval $t$. The boundary includes arrivals, service stations, and labor rules. Queue length is state. A queue or discrete-event simulation predicts waiting. The objective balances wait against labor.
+
+If the decision is meal preparation, let $q_{kt}$ be portions of dish $k$ prepared by time $t$. Inventory and temperature are state. Demand, spoilage, and kitchen capacity govern change. The objective balances shortage, waste, and cost.
+
+If the decision is space redesign, variables describe entrance, pickup, and seating layout. Pedestrian flow, walking distance, and collision risk matter. Geometry and agent movement replace the service-only mechanism.
+
+All three begin with the same complaint. None is “the dining-hall model.” A good first meeting does not ask for more data in general. It asks which decision must be made, by whom, when, and what consequence matters.
+
+### Units as the first line of defense
+
+Every term added in an equation must share units. If queue length is people, then over a time step $\Delta t$,
+
+$$Q_{t+1}=\max\{0,Q_t+A_t-S_t\}$$
+
+uses arrivals $A_t$ and completed services $S_t$ counted in people over that interval. If rates $\lambda_t$ and $\mu_t$ are people per minute, the update becomes
+
+$$Q_{t+1}=\max\{0,Q_t+(\lambda_t-\mu_t)\Delta t\}.$$
+
+Writing $Q_{t+1}=Q_t+\lambda_t-\mu_t$ while advancing fifteen-minute intervals silently treats a rate as a count. Code will run; units expose the error.
+
+Exponents and logarithms require dimensionless arguments. The cooling expression $e^{-kt}$ is meaningful when $k$ has units inverse time. A probability lies between zero and one and has no unit. A weighted sum of dollars and minutes needs normalization or weights with explicit conversion meaning.
+
+Do a unit audit before parameter fitting. Fitting can hide a unit error by absorbing conversion factors into coefficients. A model may predict well on one dataset yet fail when time is supplied in hours instead of minutes.
+
+### Minimality is not oversimplification
+
+A minimal model keeps the least structure needed for the decision and evidence. It is not the model with the fewest symbols. If a hard capacity constraint determines feasibility, it belongs in the baseline. If temperature stratification does not affect a short loading decision within measurement precision, it can wait.
+
+Minimality gives a comparison point. Add one mechanism at a time and ask whether it changes fit, feasibility, uncertainty, or recommendation. If adding individual behavior changes a queue prediction but not the staffing decision, the simpler model may be enough for that purpose. If the decision flips, the extension has earned its place.
+
+### A hand-calculated contract test
+
+Take a campus printer room. One printer completes four jobs every ten minutes. At 2 p.m., six jobs wait and eight more arrive over the next twenty minutes. With no failures, can the queue clear by 2:30?
+
+The boundary is one printer from 2:00 to 2:30. State is waiting jobs. Capacity is twelve jobs in thirty minutes. Total jobs needing service are fourteen, so at least two remain. This conclusion needs no simulation. If a later model predicts zero remaining jobs without adding a printer or changing service rate, it violates the baseline.
+
+Now add job-size variability. The four-per-ten-minute rate was an average. A simulation may estimate a distribution of remaining jobs. The baseline remains valuable: it tells us the mean capacity scale and catches impossible outputs. Complexity builds on the contract rather than replacing it.
+
+
+<Callout type="tip">
+
+**Key idea · The modeling contract**
+
+A model must make five things explicit:
+
+
+  
+
+    - **Purpose:** What decision, explanation, or prediction is required?
+
+    - **Boundary:** Which objects, time scales, and interactions belong to the system?
+
+    - **State:** What quantities are sufficient to describe the system at a given moment?
+
+    - **Mechanism:** How do those quantities interact or change?
+
+    - **Evidence:** What observation could show that the model is inadequate?
+
+</Callout>
+
+
+This contract prevents a common failure: solving a mathematically interesting problem that is not the problem asked.
+
+Let us make those five items less like a checklist and more like a conversation. If I say, “The campus shuttle is bad,” you cannot solve that sentence. Ask me what I mean. Maybe I miss my 9:00 class, maybe the average ride is slow, maybe evening riders have no service. Those are different **purposes** and could lead to different recommendations. Say I answer: “I need to decide whether to add one shuttle at 8:30 so that at least 90% of riders reach the classroom before 9:00 without exceeding the vehicle budget.” Now we have a decision and an observable success condition.
+
+Next ask where the system begins and ends. Do riders arrive at a stop, board a bus, travel, walk from the drop-off point, and enter the classroom? If the target is arriving at class by 9:00, the last walk belongs in the **boundary**. If we count arrival at the bus stop as success, our model will give an answer to the wrong clock. We might ignore the rider's breakfast or what happens after class; those may not affect this decision. Write what you excluded, because somebody reviewing the recommendation will otherwise have to guess.
+
+Now imagine a clock at 8:35. How much do we need to know to predict the next five minutes? Perhaps the number of people waiting at each stop, shuttle locations, free seats, and travel conditions. These are candidates for the **state**. Not every detail of every student's day is needed. But omitting the number of waiting riders would make it impossible to represent a queue. The test of a state is whether it contains enough of today's situation for your declared next-step rule to work.
+
+What changes that state? Riders arrive; shuttles reach stops; passengers board until seats fill; buses leave; travel times pass. That story is the **mechanism**. We might start with fixed arrival and travel rates. We would not claim they are permanent facts; they are a simple baseline. If rain delays travel and increases arrivals, we must either include rain as an input or declare that the recommendation is for ordinary dry mornings only.
+
+And how would we know if the model is wrong? Record real arrival times at classes over several mornings, not just how accurately we predicted buses reaching the last stop. Compare the fraction of riders reaching class before 9:00 with the predicted fraction, and inspect bad mornings. That is **evidence** tied to the original purpose. The five items now form one coherent question: what choice do we need, what events affect it, what quantities track those events, how do they evolve, and which observation could disprove our recommendation?
+
+
+![Campus shuttle system boundary from rider arrivals to classroom arrival](/mathematical-modeling/modeling-01-shuttle-system.svg)
+
+*The boundary ends at the classroom rather than the last bus stop because the decision concerns arrival before 9:00. Each box also names a quantity that can be measured or tested.*
+
+
+For a first experiment, take a tiny stop with ten riders at 8:30, a vehicle with eight empty seats arriving at 8:35, and another vehicle arriving ten minutes later. If everybody needs to be in a classroom five minutes after drop-off, eight can catch the first shuttle and two cannot. You do not need a simulation to see why seat capacity matters. If a program says all ten catch the first shuttle, the tiny scenario immediately reveals a missing constraint. After your smallest example works, add several stops, uncertain arrivals, and real travel times. A beginner who can diagnose a ten-person example is better prepared for a thousand-rider dataset than one who starts by importing a sophisticated solver.
+
+The shuttle gave us a purpose, boundary, state, mechanism, and test. Those five questions will also organize the thermal example below. We will keep each physical step beside its corresponding modeling idea, rather than collect unrelated puzzles in a separate chapter.
+
+## Boundaries and States
+
+Imagine a field team loading small, room-temperature sample vials into an insulated box containing a chilled thermal reservoir. For this illustrative example, we choose an upper box-temperature limit of $8^{\circ}\mathrm{C}$. **How many vials can we load before the contents reach that limit?** Take a moment to guess; the point is not to know the answer but to identify what determines it.
+
+Counting vials alone does not tell us whether the box is cool enough. The common temperature $T_n$ of the reservoir and the $n$ vials already inside is our *state*. The vial count $n$ records how many steps occurred. A real storage protocol might also require a limit on *each vial's own temperature*, exposure duration, packing geometry, or contamination. We are not designing a real laboratory procedure here. Our first model answers only a carefully declared question about the **idealized common temperature**; those other requirements would need separate checks.
+
+
+![Warm vial entering an insulated box with a chilled reservoir and existing vials](/mathematical-modeling/modeling-01-thermal-box.svg)
+
+*One loading step: energy carried by the new warm vial is redistributed across the reservoir and every vial already inside the chosen boundary.*
+
+
+### System Boundary and Energy Balance
+
+For one loading step, put the reservoir, all vials already inside, and the newly added vial inside our boundary. Let $C_c$ be the reservoir's effective heat capacity in joules per degree Celsius, $C_v$ each identical vial's effective heat capacity, and $T_v$ the incoming vial's temperature. We suppose everything in the box reaches a common temperature $T_{n+1}$ quickly, while heat exchange with the outside air during that step is negligible. The reservoir and the $n$ earlier vials gain energy; the new warm vial loses energy. Thus
+
+$$
+(C_c+nC_v)(T_{n+1}-T_n)=C_v(T_v-T_{n+1}),
+$$
+
+and solving for the new state gives
+
+$$
+T_{n+1}=\frac{(C_c+nC_v)T_n+C_vT_v}{C_c+(n+1)C_v}.
+$$
+
+Both sides of the balance are in joules. The weighted average should lie between the previous common temperature and the incoming vial temperature. If your code returns a value outside that interval, check the boundary, signs, and units before blaming the software. The factor $nC_v$ matters: vials that remain in the box also absorb some of the heat from later arrivals. This is not about a vial “using up” a fixed amount of coldness; both the temperature gap and the total heat capacity change after every addition.
+
+### State Evolution and the Temperature Threshold
+
+Let $C_c=83{,}600\,\mathrm{J}/^{\circ}\mathrm{C}$, $C_v=240\,\mathrm{J}/^{\circ}\mathrm{C}$, $T_0=4^{\circ}\mathrm{C}$, and $T_v=20^{\circ}\mathrm{C}$. These are illustrative numbers, not measured box specifications. The first step gives
+
+$$
+T_1=\frac{83{,}600(4)+240(20)}{83{,}840}\approx4.046^{\circ}\mathrm{C}.
+$$
+
+The small increase is sensible: one vial has much less thermal capacity than the reservoir. But the next vial will not cause exactly the same increase: the contents are warmer, and the first vial remains in the box. The total energy after $n$ identical additions gives a convenient closed form:
+
+$$
+T_n=\frac{C_cT_0+nC_vT_v}{C_c+nC_v}.
+$$
+
+You can check this by summing the initial reservoir energy and the energy brought in by $n$ vials, then dividing by their combined heat capacity. To stay at or below our chosen limit $T_{\max}=8^{\circ}\mathrm{C}$, we need
+
+$$
+\frac{83{,}600(4)+240n(20)}{83{,}600+240n}\le8.
+$$
+
+The denominator is positive, so rearranging gives $12(240)n\le4(83{,}600)$, or $n\le116.11\ldots$. The integer baseline permits **116 additions**: $T_{116}\approx7.997^{\circ}\mathrm{C}$, whereas $T_{117}\approx8.023^{\circ}\mathrm{C}$. The count is conditional on the chosen temperature limit and every assumption above, not permission to store actual samples without checking a real protocol.
+
+Could we reach 116 without updating one vial at a time? Yes. At the final temperature of $8^{\circ}\mathrm{C}$, the reservoir has gained $C_c(8-4)$ joules, while each vial has lost $C_v(20-8)$ joules. Equating those totals gives the same threshold. This works because we fixed the *final* temperature and kept every vial inside; it does not mean the heat transferred by each vial at the moment of insertion was constant. The stepwise update is still useful for checking intermediate temperatures and for extensions such as heat leaks or unequal vials.
+
+### Empirical Testing of the System Boundary
+
+What would we measure before trusting the number 116? Record the reservoir's mass or stated thermal capacity, incoming vial temperatures, loading times, and thermometer readings at more than one box position. If top and bottom readings disagree substantially, the one-temperature state is inadequate. If the box warms while no vial is inserted, heat leaking through insulation matters too. Leave it closed for a control period equal to ten loading steps, then compare its warming with the loading experiment.
+
+A useful log has insertion number, elapsed time, reservoir temperature before and after, vial type, and time the lid remained open. Ten careful observations can already test whether a first-step change near $0.046^{\circ}\mathrm{C}$ is plausible. If the measured change is much larger, inspect vial mass, open-lid heat gain, sensor position, and reservoir capacity. Change a parameter only when you can name the missing mechanism. If vials differ, replace the constant $C_v$ with $C_{v,n}$ in each step; if outside heat enters, add an energy term with units of joules. Neither extension should appear merely to make the formula look impressive.
+
+Suppose field observations show the box crosses our limit after 70–90 vials, not 116. The answer is not to publish “116” with more decimal places. The difference tells us the baseline missed something: perhaps opening the lid, weaker insulation, or a smaller usable thermal mass. A recommendation must state the *tested operating range* and which measurements support it. If another requirement stops loading after 40 vials, refining the thermal count from 116 to 110 would not change the decision. This is where a modeler learns when to stop elaborating.
+
+Finally, imagine the reservoir has half the thermal capacity but starts at the same temperature. With every other assumption fixed, the unrounded allowable count is proportional to $C_c$, so it halves; rounding down to a whole vial may affect the exact comparison. Predict the direction before calculating. If you can explain why, the mechanism is yours rather than a number you memorized.
+
+We have framed one physical problem and followed a state update to a threshold. Many modeling questions instead ask us to assign, schedule, or choose. The same habit—translate the ordinary words into quantities with clear jobs—takes us to the dining hall.
+
+## Language to Structure
+
+
+<Callout type="tip">
+
+**Guiding idea · From words to math**
+
+**Nouns** become sets, states, or parameters; **verbs** become decisions or changes; **qualifiers** become objectives, constraints, or uncertainty.
+
+
+  
+
+    - “Assign workers to tasks” suggests binary variables `xij ∈ {0, 1}`.
+
+    - “At most one” becomes a sum bounded by one; “minimize total time” becomes an objective.
+
+    - “For every day” creates a time index; “uncertain demand” calls for scenarios or distributions.
+
+  
+
+  Before any equations, write one **input–output sentence**: “Given ___, estimate or choose ___ so that ___.”
+
+</Callout>
+
+
+This translation is a diagnostic, not a word-substitution trick. If the sentence cannot say what is known, what you may choose, and what success looks like, the equations are not ready. It also reveals dependencies between subproblems and prevents circular reasoning.
+
+Let us translate an ordinary staffing request without skipping any steps. A manager says: “I have four workers and three stations—payment, food preparation, and pickup. At lunchtime each station must have at least one worker. Where should the fourth worker go so that customers wait less?” At first, the manager does not have an objective function. She has people, stations, a staffing rule, and a wish.
+
+Draw four little circles for workers and three rectangles for stations. Connect worker $i$ to station $j$ if they can be assigned there. Let $x_{ij}=1$ when worker $i$ is assigned to station $j$, and $x_{ij}=0$ otherwise. Why only zero or one? In this half-hour snapshot, we are choosing a whole assignment; we are not asking a worker to be $0.42$ of a person. For each worker, the sentence “exactly one station” becomes $\sum_j x_{ij}=1$. For each station, “at least one worker” becomes $\sum_i x_{ij}\ge1$. These equations do not yet minimize waiting; they simply prohibit plans the manager cannot implement.
+
+Now ask for service rates. Suppose the second worker at payment increases payment capacity from 25 to 50 customers per half hour, while a second worker at preparation increases its capacity from 40 to 70. If 60 customers arrive and pickup serves 80, allocating the spare worker to **payment** raises the three capacities to $(50,40,80)$; preparation is still the bottleneck at 40. Allocating the spare worker to **preparation** makes them $(25,70,80)$; payment is now the bottleneck at 25. Neither plan can handle all 60 arrivals in this oversimplified steady-state example. Even a fifth worker, giving two each to payment and preparation and one to pickup, leaves payment at 50. The manager needs more capacity, a changed service process, or a temporarily different objective. Optimization cannot conjure capacity the system lacks.
+
+
+![Dining hall flow through payment, preparation, and pickup capacities](/mathematical-modeling/modeling-01-dining-flow.svg)
+
+*Customers pass through a chain of stations. Increasing one capacity helps only until another station becomes the smallest-capacity link.*
+
+
+Keep two columns labeled *question* and *mathematical representation*. “Can every worker serve every station?” goes beside the allowed edges of the assignment graph. “Must pickup always be staffed?” goes beside $\sum_i x_{i,\mathrm{pickup}}\ge1$. “How much does moving a worker improve waiting?” goes beside measured service times and a queue model. A sentence with no representation warns that you may have ignored part of the problem; a variable with no originating sentence warns that you may be optimizing something nobody requested.
+
+When a prompt has multiple numbered tasks, do not assume the numbers are independent. A forecast of lunchtime arrivals may feed the staffing decision; staffing may feed a cost calculation; those results may feed a recommendation. Make an arrow diagram and label each arrow with what it passes. If the recommendation uses a 12:30 forecast calculated from a feature that is only known after 12:30, you have built a loop through the future. This dependency diagram exposes the mistake before code turns it into a mysteriously excellent accuracy score.
+
+The assignment equations made the manager's rules explicit, but the capacities we used were estimates. The sample-box calculation likewise depended on a uniform temperature throughout the box and identical vials. How do we decide which simplifications are safe to keep and which ones might reverse the recommendation? That is the job of assumptions.
+
+## Assumptions
+
+### Assumptions as controlled approximations
+
+An assumption is not an apology placed after the solution. It is a controlled approximation that makes a particular question answerable. A useful assumption states what is simplified, why the simplification is plausible at the chosen scale, how it affects the mechanism, and how we will test its influence.
+
+Compare two statements:
+
+> We assume all visitors are identical for simplicity.
+
+and
+
+> For the first capacity estimate, visitors share one mean service-time distribution. We later split first-time and returning visitors because preliminary data show materially different service durations; the recommendation is compared under both specifications.
+
+The second tells us where the approximation enters and what evidence can challenge it.
+
+### Classifying assumptions
+
+Four categories help keep the assumption register useful.
+
+**Boundary assumptions** decide what is outside: travel after leaving the network, overnight heat loss, long-term migration. **Structural assumptions** choose mechanism: well-mixed temperature, independent arrivals, linear cost. **Parameter assumptions** fill uncertain values: a 20% demand increase, five-minute service mean. **Operational assumptions** describe implementation: one staff member per open room, fixed shift lengths, no midweek fleet changes.
+
+Their tests differ. Boundary assumptions are challenged by measuring omitted effects. Structural assumptions require alternative models or residual patterns. Parameter assumptions need sensitivity or uncertainty intervals. Operational assumptions should be confirmed with decision-makers.
+
+### An assumption register with consequences
+
+Create columns for statement, category, rationale, evidence, direction of bias, test, and status. Suppose a ski model assumes mean descent time is twenty minutes. The likely consequence of underestimating descent time is underestimating slope occupancy. The test is to collect representative lift-exit and base-return timestamps or stress $\tau$ over a credible interval. This is stronger than labeling confidence “medium.”
+
+Direction of bias is especially helpful. Ignoring heat loss makes thermal endurance optimistic. Ignoring abandonment can make a queue appear longer than observed but may overstate demand actually served. Ignoring correlated storm failures can understate network risk. When direction is unknown, say so.
+
+### Independence is a strong claim
+
+Competition models often multiply marginal probabilities as if events were independent. Rain affects several road segments together. Crop yields share weather. Customer arrivals cluster around classes. Asset returns co-move.
+
+If failures $A$ and $B$ are independent, $P(A\cap B)=P(A)P(B)$. Before using that relationship, ask what common cause could connect them. Scenario models can preserve coherent joint behavior. Correlation captures linear dependence but not every tail relationship. For an introductory model, the minimum honest step is to compare independent and common-shock scenarios.
+
+### Stationarity and time scale
+
+Assuming a rate is constant over a period is a time-scale choice. A dining hall may have roughly stable arrivals within ten-minute intervals but not across the whole day. A population growth rate may be stable over one season and not across policy changes.
+
+Plot the data at the same resolution as the model. If one hourly arrival rate hides a sharp fifteen-minute peak, a staffing decision based on the mean can fail even while daily totals match. Conversely, a minute-by-minute model may chase noise if staff schedules change only hourly.
+
+### Sensitivity begins before computation
+
+Predict direction before running. If service time rises, queueing should worsen. If carrying capacity rises in logistic growth, long-run population should rise. If an output moves opposite to a structural expectation, investigate code, interactions, or the expectation itself.
+
+For local sensitivity of output $y=f(\theta)$,
+
+$$S_j=\frac{\theta_j}{y}\frac{\partial y}{\partial\theta_j}$$
+
+is an elasticity when quantities are nonzero. $S_j=2$ means a 1% parameter increase produces approximately 2% output increase locally. Finite differences should use a step large enough to exceed numerical noise and small enough to remain local.
+
+Global sensitivity samples parameters across ranges and captures interactions. It requires justified distributions or ranges. A wide arbitrary range can make any parameter look important. Tie ranges to measurement, literature, or scenarios.
+
+### Contradictory assumptions
+
+Teams sometimes assume demand is fixed in one section and forecast it as price-dependent in another, or call travel times deterministic while later applying a stochastic delay model. Maintain one register and link each equation. When an extension changes an assumption, state which version is active.
+
+A particularly dangerous contradiction concerns information. An optimization may use tomorrow's realized demand although the decision is made today. This is anticipative. Replace realized values with forecasts or policies that adapt only after observations become available.
+
+
+<Callout type="tip">
+
+**Guiding idea · Controlled approximation**
+
+**A useful assumption removes complexity without erasing the mechanism that controls the answer.** Name its reason, its consequence, and the observation that would challenge it.
+
+
+  
+
+    - **Structural:** interactions, independence, network topology, or state definition.
+
+    - **Parametric:** constants, bounds, distributions, or rates.
+
+    - **Operational:** resource availability, policy, timing, or implementation rules.
+
+    - **Measurement:** noise, missingness, resolution, or sensor bias.
+
+</Callout>
+
+
+For example, “travel speed is constant because the route is short and uncongested; therefore travel time is proportional to distance.” That sentence states both a reason and a mathematical consequence. A list of unsupported assumptions is decoration, not modeling.
+
+Return to the sample box for a concrete test. We treated the chilled reservoir as one uniform volume. A thermometer near the lid and one near the base should report roughly the same temperature after each insertion. If they report $7^{\circ}\mathrm{C}$ and $4^{\circ}\mathrm{C}$, our one-temperature state is a poor description. A sensible extension might use two zones, but the **measurement** is what justifies the extra state. Do not invent spatial detail without checking whether it matters.
+
+We also pretended that all vials have thermal capacity $240\,\mathrm{J}/^{\circ}\mathrm{C}$ and arrive at $20^{\circ}\mathrm{C}$. A small plastic vial and a heavy metal cartridge will exchange different amounts of energy. Record container types, contents, incoming temperatures, and approximate thermal capacities $C_{v,n}$. For a mixed loading sequence, use the corresponding $C_{v,n}$ at each step. If order is unknown, try plausible sequences or sample them from observed frequencies. This grows the toy model into an uncertainty analysis without losing its mechanism.
+
+An assumption ledger keeps promises visible. Put “uniform box temperature” in one row, “equal vial thermal capacity” in another, and “negligible heat entering while the lid opens” in a third. Beside each, record why it is plausible, which result depends on it, and what observation could reject it. If the box sits in a warm room with its lid open, our predicted 116 vials could be far too high. Estimate incoming heat rate in watts (joules per second) and the time the lid is open. Then **power times time** is heat entering the box, with the same units as heat exchanged with a vial.
+
+Not every assumption needs an elaborate sensitivity plot. If the field team needs to load only 20 vials, even a much lower stressed count might exceed 20. That decision could be robust. If it needs to load 95, small changes in heat gain or vial mix may push the answer across the threshold. Modeling effort should depend on how close the real choice is to the predicted boundary.
+
+Once assumptions are visible, we can avoid two opposite mistakes: doing nothing because the real world is messy, or building an enormous model before we know what matters. Begin with the smallest calculation that respects the main mechanism, and add detail only when an observation shows why you need it.
+
+## Baselines and Extensions
+
+### The baseline ladder
+
+A baseline is not one method. Build a ladder from arithmetic to mechanism:
+
+1. scale estimate;
+2. current policy;
+3. simple deterministic model;
+4. simple stochastic or scenario model;
+5. proposed extension.
+
+For study rooms, the scale estimate is seats times usable hours divided by booking duration. Current policy is today's schedule. A deterministic model uses mean arrivals. A scenario model tests exam peaks. A simulation adds time-varying arrivals and abandonment. Each rung must explain what the next adds.
+
+### Example: bicycle rebalancing
+
+A campus has two bicycle stations. At 8 a.m., station A has 30 bicycles and B has 10. During the morning, expected net demand moves 18 bikes from A to B. Capacity is 35 at each station. The simplest balance predicts end counts $(12,28)$, so no shortage or overflow on average.
+
+That does not prove the system performs well. Demand occurs over time. If departures from A happen before arrivals return bikes, A may empty at 9 a.m. even though end-of-period balance is positive. The first extension uses hourly net flow:
+
+$$B_{i,t+1}=B_{i,t}+R_{i,t}-D_{i,t}+u_{i,t},$$
+
+where $u$ is operator rebalancing. Enforce $0\le B_{i,t}\le C_i$. Now the decision is when and how many bicycles to move.
+
+The next extension represents uncertain arrivals. Scenarios can preserve correlated class schedules and weather. A robust policy may hold more buffer at A. A discrete-event simulation may model users turned away and alternative stations. Each extension answers a detected weakness: end balance ignored timing; deterministic flow ignored variability; station-only counts ignored user response.
+
+### Deciding whether complexity changes the decision
+
+Create a decision-stability table. Rows are model versions; columns show recommended action, objective, constraint slack, and key assumptions. If all versions recommend moving six bikes before 9 a.m., communicate that stability. If the stochastic model recommends twelve while the deterministic baseline recommends zero, investigate which variability drives the change.
+
+Complexity can improve uncertainty even if the point decision stays unchanged. A simple model may recommend six bikes; scenarios may show any value from five to eight performs similarly but zero is risky. That confidence region is useful.
+
+### Residuals tell us what to add
+
+Do not extend a model merely because a more advanced method exists. Examine where baseline predictions fail. Queue residuals clustered at lunch suggest a time-varying arrival rate. Thermal residuals changing sign during loading suggest omitted heat gain. Spatial residuals near one neighborhood suggest missing geography.
+
+An extension should target a pattern. After adding it, check whether the pattern shrinks on held-out data. If overall fit improves but the decision-relevant peak remains wrong, the extension has not solved the important problem.
+
+### Overfitting in mechanistic models
+
+Overfitting is not exclusive to machine learning. Adding many adjustable rates to an ODE can match one trajectory while producing unstable parameters. Adding penalties to an optimizer can tune one scenario. Adding queue classes can explain every fluctuation in training data.
+
+Use held-out conditions, parameter plausibility, and simpler alternatives. Prefer mechanisms supported by observation. More equations do not automatically mean more truth.
+
+### Counterfactual baselines
+
+An intervention claim needs a comparison: what would have happened without the change? If a new shuttle schedule coincides with lower demand, a before-after comparison may credit the schedule incorrectly. Simulate both policies under the same arrival days or use matched historical periods. State which counterfactual is assumed.
+
+For a competition problem without deployment data, compare policies under shared scenarios. Use the same random arrivals for current and proposed schedules. This common-random-number design reduces noise and makes differences attributable to policy.
+
+### When to stop extending
+
+Stop when additional detail does not materially improve decision, validation, or uncertainty relative to time and evidence. Also stop when parameters cannot be supported. A complex module with guessed inputs may create false precision.
+
+The report should explain stopping: “Adding separate weekday service distributions reduced held-out error and changed staffing; adding individual demographic classes did not improve held-out peak waits, so we retained the simpler model.” This is evidence of judgment, not lack of ambition.
+
+
+<Callout type="tip">
+
+**Guiding idea · Earn complexity**
+
+**Build in layers instead of beginning with the most elaborate model.**
+
+
+  
+
+    - Start with a transparent baseline you can check by hand.
+
+    - Extend it to address the baseline's largest observed failure.
+
+    - Compare both under the same conditions and keep the extension only if it matters.
+
+</Callout>
+
+
+If a linear model already answers the decision robustly, a deep network is not automatically better. Complexity must purchase predictive accuracy, realism, computational tractability, or decision quality. Report that purchase explicitly. The box gives the rule; the thermal box and dining-hall examples below show how to apply it.
+
+For our box, the transparent baseline is the uniform-temperature recurrence with no heat leak. The first extension is not “replace it with machine learning”; it is “measure warming while no vials are loaded, and account for that gain between insertions.” Put a thermometer in the closed box and leave it untouched for ten minutes. If it warms from $4$ to $4.1^{\circ}\mathrm{C}$, the loss of cooling may be tiny over a fast batch. If it warms to $6^{\circ}\mathrm{C}$, it is too important to ignore. The extension earns its place only if this difference alters the loading decision.
+
+For the dining hall, a baseline is the demand-capacity balance. An extension could preserve individual arrival times and service-time variability in a discrete-event simulation. You need not know the name to grasp the idea. Keep a clock and a list of customers: when someone arrives, assign them to a free worker or make them wait; when a worker finishes, take the next customer. Repeating the clock events produces each person's wait. Compare predicted waits with real lunchtime observations. If the simulation changes the suggested staffing pattern during peaks, the extension solved a real limitation. If both models agree across the observed range, the simple balance might be sufficient for the manager's current decision.
+
+The next example puts all of these ideas under pressure. It begins with a sentence that sounds obviously wrong—“a ski lift should be slower”—and shows why the sentence can be mathematically correct for one objective and economically foolish for another. The disagreement is not really about algebra. It is about what the word *capacity* means and whose outcome we are optimizing.
+
+### Capacity Allocation in a Ski-Resort Circulation System
+
+
+<Callout type="tip">
+
+**Modeling question · What does capacity mean?**
+
+A resort has a fixed amount of skiable terrain. Should the owner add lifts and run them as fast as possible, or can a slower uphill system allow the resort to sell more tickets without putting more people on the trails?
+
+</Callout>
+
+
+<Callout type="tip">
+
+**Stop and think · Make a prediction first**
+
+Do not read the explanation yet. Imagine that the trails stay exactly the same but every lift suddenly carries people uphill twice as fast. On a piece of paper, predict what happens to:
+
+
+  
+
+    - the number of skiers simultaneously on the trails,
+
+    - the total number of ticket holders the resort can admit, and
+
+    - the number of runs and the experience of one skier.
+
+  
+
+  Then write one sentence defining what you meant by **capacity**. Did you mean people on the snow, people moved per hour, total visitors inside the resort, or profit? Keep your prediction beside you; we will return to it after the small model is built.
+
+</Callout>
+
+
+Most skiers give an immediate answer: more lifts, faster chairs, shorter queues. That is a perfectly sensible **customer objective**. A skier wants more downhill runs per hour and less time standing at the base. But suppose the owner asks a different question: how many guests can be admitted while the number simultaneously descending remains below the trail's comfortable limit? Under that narrow objective, keeping guests off the snow for longer can increase the number of tickets that fit inside the system. A person sitting on a chair or waiting in a corral is a paying guest who is not currently occupying a trail.
+
+This is why the first item in the modeling contract is purpose. “Improve the lift” is not an objective. Possible objectives include minimizing average wait, maximizing runs per skier, maximizing daily profit, limiting on-trail density, or maximizing the number of admitted guests. They can recommend opposite lift policies. Before writing an equation, we also have to separate three quantities that everyday language calls *capacity*:
+
+- **trail capacity:** the comfortable or safe number of skiers simultaneously on the slopes;
+- **lift throughput:** the number of uphill passenger trips delivered per hour;
+- **resort population:** everyone admitted, including people descending, riding, waiting, resting, or eating.
+
+Adding these quantities together or using one name for all three would make the argument look contradictory. Once they are separated, the paradox becomes a stock-and-flow problem.
+
+
+![Snow mountain showing the ski trail, chairlift, base queue, lodge, and skier circulation loop](/mathematical-modeling/modeling-01-ski-circulation.svg)
+
+*The resort is a circulation system rather than a single slope. A visitor alternates between the trail and off-trail states such as the lift, queue, connection area, and lodge.*
+
+
+#### Single-Loop Circulation Model
+
+Draw the smallest useful boundary: one lift serves one collection of trails, and a fixed population of $N$ guests repeatedly completes a loop. Let $T_d$ be a skier's average time actually descending and let $T_o$ be average time **off the trail** between descents—queueing, riding uphill, and moving through the loading and unloading areas. The average loop time is
+
+$$
+T_{\mathrm{cycle}}=T_d+T_o.
+$$
+
+For now, assume the day is in a roughly stationary period, guests keep circulating, and they have similar average loop times. A skier therefore spends the fraction $T_d/(T_d+T_o)$ of the loop on a trail. The expected number simultaneously descending is
+
+$$
+S=N\frac{T_d}{T_d+T_o}.
+$$
+
+If $C$ is the comfortable on-trail limit, the constraint $S\le C$ gives
+
+$$
+N\le C\frac{T_d+T_o}{T_d}
+  =C\left(1+\frac{T_o}{T_d}\right).
+$$
+
+The ratio
+
+$$
+M=\frac{N_{\max}}{C}=1+\frac{T_o}{T_d}
+$$
+
+is the resort-population multiplier relative to the number that can comfortably be on the snow at once. This equation captures the owner's surprising argument. If downhill time stays fixed while the off-trail portion becomes longer, a smaller fraction of each guest's day is spent on the trails. The same trail limit can then coexist with a larger admitted population.
+
+Notice what the equation does **not** say. It does not say that the mountain became larger, that lift throughput improved, or that customers received more skiing. It says only that more people can be stored in other parts of the bounded system while the on-trail stock stays under $C$.
+
+#### Numerical Capacity Comparison
+
+Suppose the trails feel comfortable with at most $C=400$ skiers descending at once, and an average descent takes $T_d=12$ minutes. Under a relatively fast uphill experience, suppose waiting, riding, loading, and unloading total $T_o=18$ minutes. Then
+
+$$
+M_{\mathrm{fast}}=1+\frac{18}{12}=2.5,
+\qquad
+N_{\max}=400(2.5)=1{,}000.
+$$
+
+In this baseline, a resort population of 1,000 corresponds to about 400 people on the trails at a typical moment and about 600 elsewhere. Now suppose slower service and a longer queue raise off-trail time to $T_o=36$ minutes. The same calculation gives
+
+$$
+M_{\mathrm{slow}}=1+\frac{36}{12}=4,
+\qquad
+N_{\max}=400(4)=1{,}600.
+$$
+
+From a narrow ticket-count perspective, the slower arrangement appears to support 600 additional guests without increasing average on-trail occupancy. If every ticket has price $p$, demand is unlimited, and there is no penalty for waiting, then revenue $pN$ pushes the owner toward a larger $T_o$. Under **that** model, “slower is better” is not a joke; it follows from the objective and boundary.
+
+
+![Stacked comparison of on-trail and off-trail visitors under faster and slower circulation](/mathematical-modeling/modeling-01-ski-capacity.svg)
+
+*Both scenarios keep the illustrative on-trail stock at 400. The larger total under slower circulation comes entirely from holding more visitors off the trails; it does not represent better service.*
+
+
+But pause before treating 1,600 as a recommendation. The calculation silently turned a long queue into useful storage. It assumed guests do not leave, complain, take fewer future trips, request refunds, or crowd the base area. It also treated average occupancy as sufficient even though two narrow intersections can be dangerous while the mountain-wide average remains comfortable. Those are not small footnotes. They are mechanisms that can reverse the decision.
+
+There is another distinction hiding inside “slower lift.” If chairs are spaced $d$ metres apart, each holds $q$ people, and the cable moves at speed $v$, an idealized hourly throughput is proportional to
+
+$$
+\mu(v)=60q\frac{v}{d},
+$$
+
+when $v$ is measured in metres per minute. Slowing the cable makes the ride longer **and** sends fewer chairs through the loading point each hour. Adding another lift increases total throughput and changes which trails receive skiers. So $T_o$ is not a free control knob: it emerges from cable speed, number of lifts, loading interruptions, demand, and queueing. If arrivals exceed throughput, the queue grows rather than settling at the tidy average assumed above.
+
+#### Multi-Objective Operational Model
+
+The baseline has done its job: it exposed the mechanism behind the paradox. The next layer should not simply add more symbols. It should repair the most important omission—the fact that an owner earns today's ticket revenue but also pays operating costs and depends on safety, satisfaction, and repeat demand.
+
+Let $v$ denote lift speed, $m$ the number of operating lifts, $N$ the admitted population, $W(v,m,N)$ expected waiting time, and $S(v,m,N)$ expected on-trail occupancy. A more honest schematic decision is
+
+$$
+\max_{v,m,N}
+\quad pN-c(v,m)-\alpha W(v,m,N)-\beta L(v,m,N),
+$$
+
+subject to
+
+$$
+S(v,m,N)\le C,
+\qquad
+W(v,m,N)\le W_{\max},
+\qquad
+v_{\min}\le v\le v_{\max}.
+$$
+
+Here $c(v,m)$ is operating cost and $L$ summarizes consequences such as refunds, lost repeat visits, base-area congestion, or service failure; $\alpha$ and $\beta$ translate those effects into the objective. The speed limits are not arbitrary mathematical decoration—real equipment, wind, loading safety, and evacuation rules bound what can be operated. We might also constrain density separately on beginner, intermediate, and expert terrain because one mountain-wide average can hide the location that actually fails.
+
+This model does not guarantee that faster is best. Another lift may be expensive and may load the trails too quickly. Nor does it guarantee that slower is best. Once long waits reduce demand or future revenue, deliberately creating a queue can cost more than the extra tickets earn. The optimum can lie between the two extremes. The important result of modeling is not the slogan “faster” or “slower”; it is a clear explanation of which trade-off selects the speed.
+
+#### Empirical Validation Plan
+
+The ski-resort example also gives us a practical assumption ledger. Lift-gate timestamps estimate throughput and uphill cycle time. Periodic trail counts or privacy-preserving camera counts estimate $S$. Ticket scans estimate how many guests are present. Queue sensors estimate $W$ by hour, while surveys, complaint rates, return visits, and refund requests test whether waiting changes demand. Separate the data by weather, weekday, ability level, and terrain opening, because a powder morning with half the mountain closed is not the same system as an ordinary Tuesday.
+
+Before building a simulation, test the simple identity on a calm hour. If $N=1{,}000$, $T_d=12$, and $T_o=18$, do observations show roughly 400 guests on the slopes? If not, perhaps guests take lodge breaks, descent times vary by ability, or the boundary misses another lift. That discrepancy tells us what to add. A useful next model could be a time-varying network: lift queues are nodes, trails are directed links, and guests move between terrain zones with different capacities. Such an extension is earned only if the one-loop model fails in a way that matters to the operating decision.
+
+Now the original claim can be stated carefully. **For a resort owner who maximizes admitted ticket holders while constraining only average trail occupancy, a slower lift can make total resort population a larger multiple of trail capacity.** For an owner who values profit over several seasons, safety, guest experience, and repeat demand, “slower is always better” is no longer justified. The example is valuable precisely because both statements can be derived from different modeling contracts.
+
+The box recurrence, dining-hall balance, and ski-resort circulation model all gave us answers under declared assumptions. None proves that field loading, campus demand, or a mountain will behave exactly as predicted. We now need to test the *whole path* from story to code to decision, not merely admire the final number.
+
+## Validation
+
+### Verification and validation are different questions
+
+Verification asks whether we solved the equations we intended: is the code correct, are indexes aligned, and does the numerical method behave? Validation asks whether those equations are adequate for the purpose. Perfect code can implement a poor model. A realistic equation can be ruined by a coding error.
+
+For the thermal box, verification includes reproducing one mixing step by hand, checking that temperature stays between physically plausible bounds, and confirming convergence as time step shrinks. Validation compares predicted temperatures with measurements from representative loading. If code matches its recurrence but the well-mixed assumption fails, verification passes and validation fails.
+
+### Layer 1: implementation tests
+
+Begin with deterministic cases. Set arrivals to zero and confirm a queue cannot grow. Set heat transfer to zero and confirm energy is conserved. Give an optimizer one feasible choice and verify it returns that choice. These are invariants and edge cases.
+
+Test indexing at boundaries. Does a rolling three-day window include exactly three days? Does the last bus finish its route inside the horizon? Does a first-order recurrence use state $t$ or accidentally updated state $t+1$? Off-by-one errors frequently produce plausible plots.
+
+Compare two implementations on tiny input: a vectorized function and a slow explicit loop. The loop is easier to inspect. Randomly generate small cases and assert agreement. For optimization, independently recalculate final objective and constraints from decoded decisions.
+
+### Layer 2: internal consistency
+
+Conservation is powerful. In a closed SIR system, $S+I+R$ remains constant. In inventory, opening stock plus inflow minus outflow equals closing stock. In a transport network, flow entering an intermediate node equals flow leaving unless storage is modeled.
+
+Check bounds and signs. Probabilities belong in $[0,1]$; populations are nonnegative; binary variables are truly integer after rounding; service completions cannot exceed people available. Check monotonic relationships where structural: increasing capacity should not worsen the best achievable objective if all previous choices remain feasible.
+
+Dimensional consistency belongs here. An equation can fit data with inconsistent units because parameters absorb errors, but transfer will fail. Print units in a variable table and annotate transforms.
+
+### Layer 3: empirical adequacy
+
+Separate calibration from evaluation. If parameters are fitted on all data and the same points measure error, the result describes fit, not prediction. Hold out later time periods, different locations, or different operating regimes according to the decision.
+
+Use residuals $e_i=y_i-\widehat y_i$. Plot them against time, prediction, and key inputs. A mean near zero is not enough. Structure indicates missing mechanism: curvature, seasonality, increasing variance, spatial clusters, or autocorrelation.
+
+Metrics must match consequences. Mean absolute error is interpretable; squared error emphasizes large misses; percentage error misbehaves near zero. For queues, peak wait and turn-away probability may matter more than average. For risk, calibration of tail probability matters.
+
+### Layer 4: comparative evidence
+
+Compare with current policy, simple baseline, and reasonable alternatives under the same cases. A sophisticated model with low raw error may not improve a decision. A simple model may perform similarly and be easier to explain.
+
+Use paired scenarios. If proposed staffing and current staffing see different random arrivals, their outcome difference contains simulation noise. Feed the same arrivals and service draws to both. Repeat across scenario seeds.
+
+For predictive methods, avoid future leakage. A feature computed from the full time series may use future values. Random train-test splits break temporal order. Fit preprocessing only on training data and evaluate chronologically when predicting the future.
+
+### Layer 5: decision validation
+
+Even accurate predictions may support a poor decision if the objective is wrong. Ask decision-makers whether costs, equity, safety, and implementation appear. Show alternative near-optimal policies. Conduct a tabletop exercise: could staff execute this schedule? Are required measurements available when decisions occur?
+
+Decision validation includes monitoring after deployment. Define leading metrics and a trigger for revision. A staffing policy might be deployed for one week, with hourly arrivals, waits, and abandonment recorded. If peak wait exceeds threshold on two days, re-estimate or activate a contingency.
+
+### Calibration versus discrimination
+
+A probability model is calibrated if events predicted at 30% occur about 30% of the time. It discriminates if higher-risk cases tend to experience events more often than lower-risk cases. Both matter. A constant 10% predictor can be perfectly calibrated in a population with 10% events but useless for prioritization.
+
+For capacity decisions, interval coverage and sharpness play similar roles. A 99% prediction interval from zero to one million contains everything and is not useful. Report whether intervals cover and whether they are narrow enough to change decisions.
+
+### Stress testing and failure envelopes
+
+Sensitivity changes inputs one at a time or globally. Stress testing asks whether the system remains acceptable under coherent adverse conditions. A campus shuttle stress may combine rain, class dismissal, and one unavailable bus. A thermal box stress may combine high ambient temperature, repeated opening, and warm payload.
+
+Map a failure envelope: combinations of demand and service capacity where wait threshold fails. This is more informative than one worst case. Decision-makers see how much margin exists and which contingency is effective.
+
+### Uncertainty decomposition
+
+Distinguish input uncertainty, parameter uncertainty, structural uncertainty, stochastic variability, and numerical error. Running more Monte Carlo samples reduces simulation error but not an omitted mechanism. More decimal places do not reduce parameter uncertainty.
+
+For each source, identify a response: collect data, estimate an interval, compare structures, simulate randomness, refine numerical tolerances. A final interval should not be described as “all uncertainty” if it varies only one parameter.
+
+### Validation under distribution shift
+
+Historical exam-week data may not predict a renovated library or a new booking app. Identify variables whose relationship can change. Test by time, subgroup, or location. Use scenarios when direct data are unavailable. Limit claims.
+
+Monitor drift after deployment: arrival distribution, service time, residuals, and constraint violations. A model is a maintained decision process, not a one-time file.
+
+### A full validation example: dining-hall staffing
+
+Suppose a simulation recommends adding two servers from 12:00 to 1:00. Verification reproduces a small queue trace by hand and checks conservation of customers. Internal checks confirm no negative queues and completed service never exceeds capacity.
+
+Empirical validation fits arrival and service distributions on three weeks and predicts a fourth. Residual plots reveal underprediction at 12:10, so time-varying arrivals replace one hourly mean. Comparative validation evaluates current and proposed schedules on the same held-out days and common random streams. Proposed staffing reduces median peak wait from eighteen to eleven minutes and ninety-fifth percentile from thirty-two to nineteen.
+
+Stress testing raises arrivals 20%, removes one service station, and lengthens service for a menu change. The proposal remains under fifteen minutes in the demand stress but fails during station loss. Decision validation therefore recommends the schedule plus a contingency to redirect one staff member when a station closes. Monitoring records actual waits and abandonment for two weeks.
+
+Notice the conclusion grew from layers. “Two servers are optimal” would be too strong. “Under observed and stressed demand, two extra noon servers improve peak waits; station failure remains the main vulnerability” is specific and actionable.
+
+### What validation cannot prove
+
+Passing tests does not prove universal truth. It raises confidence within tested conditions. Held-out data come from a finite range. Stress scenarios reflect imagination and evidence. Unknown mechanisms remain.
+
+Use explicit scope: population, time, location, intervention, and metrics. A model validated for weekday lunch cannot claim weekend performance. This restraint makes future updating possible.
+
+
+<Callout type="tip">
+
+**Guiding idea · Five levels of validation**
+
+**A plausible final number is not enough.** Check the model at five different levels:
+
+
+  
+
+    - **Implementation:** does the code solve the equations written?
+
+    - **Internal:** do units, bounds, conservation laws, and limiting cases hold?
+
+    - **Empirical:** does it reproduce observations it was not fitted to?
+
+    - **Comparative:** does it improve on a baseline under the same test?
+
+    - **Decision:** would plausible uncertainty change the recommendation?
+
+</Callout>
+
+
+These checks ask different questions. Passing the first does not imply passing the fifth, so we will walk through them one by one with the shuttle example.
+
+The final report should close the loop: question $\rightarrow$ abstraction $\rightarrow$ solution $\rightarrow$ evidence $\rightarrow$ decision. COMAP describes mathematical modeling competitions as an unscripted combination of modeling, problem solving, and writing; the deliverable is therefore an argument, not just a program ([official MCM/ICM instructions](https://www.contest.comap.com/undergraduate/contests/mcm/instructions.html)).
+
+Let us validate the shuttle calculation one level at a time. First, **implementation**: set the toy stop to ten riders and eight available seats. Does your program leave two behind? If not, the boarding rule in the code contradicts the rule in your story. This check is often called verification. It does not prove the real shuttle system is modeled well; it proves only that your program carried out the declared rule on a case you understand.
+
+Second, **internal plausibility**: a shuttle with eight seats cannot board nine people; predicted classroom arrival cannot be earlier than boarding; the number of riders waiting next minute should equal those already waiting plus new arrivals minus riders who boarded, assuming no one walks away. These are conservation, capacity, and chronology checks. You can catch impossible outputs even without collecting more data. A program that runs without errors can still violate all three.
+
+Third, **comparison with the world**: collect several ordinary mornings of arrival, boarding, travel, and classroom timestamps. Fit any parameters on some days and test predictions on other days. Why not use the same days for both? Because a model can learn the quirks of the days it saw and still fail next Tuesday. If you use the actual travel time of the test-day shuttle as an input to a prediction that should have been made at 8:30, you have also leaked information from the future. Check what the dispatcher could really have known at decision time.
+
+Fourth, **comparison with a baseline**: suppose the current schedule gets 78% of riders to class by 9:00. Your new plan predicts 92%. Test both against the same arrival scenarios, vehicle budget, and measurement definition. If the new plan needs another vehicle beyond the budget, the 92% is not a feasible improvement. If the old plan's 78% was measured on rainy days and the new plan's 92% on dry days, the comparison is not controlled. A useful baseline can be plain and imperfect; it must nevertheless be tested fairly.
+
+Fifth, **decision stability**: what if travel time is five minutes longer than measured last week? Does the new plan still deliver at least 90% on time? What if arrivals at the busiest stop rise by 20%? You do not have to guess blindly. Change one input, rerun the calculation, and explain which riders miss the target. If a small plausible perturbation makes the recommendation fail, present the recommendation as conditional and consider a spare shuttle, an earlier departure, or another route. This is sensitivity analysis in the service of a real decision.
+
+Finally, write the result for the person who asked. “Assign one additional eight-seat shuttle to the 8:35 stop arrival, subject to the vehicle budget; on held-out ordinary mornings the predicted on-time fraction rises from 78% to 92%, but the plan falls below 90% when travel is more than five minutes slower.” This is an *illustrative sentence*, not a measured result from Columbia's shuttles. It shows what a conclusion ought to contain: an action, a metric, a comparison, the operating range, and the main failure condition. A bare “accuracy = 92%” does not tell the dispatcher what to do.
+
+If you are new to mathematics, you may worry that these checks make every answer uncertain. They do, in a healthy way. Modeling does not mean being afraid to conclude anything; it means knowing which conclusions are earned. Our commuter answer is exact under a clear symmetry assumption. The two-day theorem guarantees an existence result under continuity but not the location. The box's vial count is conditional on measured thermal values and stopping rules. The ski-lift multiplier is an accounting identity inside a deliberately narrow circulation model, not proof that frustrating customers maximizes long-run profit. The shuttle recommendation can be supported by held-out mornings but still need stress testing for rain. Different problems give different kinds of certainty, and this post should not pretend they are all the same.
+
+The shuttle validation example was deliberately long. On a live problem you need a compact way to notice a missing decision variable, an unmeasured input, or a test you forgot to design. Use the following questions as a pause before moving from formulation to computation.
+
+### Pre-Computation Checklist
+
+Before proceeding, be able to answer:
+
+- What is the decision variable or predicted quantity?
+- Which data are observations, and which numbers are assumptions?
+- What baseline can be solved today?
+- What failure mode motivates the next layer?
+- Which figure or test will support the conclusion?
+
+If any answer is vague, the model is not ready for optimization.
+
+You have seen a sample box, a shuttle, a ski resort, and several short definitions. Let us slow down and build one campus decision from its very first sentence. The dining-hall case will let us use the checklist while the variables and constraints are still small enough to check by hand.
+
+## Dining-Hall Case
+
+Suppose a university wants to reduce the waiting time at a campus dining hall without increasing the weekly labor budget. This sentence is still a **situation**, not a mathematical problem. We must decide who acts, what can be changed, what cannot be changed, and what “better” means.
+
+### Step 1: Define the Decision Statement
+
+Use the template introduced earlier:
+
+> Given predicted customer arrivals, service times, worker availability, and labor costs, choose the number of workers assigned to each station in each 30-minute period so that expected waiting time is minimized while the labor budget and staffing rules are respected.
+
+The nouns now become mathematical objects. Let $T$ be the set of time periods, $S$ the set of stations, $\lambda_{st}$ the expected arrival rate reaching station $s$ during period $t$, $\mu_s$ the service rate of one worker at station $s$, and $x_{st}$ the number of workers assigned to station $s$ during period $t$. Notice that $x_{st}$ is a decision, whereas $\lambda_{st}$ and $\mu_s$ must be measured or estimated.
+
+### Step 2: Specify the System Boundary
+
+The boundary might include arrival, ordering, payment, food preparation, and pickup. It might exclude where students go after collecting food. A boundary is neither correct nor incorrect by itself; it is useful when it contains the mechanisms that dominate the target quantity. If pickup congestion blocks the preparation station, pickup must be included. If it never blocks upstream work, it can initially be omitted.
+
+Write a unit beside every quantity. For example, $\lambda_{st}$ has units customers/minute, $\mu_s$ has units customers/(worker·minute), and $x_{st}\mu_s$ has units customers/minute. A utilization estimate
+
+$$
+\rho_{st}=\frac{\lambda_{st}}{x_{st}\mu_s}
+$$
+
+is dimensionless. If $\rho_{st}\ge 1$, demand reaches or exceeds nominal capacity, so a stable steady-state queue should not be expected. This one calculation is already a useful baseline.
+
+### Step 3: Separate Observations from Assumptions
+
+Arrival timestamps, transaction durations, and schedules are observations. “Service times are independent” and “one worker has a constant service rate within a period” are assumptions. Estimate an empirical distribution rather than reporting only the mean: a mean of two minutes can hide a mixture of many 30-second orders and a few ten-minute orders.
+
+Make an assumption ledger with four columns: assumption, reason, consequence, and test. The constant-rate assumption may be reasonable over a short interval; its consequence is a simpler queue; its test is whether the rate changes systematically within that interval. An assumption that cannot be connected to a consequence is probably too vague.
+
+### Step 4: Construct a Baseline and One Extension
+
+The baseline assigns enough workers to keep estimated utilization below a chosen threshold such as $0.85$. It ignores random variation but is transparent. The extension uses a queueing approximation or discrete-event simulation to estimate the waiting-time distribution. Compare both under the same arrival scenarios. If both recommend the same staffing pattern, the simpler model may be sufficient. If they differ during sharp peaks, the extension has identified where variability matters.
+
+### Step 5: Define Falsification Criteria
+
+Reserve several days for evaluation. Compare predicted and observed queue length, mean wait, 90th-percentile wait, and the fraction of periods exceeding a service target. Inspect errors by weekday and time of day. A model that is accurate at noon but fails at closing time has a defined operating range, not universal validity.
+
+**Your first deliverable**
+
+Create a one-page specification for a real system around you. It must include one decision sentence, a boundary diagram, a variable table with units, three assumptions with tests, one baseline, one extension, and two validation metrics. This exercise is deliberately algorithm-free: the purpose is to learn that formulation comes before computation.
+
+**Work one dining-hall period on paper**
+
+That specification can feel abstract, so let us pretend we are standing beside the dining-hall manager at 12:00. In the next half hour, past records suggest that about 60 customers will arrive at the payment station. One worker can serve about 25 customers per half hour under ordinary conditions. The manager can assign either two or three workers. Which arrangement would you try first? Make your own prediction before using a formula.
+
+Two workers can serve about 50 customers in half an hour. If 60 arrive, a rough balance says the queue grows by 10 customers even if it was empty at the beginning. Three workers can serve about 75. In the same rough balance the station has capacity to absorb the 60 arrivals; the queue need not grow. The calculation is not a proof that nobody waits. Customers can arrive in a burst while servers happen to be busy. It is a first way to reject a clearly overloaded plan.
+
+Express the same idea in units. At 60 customers per 30 minutes, the arrival rate is $\lambda=2$ customers/minute. Each worker's service rate is $\mu=25/30\approx0.833$ customers/minute. With two workers, nominal capacity is $2\mu\approx1.667$ customers/minute and $\rho=\lambda/(2\mu)=1.2$. With three, capacity is $3\mu=2.5$ customers/minute and $\rho=0.8$. The number $\rho$ is called *utilization*: it compares demand with capacity, and has no unit because the units cancel. A value over one is warning of persistent overload if the rates stay like this. A value below one leaves spare average capacity but does not guarantee a short wait during peaks.
+
+Do you see why we wrote the 30-minute balance before saying “use queueing theory”? The manager's first question was whether the extra worker is plausibly necessary. The elementary balance answers that much without a distribution, a simulation, or a specialized library. If the team needs to know whether the 90th-percentile wait is below five minutes, the balance does not answer enough: it is time to model the variability of arrivals and service times. The *need for a sharper answer*, not our appetite for sophisticated mathematics, tells us when to extend the model.
+
+We have also hidden a decision trade-off. Perhaps three workers at payment leave only one worker preparing food, so the bottleneck simply moves. Before the manager acts, the boundary must include other stations and the total labor constraint. If a worker costs USD 18 per hour, adding one for a half hour costs USD 9. Compare that cost with measured waiting and with the cost of longer waits. Without some valuation or a hard wait-time target, the phrase “optimal staffing” is unfinished: optimal with respect to *what*?
+
+Try a quick counterexample. Suppose 30 of the 60 customers arrive within the first five minutes. Three workers' average capacity of 75 per half hour sounds generous, yet during those five minutes they can serve only about $3(25/30)(5)=12.5$ customers. A temporary queue of roughly 17 or 18 people forms. A model based only on total half-hour arrivals will miss this burst. You can test the constant-arrival assumption using timestamps, not by adding a vague sentence to the limitations paragraph.
+
+If those timestamps exist, create two plots: cumulative arrivals against cumulative service capacity, and observed wait against predicted wait across several days. The gap between the two cumulative curves is an approximate queue. Measure whether errors cluster at lunch peaks; if so, shorten the time periods or use a stochastic queue. If predicted and observed waits agree under ordinary conditions but not at the first five minutes of lunch, report that precise operating range. A model that identifies its own weak spot is far more useful than one that prints a single unqualified staffing schedule.
+
+**Data, choice, and rule are different kinds of quantities**
+
+Let me spell out a distinction that beginners often learn only after a solver gives nonsense. The 60 arrivals are an *observation or forecast*: we do not get to change yesterday's timestamps. The number of assigned workers is a *decision*: the manager can choose it within staffing rules. The USD 9 cost is a *parameter* computed from wages and time. A sentence like “no more than three workers at payment” is a *constraint* on decisions. A queue of 18 at 12:05 is a *state* of the system, created by earlier arrivals and service. These labels are not ceremonial. They tell us which quantities can be optimized and which must be estimated.
+
+You can test your understanding by changing only one quantity at a time. If arrivals increase to 75 while staffing remains at three, utilization becomes $75/75=1$ and the average spare capacity vanishes. If the manager assigns four workers with arrivals still at 60, utilization falls to $60/100=0.6$ but labor cost rises. If service capacity of one worker falls to 15 customers per half hour because of a slow register, three workers provide only 45; the queue grows despite a staffing number that looked fine yesterday. Every change corresponds to a different real-world intervention or failure, so do not silently treat it as the same scenario.
+
+At this point, I would ask you to explain the case to a classmate without any Greek letters. You should be able to say, “Customers arrive faster than two workers can serve them, so a line builds. A third worker gives average breathing room, but a lunch rush can still create a line. We would check arrival timestamps and the other stations before changing the schedule.” If you can say that, the mathematical symbols have done their job: they clarified a decision rather than replacing it with jargon.
+
+### Extending the dining-hall model without losing the thread
+
+The half-hour calculation identified overload but did not predict a waiting-time distribution. The next model should answer a specific missing question: how variable arrivals and service translate into waits. Do not jump directly to a hundred-line simulation. Begin with a small discrete-time recurrence.
+
+Let $A_t$ be arrivals during minute $t$, $C_t$ completed services, and $Q_t$ people waiting at the start. Then
+
+$$Q_{t+1}=\max\{0,Q_t+A_t-C_t\}.$$
+
+If three workers each complete a service independently with probability calibrated to the observed rate, $C_t$ is random and cannot exceed $Q_t+A_t$. Alternatively, use recorded service durations in a discrete-event simulation. In both cases the state update should agree with a hand trace.
+
+Take five minutes with arrivals $(6,3,5,2,4)$ and capacity $(3,3,3,3,3)$, starting empty. The queues after each minute are $(3,3,5,4,5)$. Total arrivals are twenty and service capacity fifteen, so five remain. The recurrence and aggregate balance agree. If code produces four or six, inspect timing convention: do arrivals occur before service within each minute? Choose and document it.
+
+Waiting time requires customer-level order or an approximation. Under first-come-first-served service, store arrival times in a queue and record departure minus arrival. Validate with a tiny list. If priority pickup exists, the discipline changes. Mean queue length and mean wait are connected by Little's law $L=\lambda W$ under stable long-run conditions, but this is a consistency check rather than a replacement for transient lunch peaks.
+
+### From prediction to staffing optimization
+
+Once a simulator takes staffing $x_{st}$ and outputs waiting metrics, define the decision problem. A stylized objective is
+
+$$\min_x\quad
+\sum_t\left(c_L\sum_sx_{st}+c_W\mathbb E[W_t]
++c_T\Pr(W_t>W_{\max})\right),$$
+
+subject to worker availability, station minimums, skill compatibility, breaks, and weekly labor budget. The coefficients convert outcomes into a common scale. If stakeholders cannot justify such conversions, use hard service thresholds or present a Pareto frontier instead.
+
+Shift rules couple periods. A worker cannot appear independently for one half hour if minimum shift length is four hours. Introduce assignment by worker and shift or use pre-defined feasible shift patterns. A simple staffing count can otherwise recommend an unimplementable patchwork.
+
+Compare with current roster and utilization baseline. The simulator should earn its place by changing a decision or quantifying risk. If it recommends the same three-worker noon assignment but reveals a 15% chance of long waits, the added value is contingency planning.
+
+### Forecast uncertainty enters before optimization
+
+Arrival forecast $\widehat\lambda_t$ is not truth. Optimize across scenarios $\lambda_t^{(s)}$ drawn from held-out residual patterns or coherent historical days. Avoid treating every minute independently if lunch peaks shift together.
+
+A risk-neutral schedule minimizes average cost. A robust or risk-sensitive schedule controls high waits. One transparent target is
+
+$$\Pr\{W_t\le15\text{ minutes for every peak period}\}\ge0.9.$$
+
+Estimate it on independent validation scenarios. With only ten scenarios, one failure changes the rate by ten percentage points, so acknowledge sampling uncertainty.
+
+Information timing matters. Next week's staffing may use calendar and historical forecasts, not next week's realized arrivals. A same-day supervisor may adapt after observing an early surge. These are different decisions: a fixed schedule and a recourse policy. Model them separately.
+
+### Behavior can close the feedback loop
+
+If long queues make students leave, observed completions understate latent demand. If an app displays short waits, students may shift arrival times. Staffing changes behavior; arrivals are not always external.
+
+Begin by checking data. Do entries fall when visible queues are long? Are abandoned customers counted? A simple abandonment model assigns patience distributions. A feedback extension lets arrival choice depend on predicted wait. Validate cautiously because preference parameters are difficult to identify from aggregate counts.
+
+This is an example of a boundary expanding only after evidence. The first capacity model treats arrivals as given. Residuals or observed abandonment motivate behavior. We do not add psychology merely to sound realistic.
+
+### Fairness and subgroup outcomes
+
+Average wait can hide unequal service. Students with dietary restrictions may rely on one slower station. Staff may optimize common lines while that group waits longer. Report wait by station and relevant service need, subject to privacy and appropriate data.
+
+A fairness constraint might require each group’s 90th-percentile wait below a threshold, or minimize maximum normalized wait. Such constraints can cost labor efficiency; show the trade-off rather than hiding it in a weight.
+
+### Data schema and provenance
+
+A reliable model begins with records that can be traced. A transaction table might contain anonymized transaction ID, station, queue-entry timestamp if available, service-start, service-end, and calendar features. Staffing table contains station, worker skill, shift start and end. Keep raw timestamps immutable; create cleaned fields in a pipeline.
+
+Document timezone, clock corrections, missing events, duplicated transactions, and closures. A negative service time is not removed silently. Investigate whether timestamps came from unsynchronized systems. Report cleaning counts.
+
+Aggregate only after deciding the question. Thirty-minute totals support capacity planning but hide five-minute bursts. Preserve event-level data where allowed. Fit preprocessing on training periods and apply unchanged to validation periods.
+
+### A complete tiny experiment
+
+Construct three candidate schedules for one lunch hour: current $(2,2,2)$ workers across three stations, balanced $(3,2,1)$, and demand-weighted $(3,1,2)$. Use twenty historical arrival-day traces held out from calibration. For every trace, run all schedules with identical arrival and service draws.
+
+Record mean wait, 90th-percentile wait, maximum queue, abandonment, labor, and station-specific outcomes. Suppose demand-weighted staffing reduces overall peak wait but creates an unacceptable queue for the second station. Balanced staffing is slightly worse overall but satisfies every station threshold. The decision depends on service requirements, not merely the smallest mean.
+
+Bootstrap days, not individual customers, if day-level conditions create dependence. Present paired differences from current roster. Stress with 20% higher arrivals and one absent worker. Independently check labor and staffing rules.
+
+A recommendation might be: use balanced staffing on forecast ordinary days, activate a cross-trained backup when arrivals in the first ten minutes exceed threshold, and collect abandonment counts for two weeks. This is a policy with monitoring, not a mystical optimum.
+
+### What the manager should see
+
+The final page needs a decision table, one queue comparison figure, a sensitivity or stress figure, and limitations. Avoid leading with simulation architecture. Lead with action and evidence:
+
+| Policy | Labor hours | Median peak wait | 90th percentile | Worst station | Stress feasible? |
+|---|---:|---:|---:|---:|---|
+| current | 6 | 18 | 31 | 35 | no |
+| demand-weighted | 6 | 11 | 20 | 28 | no |
+| balanced | 6 | 12 | 19 | 19 | yes under demand stress |
+
+These numbers are illustrative. Their purpose is to show how complementary metrics can reverse a ranking. The lowest mean is not automatically the best implementable policy.
+
+### Failure analysis as part of the answer
+
+When the policy fails a scenario, preserve the trace. Did arrivals exceed forecast, service slow, or a station block another? Classify failures. If most come from worker absence, improve contingency rather than arrival model. If they come from a five-minute surge, increase temporal resolution or flexible staffing.
+
+Use a fault tree: service target fails because capacity is too low, allocation is misplaced, or demand exceeds design. Each branch has observable indicators and remedies. This turns a model into operational learning.
+
+### Reproducible handoff
+
+Save raw-data checksum, cleaning log, fitted parameters, scenario seeds, schedules, output tables, and code commit. A teammate should rerun one command. The report's numbers should come from saved results, not manual transcription.
+
+Add tests: the five-minute queue trace above, zero-arrival case, unlimited-capacity case, labor-budget assertion, and same-scenario comparison. Confirm plots label minutes and people correctly. Record which AI assistance, if any, was used according to rules, and verify every generated claim and citation.
+
+### What the integrated case teaches
+
+The workflow remained one argument even as detail grew. The purpose chose staffing. Boundary identified stations and time. State tracked queues. Mechanism balanced arrivals and service. Assumptions were tested. Baseline detected overload. Simulation addressed variability. Optimization compared feasible staffing. Validation used held-out paired days. Stress and monitoring limited the claim.
+
+If we had started with an algorithm, these links could disappear. Starting with the contract lets every added component answer a visible question.
+
+The dining hall was a full workflow: decide, calculate a baseline, and test it. We already used a physical balance for the sample box. Three more mathematical lenses sharpen different habits: an invariant can remove unknown speeds, continuity can prove existence without an exact path, and a threshold can separate braking from clearance. They are not new modeling cycles; they are tools for choosing a useful mechanism *inside* the cycle you know.
+
+## Analysis Before Computation
+
+Computing is most useful after we know what the computation should preserve. An invariant, bound, monotonic relationship, limiting case, or dimensional argument can eliminate wrong models and test code. These tools are not substitutes for data; they tell us what any data-driven or numerical answer must respect.
+
+### Bounding before estimating
+
+Suppose a delivery vehicle has eight hours, spends at least ten minutes at each stop, and travel time is nonnegative. It can visit at most forty-eight stops, even before travel. If software reports seventy, no parameter tuning is needed—the output violates a bound.
+
+Bounds can combine resources. If every meal needs at least 0.2 kg ingredients and the kitchen has 100 kg, no more than 500 meals can be produced. If cooking capacity is 420, the tighter bound is 420. A lower bound may come from unavoidable distance or minimum staffing.
+
+Present bounds alongside heuristic solutions. If an algorithm serves 410 meals against an upper bound 420, readers know the remaining possible gain. If it serves 200, more investigation is justified.
+
+### Monotonicity and comparative statics
+
+Ask how an output should move when one input increases, holding others fixed. In a simple capacity model, more servers cannot reduce maximum feasible service. In a cooling model, greater insulation slows temperature approach to ambient. In logistic growth, carrying capacity raises the long-run equilibrium.
+
+Optimization complicates this: increasing budget cannot worsen the *best achievable* objective when old choices remain feasible, though the selected decision may change. If computed optimum worsens, check solver, random variation, or model changes.
+
+Differentiate when possible. If $y=a/b$ with positive quantities,
+
+$$\frac{\partial y}{\partial a}=\frac1b>0,
+\qquad
+\frac{\partial y}{\partial b}=-\frac{a}{b^2}\lambda,$$
+
+where the second term is a stylized wait penalty. Then
+
+$$f''(s)=\frac{2w}{(s-\lambda)^3}>0.$$
+
+There is one global balance in the continuous domain. Before applying a heuristic, solve $f'(s)=0$ and then check integer staffing nearby. Structure saves computation and gives a benchmark.
+
+### Order-of-magnitude checks
+
+Estimate scale. If a bus carries 50 people and makes six peak trips, capacity is about 300 passenger-trips. A prediction of 30,000 requires a unit or scope explanation. If a 10-liter thermal mass is assigned heat capacity equivalent to a swimming pool, parameters are wrong.
+
+Use scientific notation and rough arithmetic before code. Order-of-magnitude checks catch decimal shifts, percentages entered as whole numbers, and minutes treated as hours.
+
+### Analytical reasoning in a competition workflow
+
+At the start, derive at least one hand-checkable case, one bound, and one directional expectation. During coding, turn them into tests. In the report, use them to interpret results. A reader then sees why output is plausible, not just that software produced it.
+
+For every complex module, ask: what would happen in the smallest case? What is conserved? What cannot exceed what? What happens if a parameter vanishes? Which direction should change occur? These questions often reveal more than an extra page of algorithm description.
+
+### Invariant Analysis: The Early Commuter
+
+A commuter is normally picked up at the station at 6:00 p.m. One day he arrives at 5:30, does not phone his wife, and walks toward home along her usual driving route. She leaves at the usual time, meets him on the way, and they arrive home **ten minutes earlier** than on a normal day. How long did he walk? Before reading the answer, choose a number. A lot of people immediately say “thirty minutes,” because he arrived thirty minutes early. But that would require his wife to meet him exactly when she normally reaches the station; she meets him *on the road*, so he stops walking before then.
+
+What information do we know about the car? We do not know its speed, the distance from home to the station, or the man's walking speed. Surprisingly, we do not need them if the wife's speed along the route is the same on the outward and return drives. Imagine the segment from the roadside meeting point to the station. On an ordinary day, she drives that segment *toward* the station and then the same segment *back* with her husband. On the unusual day, she skips it twice. The total driving time saved is ten minutes; hence **each** skipped traversal would have taken five minutes.
+
+The meeting must therefore occur five minutes before her normal 6:00 arrival, at 5:55. The man started at 5:30 and walked until 5:55: he walked **25 minutes**. Check the clock calculation explicitly: $5{:}55-5{:}30=25$ minutes. The structure, not a measured speed, carried the answer.
+
+
+![Road diagram showing the two equal car segments avoided by meeting early](/mathematical-modeling/modeling-01-commuter-invariant.svg)
+
+*The ten-minute saving is split across two identical traversals of the meeting-point-to-station segment, so each skipped traversal accounts for five minutes.*
+
+
+Let me ask you to challenge it. What if the wife speeds up on the way home, or the road is one-way and the return route differs? Then the two saved traversals are no longer equal, so “five plus five” need not hold. What if she gets the news and leaves early? Then her departure schedule has changed, and the usual reference clock no longer works. The conclusion is conditional, as a model's conclusion should be.
+
+This is a useful example of *invariants*: properties that remain usable even when other numerical details are unknown. You can model the full positions $x_{\mathrm{wife}}(t)$ and $x_{\mathrm{walker}}(t)$, introduce two speeds and a distance, and solve a system of equations. You could also notice the two skipped road segments and solve the problem in three lines. Simplicity here is not laziness: it exposes exactly why the answer is determined.
+
+### Continuity Argument: The Two-Day Journey
+
+On Monday, a walker sets out from village $A$ at 9:00 a.m. and reaches village $B$ by 5:00 p.m. On Tuesday, the same walker starts at $B$ at 9:00 a.m. and returns along the same path to $A$ by 5:00 p.m. Once a destination is reached, imagine the walker remaining there until 5:00. Must there be a point on the path where the walker was at **the same clock time** on both days? You need not know whether either day's speed is constant. The walker might pause, accelerate, or even backtrack. Take thirty seconds to imagine both journeys before following the proof.
+
+One wonderfully concrete way to see it is to imagine two copies of the walker traveling *simultaneously* on the same path: Monday's copy walks from $A$ to $B$, Tuesday's copy walks from $B$ to $A$. At 9:00 the copies are on opposite ends. By 5:00 their ends have exchanged. If neither teleports and they stay on the same continuous path, they cannot exchange order without meeting. Their meeting point is exactly the position occupied at the same clock time on the two real days. The story is a proof, not a numerical prediction of *where* they met.
+
+If you want mathematical notation, measure distance $x$ from $A$ along the route. Set $f(t)=x_{\mathrm{Monday}}(t)-x_{\mathrm{Tuesday}}(t)$. At 9:00, $f$ is negative: Monday is at $A$ ($x=0$), Tuesday at $B$ ($x=D$), so $f=-D$. At 5:00 it is positive: Monday at $B$ and Tuesday at $A$, so $f=D$. The intermediate-value theorem says a continuous $f$ that changes sign must take the value zero at some time $t^*$. At that instant the two positions coincide.
+
+
+![Two continuous position curves crossing at the same time and position](/mathematical-modeling/modeling-01-continuity-crossing.svg)
+
+*The curves need not be straight or monotone. Shared endpoints and continuity are enough to guarantee at least one crossing.*
+
+
+Why did I state the starting and ending **clock times**? If Tuesday's trip happens between midnight and 8:00 a.m., it need not share a time interval with Monday's trip, so “same clock time” has a different meaning. If the return journey follows a different road, equal distances from $A$ may refer to different actual places. We must state a common time interval, a shared continuous path, and continuous motion. That is the modeling work hidden beneath a very short theorem.
+
+### Threshold Analysis: A Cart and a Timed Gate
+
+Imagine a small automated delivery cart approaching a timed campus service gate. The gate controller announces that its opening phase will end after $T_g$ seconds. At that moment, a cart still outside the marked entrance has two options: stop before the entrance or continue and clear the gate before it begins closing. **How long should the controller keep the gate open so a cart at the edge of the comfortable-stopping region has a feasible continue option?** This is an invented example, not an engineering specification for an actual gate; a real operating system would require obstacle sensing, fail-safe behavior, and equipment-specific checks.
+
+During a controller-to-brake delay $t_d$, the cart rolls at speed $v$ and covers $vt_d$. If braking then produces approximately constant deceleration $a>0$, it needs another $v^2/(2a)$ metres to stop. A cart closer than $d_s=vt_d+v^2/(2a)$ to the entrance cannot meet our assumed comfortable-stop rule. At constant speed, reaching the entrance from that boundary needs
+
+$$
+T_{\mathrm{reach}}=\frac{d_s}{v}=t_d+\frac{v}{2a}.
+$$
+
+Reaching the entrance is **not** the same as clearing the opening. If the gate zone is $w$ metres deep and the cart is $L$ metres long, the final part needs about $T_{\mathrm{clear}}=(w+L)/v$. Under our simplified constant-speed continue path, the full opening requirement is $T_g\ge T_{\mathrm{reach}}+T_{\mathrm{clear}}$. A real controller might have a separate clear-zone hold period; keep the two stages explicit rather than hide them inside one unexplained duration.
+
+For illustrative numbers $t_d=0.4$ s, $v=2$ m/s, $a=1$ m/s$^2$, $w=3$ m, and $L=0.8$ m, reaching takes $0.4+2/(2\cdot1)=1.4$ s and clearance takes $3.8/2=1.9$ s. The simplified total is $3.3$ s. Every term is measured in seconds; a length divided by speed is time, and $v/a$ is time. Before trusting $3.3$, try slower braking, a longer cart, sensor delay, or an obstacle inside the opening. An obstacle should trigger a fail-safe response, not a more optimistic timing formula. The example shows how one decision divides into distinct physical stages and stress tests.
+
+
+![Automated cart approaching a timed gate with a stop-or-continue threshold](/mathematical-modeling/modeling-01-cart-gate.svg)
+
+*The decision compares the time remaining before closure with the time required first to reach the entrance and then to clear the full gate zone.*
+
+
+Each lens turned ordinary words into a mathematical claim. A competition prompt is rarely as tidy: it combines several claims, data sources, and deliverables. Let us carry the same habits into that larger setting before talking about software.
+
+
+Competition selection, tool use, paper reading, visualization practice, algorithm extension, and AI-assisted workflows now form the separate second blog, **Competition Techniques**. Here we will finish the fundamentals by checking whether the modeling pattern transfers to one new decision problem.
+
+## Study-Room Case
+
+### Rebuild the contract without copying the dining hall
+
+Transfer means carrying reasoning, not copying equations. A study room is occupied for a duration and may require reservation; a dining station continuously serves individuals. The state, constraints, and evidence therefore change.
+
+Suppose the library controls opening extensions for three rooms over five evening periods. Let binary $x_{rt}$ indicate room $r$ is open in period $t$. Let capacity $c_r$ be seats and staffing requirement $a_r$. A basic labor constraint is
+
+$$\sum_r a_rx_{rt}\le B_t.$$
+
+If opening a room requires consecutive periods, add logical constraints or choose complete shift patterns. Demand $D_t$ is groups seeking rooms, not individual seats if rooms cannot be shared. A four-seat room occupied by one two-person group has unused seats but is unavailable to another group under exclusive booking.
+
+The purpose might be to choose extra hours tomorrow. The boundary includes requests, reservations, no-shows, room capacities, and staff; it may exclude general seating. State includes currently occupied rooms and remaining booking durations. Mechanism assigns arriving groups to suitable available rooms. Evidence includes booking logs, denied requests, occupancy checks, and held-out exam days.
+
+### A hand calculation with heterogeneous rooms
+
+Three rooms seat 4, 6, and 10. In one period, groups of sizes $(8,6,4,3)$ arrive. If assignment is first-fit by room order, the group of eight takes room 10, six takes room 6, four takes room 4, and three is denied. Total demand is 21 people and total seats 20, so at least one person cannot fit, but the unit is groups: denying the group of three means three people unserved.
+
+If arrivals are $(3,4,6,8)$ and assignments take the smallest fitting room, three gets room 4, four may take room 6, six gets room 10, and eight is denied—eight people unserved. A naive “total seats” model says only one seat short in both cases, but indivisible groups and timing create different outcomes.
+
+This miniature motivates bin packing or matching inside each period. If groups occupy multiple periods, current assignment affects future availability. The state must include remaining durations.
+
+### Baseline and extension
+
+A capacity baseline compares expected group-hours demanded with room-hours available by room-size category. It can identify obvious shortages. An extension simulates arrival time, group size, duration, cancellations, and assignment rule.
+
+Do not optimize opening hours before specifying assignment. Extra capacity can appear ineffective under a poor assignment rule. Compare current first-available assignment with smallest-fitting-room policy. The latter preserves large rooms for large groups. The operational policy may improve service without more hours.
+
+### Booking data do not reveal all demand
+
+Observed bookings omit people who saw no availability and never submitted a request. Denial logs help. Search or page-view data may proxy latent demand but raise privacy and interpretation issues. A survey or short manual count can reveal walkaways.
+
+If the library opens more hours, latent demand may appear. Historical completions alone can therefore underestimate benefit. Present a range or demand-response scenario instead of treating censored demand as zero.
+
+No-shows complicate capacity. Overbooking can improve utilization but risks conflicts. Model no-show probability by time and context, validate calibration, and include a conflict cost. Do not assume independent no-shows if weather or exams create shared effects.
+
+### A compact assignment model
+
+Let groups $g$ have size $n_g$, arrival $a_g$, duration $d_g$. Binary $y_{grt}=1$ assigns group $g$ to room $r$ starting at $t$. Require
+
+$$n_gy_{grt}\le c_ry_{grt},$$
+
+which simply means exclude room choices with $n_g>c_r$. Each group is assigned at most once:
+
+$$\sum_{r,t}y_{grt}\le1.$$
+
+For every room-period $\tau$,
+
+$$\sum_g\sum_{t:\,t\le\tau<t+d_g}y_{grt}\le x_{r\tau}.$$
+
+The objective may maximize served groups or people while penalizing wasted capacity and extra staff hours. Maximizing groups favors small groups; maximizing people may neglect many small groups. Show this trade-off.
+
+For online operation, future groups are unknown. The offline assignment is an optimistic benchmark. A real policy needs reservations or online rules. Comparing online performance to the offline bound measures information cost.
+
+### Validation design
+
+Use chronological held-out exam days. Replay request sequences through each opening and assignment policy. Use identical sequences. Report groups served, people served, denied demand by group size, unused room-hours, overtime, and maximum waiting.
+
+Stress with more large groups, longer durations, no-show changes, and staff absence. Check that opening a room cannot reduce best achievable service; if a fixed greedy policy performs worse, distinguish policy behavior from capacity potential.
+
+Interview staff about cleanup and closing transitions. An extension ending at 10 p.m. may require paid staff until 10:30. Include that operational time. Confirm accessibility and equipment requirements; capacity alone does not make rooms interchangeable.
+
+### From model output to an adaptive policy
+
+Instead of “always extend room 3,” a policy may say: extend the 10-seat room when forecast large-group demand exceeds threshold and staff are available; otherwise extend two smaller rooms. Monitor request composition during the first week.
+
+Estimate threshold from scenarios, then round it to an operational rule. A slightly suboptimal simple threshold may be preferable to a complex schedule that staff cannot explain. Test near the threshold because forecast error can flip action.
+
+### Transfer audit
+
+Compare with earlier examples. Conservation still matters: occupied rooms plus available rooms match open capacity. Thresholds still matter: group size and demand trigger room choices. Assumptions still need tests: duration, no-shows, and latent demand. Validation still needs held-out shared scenarios.
+
+What does not transfer directly? A queue utilization formula does not capture indivisible multi-period room assignments. A thermal state equation does not represent behavior. The reusable object is the workflow—purpose, boundary, state, mechanism, assumptions, baseline, extension, evidence—not one favorite formula.
+
+### A final decision drill
+
+Imagine that tomorrow's forecast contains twelve small groups and four large groups. Staff can extend either the 10-seat room for two periods or both smaller rooms for one period. Before calculating, state what information decides the choice: group durations, timing, which sizes fit, staff cost, and whether rooms can be shared.
+
+Under one-period bookings, extending the large room for two periods supplies two large-room slots. Extending both small rooms for one period supplies two slots but neither may fit large groups. If large groups are likely to be denied and serving people is the priority, the large room may dominate. If large groups arrive outside the extension and many small groups arrive together, small rooms may be better. Total seat-hours alone cannot decide because compatibility and timing matter.
+
+Now suppose forecast probabilities are uncertain. Scenario A has four large groups during extension; B has none; C has two with long durations. Evaluate both decisions under all scenarios. A minimax policy may protect large-group access. An expected-value policy may favor frequent small groups. Present regret:
+
+$$R(a,s)=V^*(s)-V(a,s),$$
+
+where $V^*(s)$ is best service in scenario $s$ and $V(a,s)$ is service under action $a$. Minimax regret chooses the action whose worst missed opportunity is smallest. This is an understandable alternative when probabilities are weak.
+
+Check implementation. If the model recommends a room extension but cleaning staff cannot close afterward, action is infeasible. If equipment bookings reserve the room, availability data are incomplete. If the solution serves more groups by repeatedly denying large groups, an equity or priority rule may be needed.
+
+Then state a bounded recommendation: “Under the observed distribution of group sizes and one-period bookings, extending the large room serves more people on held-out exam evenings; when projected large-group demand is below two groups, the two-small-room option serves more groups. Use the forecast threshold, retain a staff feasibility check, and monitor denied requests by size.”
+
+This sentence contains conditions rather than hiding them. It also tells staff what to measure. If the threshold fails after deployment, the failure is informative: demand, duration, assignment behavior, or forecast has changed.
+
+### What to write when evidence is limited
+
+Sometimes there is no complete booking log. Do not fabricate precision. Build the hand-checkable capacity and assignment model, use clearly labeled scenarios, and propose a measurement plan. Distinguish conclusion from illustration.
+
+For example: “With the illustrative arrival sequences, smallest-fitting-room assignment reduces large-group denial. Actual benefit cannot be estimated until denied requests and durations are recorded.” This is more credible than reporting 17.43% improvement from guessed data.
+
+Limited evidence does not make modeling pointless. The model can reveal which measurements are decision-relevant. Here, total room occupancy is insufficient; group size, request time, duration, denial, and room compatibility are needed. That is a concrete result.
+
+### The one-page model record
+
+When you finish a first version, preserve one page containing:
+
+- decision and decision time;
+- boundary and state;
+- variable table with units;
+- mechanism equations or rules;
+- hard constraints;
+- assumptions and bias direction;
+- hand-checkable case;
+- baseline and proposed extension;
+- validation data and metrics;
+- stress scenarios;
+- recommendation and failure trigger.
+
+A teammate should be able to read this page and explain the model without opening code. If they cannot, the architecture is not yet clear. Update the record when assumptions or boundaries change. It becomes the bridge between analysis, implementation, and writing.
+
+At this point transfer has succeeded. We did not copy a queue formula blindly. We reconstructed a model contract, discovered indivisible groups and duration, built a compatible baseline, identified missing demand, designed evidence, and returned to an operational rule. That is the skill this first blog is meant to establish.
+
+One last habit will make the record stronger: attach one counterexample. Show a case where the baseline fails—perhaps two groups whose total size fits available seats but cannot be packed into the particular rooms. A counterexample explains why the extension exists. Also attach one success case where the baseline and detailed model agree. That prevents the extension from appearing necessary everywhere.
+
+When results change, update the reasoning rather than only the number. If new denial logs show large groups are rare, the recommended room may change; the purpose and workflow need not. A maintainable model separates stable structure from revisable evidence. This is why clear variable definitions, data provenance, and tests matter even in an introductory project.
+
+Finally, ask a person outside the team to read the one-page record and describe the recommendation, assumptions, and main failure condition. Misunderstanding is evidence too. Revise language until the model can be challenged on its real claims rather than on avoidable ambiguity. Good communication does not simplify away uncertainty; it makes uncertainty visible enough to use.
+
+That review completes the loop from a vague complaint to a testable, revisable decision process grounded in evidence.
+
+I want to make sure you can use these ideas in a new situation rather than merely recognizing my examples. Imagine a library wants to reduce the number of students turned away from study rooms during exam week. Its first request is “build the best model of room usage.” Stop and ask the librarian three questions. What decision can be changed—hours, bookings, room assignments, or the number of available rooms? What outcome matters—turn-aways, average wait, student satisfaction, or unused room-hours? When is the decision made, and what data are available *then*? Until those answers are clear, “best model” is not a well-defined target.
+
+Suppose the answer is: “Tomorrow morning we must decide whether to extend each of three rooms' opening hours by up to two hours; we want fewer turn-aways, but staff time is limited to six additional staff-hours.” Assume one staff member covers each open room. We can now draw a boundary around arrivals, bookings, rooms, and staffing. Let $x_i$ be the extra hours assigned to room $i$, with $0\le x_i\le2$. The hard rule is $x_1+x_2+x_3\le6$ hours; because one staff member covers each room, the same sum also measures additional staff-hours. A count of students waiting at each hour is a changing state. Historical arrival times are data. The phrase “fewer turn-aways” suggests a measurable objective. You can see a model beginning to form without choosing an optimizer yet.
+
+
+![Three study rooms receiving extra hours under a shared staff-hour budget](/mathematical-modeling/modeling-01-library-allocation.svg)
+
+*The allocation variables control opening hours, while turn-aways and unused room-hours provide two complementary measures of whether the added capacity is useful.*
+
+
+Begin with a tiny baseline. If each extended room can serve one additional two-hour booking, three two-hour extensions might serve three additional groups. That is a capacity estimate under the stated booking length, not a prediction that three groups will actually appear. If historical data show no one requests room three after closing, adding hours there would not help. If twenty students arrive all at once and rooms are booked in one-hour slots, our two-hour-booking assumption could misrepresent capacity. Those observations tell us which extension is worth studying: different booking lengths, hourly arrival peaks, or a better scheduling rule.
+
+How would you test the recommendation? Use last week's or last semester's exam-period bookings to simulate what the proposed extension would have done, while being honest that demand can respond to added availability. Compare the same days under the existing schedule and the proposed one; report turn-aways **and** unused room-hours. Stress the result if arrivals rise during finals. If extending rooms one and two works on the data but fails whenever attendance is slightly higher, tell the librarian so. An actionable answer might be “extend rooms one and two first, monitor the hourly turn-away count, and revisit the assignment after one week.” That is a more modest, more useful conclusion than “our model achieves optimum efficiency.”
+
+Can you now say how the library and the sample box are alike? Both began as vague requests; both required choosing a quantity that changes—waiting students or reservoir temperature; both had a success or stopping threshold; and both needed a test that could overturn a recommendation. Can you also say how they differ? A vial does not change its behavior when the box gets warmer, but students may change booking behavior when rooms become available. Physical conservation gives us a strong starting mechanism in one case; human behavior may require more careful observation in the other. Learning modeling means recognizing both the transferable structure and the limits of that analogy.
+
+### Conclusions and Transferable Principles
+
+Today we moved from a bus to a sample box, stopped at a ski resort, and then continued to a cafeteria and a library. They may not yet feel like parts of one neat story. Perhaps one example seemed almost too easy to deserve so much attention; perhaps another made you pause at a step that looked obvious on the page. Either reaction is fine. This is the first post, and we have not even begun the posts about particular named models. Learning to pick a question out of a real situation, choose what to keep, and ask whether the answer deserves our trust takes practice. One stubborn example is no reason to doubt that you can do it.
+
+If you take one thought away, I hope it is a clearer sense of what *mathematical modeling* asks of us. **Mathematics** lets us say things precisely: what changes, how quantities relate, and why a conclusion follows. **Modeling** begins a little earlier, with listening to the real question. We build a smaller world in which we can reason about it, remain honest about what we left out, and bring the answer back to observations and data. A beautiful calculation that answers the wrong question, or falls apart when checked, is not the finish line. You do not need to remember every number from today. Noticing the question, the boundary, the assumptions, and the evidence is enough of a beginning.
+
+The next posts will introduce particular models and methods, one at a time. For now, that is plenty. Close the laptop and take a break.
+
+## Knowledge Check
+
+The ten questions below move deliberately from recognition to synthesis. Questions may have one or several correct answers, so read the instruction on each card before checking it. The difficulty percentage is a target calibration rather than a claim about collected student data: the first question is designed to be accessible to roughly 90% of prepared readers, while the last is intended as a demanding 10% challenge.
+
+
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+
+欢迎，进来坐。既然是第一篇，我们先不急着打开软件，也不拿一整页公式迎接你。建模最初的那一步其实很朴素：有人讲了一件现实中的事，我们能不能耐心听完，弄清他到底想知道什么？这个问题问明白了，后面的计算才有落脚的地方。
+
+我们先从一个小谜题聊起。一个人平时下午 6:00 在车站等家人开车来接。有一天，他 5:30 就到了，没有打电话，而是沿着家人平常开来的路往回走。两人在半路碰上，回到家时竟比平时早了十分钟。**他走了多久？** 如果你第一反应是“题目没给车速，怎么算”，很正常，我第一次看到也会这样想。先把疑问留在心里：也许我们缺的不是一个速度，而是还没留意到哪一段路被省下了。
+
+这篇博客里，我们还会遇到校园班车、野外样本箱、食堂排班、配送车和自习室，也会聊一个有点反直觉的滑雪场问题：为什么游客都希望缆车快一点，老板却可能希望它慢一点？故事看起来不相干，想问题的方式却很相似：先听懂对方的困扰，说明我们暂时相信什么，做一个自己也能检查的小计算，再想想什么现象会让我们改主意。这就是我想和你一起练的建模。它不是急着给数据贴一个算法的名字，而是为了回答眼前的问题，先画出一个足够简单、又没有丢掉关键过程的小世界。
+
+## 模型基础
+
+
+<Callout type="tip">
+
+**核心原则 · 建模契约**
+
+一个模型必须把五件事讲明白：
+
+
+  
+
+    - **目的：**要做什么决定、解释什么现象，或预测什么量？
+
+    - **边界：**系统包含哪些对象、时间尺度和相互作用？
+
+    - **状态：**某个时刻，哪些量足以描述系统？
+
+    - **机制：**这些量如何相互作用、如何随时间改变？
+
+    - **证据：**什么观察结果可以证明模型还不够好？
+
+</Callout>
+
+
+这五句话摆在一起有点像表格，但它们想避免的是一件很真实的遗憾：我们认真算了半天，回答的却不是别人关心的事。假如有人说“校园班车太差”，我想先请他多讲一点。是车上太挤，还是晚上等不到车？或许真正难受的是早上明明赶上了班车，却仍然迟到。假设管理者最后把问题说成：“8:30 多发一辆车，能不能在预算内让至少 90% 的乘客在 9:00 前走进教室？”到这里，我们终于知道要比较什么方案，也知道什么结果才算帮上忙。
+
+问题清楚一些后，我们再沿着一个学生的早晨走一遍：到站、等车、上车、乘车、下车，最后走到教室。如果目标是“进教室”，那最后几分钟步行也算在内；只算车到终点，表就停早了。早餐和下课后的安排，这一次大概不必纳入。边界并不是把现实尽可能多地装进模型，而是诚实地说清楚：哪些过程和这次决定有关，哪些我们暂时放在一边。
+
+不妨把时钟停在 8:35。现在要猜五分钟后会怎样，我们大概想知道每站等着多少人、车在哪里、空位还剩几个、路上堵不堵；我们不需要知道每个学生下午去做什么。这些能让我们接着往下推的“此刻情况”，就是状态。接下来，乘客到来、车靠站、座位被占满、车辆驶离，状态便一步步改变。第一次建模时，我们可以先把到站率和车程当作固定的；只是要记住，这不是在宣布它们永远不变。下雨天很可能是另一回事，那时要么修改模型，要么老实说明这次的结论只谈普通天气。
+
+还有一个问题不能留到最后才想：怎么知道自己的建议有没有帮上忙？既然我们关心学生是否迟到，就应记录他们真正进教室的时间，而不只看车到站没有。预测和实际差在哪里，特别是那些依旧赶不上的早晨，都值得回头看看。这样一来，前面的目的、边界、状态和机制才有了接受检验的机会；它们不再只是几个漂亮的名词。
+
+
+![从乘客到站、排队、乘车到进入教室的校园班车系统边界](/mathematical-modeling/modeling-01-shuttle-system.svg)
+
+*因为决策关心的是 9:00 前走进教室，所以边界结束在教室，而不是班车终点。图中的每个环节也对应一个可以记录或检验的量。*
+
+
+你看，我们甚至可以先不碰全校数据。设想 8:30 有十个人等车，8:35 到的车只剩八个座位，下一辆要再等十分钟。第一辆最多带走八人，这件事一眼就能核对。如果程序说十个人全上去了，我们大概不是缺一个更厉害的求解器，而是漏写了“座位只有八个”。把这样的小场景走通后，再逐渐加站点、随机到站和真实车程，心里会踏实得多。
+
+班车的故事让我们把五个问题连了起来。不过，到目前为止我们只是用语言推演。换到下面这个保温箱，温度会随着每次放入样本而改变，“状态”为什么重要，就能在数字里看得更清楚。
+
+## 边界与状态
+
+想象一支野外采样队在整理当天收集的样本。瓶子还是室温，保温箱里却放着预冷的蓄冷体；每放进去一瓶，箱内就会暖一点。为了能把问题算下去，我们先约定一个演示用的上限：箱内物体不能高于 $8^{\circ}\mathrm{C}$。**在碰到这条线之前，最多能放进多少瓶？** 你可能想直接数瓶子，但不妨先想想：第十瓶面对的箱子，已经不是第一瓶面对的那个温度了。我们用 $T_n$ 记放进 $n$ 瓶后的箱温，先假设蓄冷体与已放入的瓶子能达到同一个温度。
+
+我想在这里把话说清楚：这个例子算的是**理想化的箱内共同温度**，不是在替真实样本制定保存规范。现实里，还要看每瓶样本自身的温度、暴露时间、摆放位置和污染风险。即使模型说箱温合格，也不能据此断言样本一定安全。我们暂时缩小问题，只是为了把能量怎样转移看明白。
+
+
+![温暖的新样本瓶进入装有蓄冷体和已有样本瓶的保温箱](/mathematical-modeling/modeling-01-thermal-box.svg)
+
+*一次装瓶步骤：新瓶带入的热量，会在我们选定的边界内重新分配给蓄冷体和所有已经放入的瓶子。*
+
+
+### 系统边界与能量平衡
+
+我们只盯住“再放进一瓶”的短短一步。此时箱内有蓄冷体和先前放好的 $n$ 个瓶子，外面还有一个温暖的新瓶子。用 $C_c$ 表示蓄冷体的有效热容，$C_v$ 表示每个相同瓶子的有效热容，单位都是焦耳每摄氏度；新瓶入箱时的温度叫 $T_v$。如果这一小步里外界几乎没有热量进入，而箱内物体又很快达到共同的 $T_{n+1}$，新瓶放出的热就应该等于箱内原有物体吸收的热：
+
+$$
+(C_c+nC_v)(T_{n+1}-T_n)=C_v(T_v-T_{n+1}).
+$$
+
+整理得到状态更新式
+
+$$
+T_{n+1}=\frac{(C_c+nC_v)T_n+C_vT_v}{C_c+(n+1)C_v}.
+$$
+
+看到式子里多出来的 $nC_v$，也许你会问：为什么前面放过的瓶子还要算？因为它们没有被取出，下一瓶带来的热也会分给它们。这个细节一旦漏掉，后面算出的瓶数就会偏小。顺手再检查两个直觉：等式两边的单位都是焦耳；新温度既然是混合后的结果，就该落在原箱温 $T_n$ 与新瓶温 $T_v$ 之间。单位或范围不对时，先回头看式子，往往比继续代数字更有用。
+
+### 状态演化与温度阈值
+
+给这个假想保温箱一组数：$C_c=83{,}600\,\mathrm{J}/^{\circ}\mathrm{C}$、$C_v=240\,\mathrm{J}/^{\circ}\mathrm{C}$、$T_0=4^{\circ}\mathrm{C}$、$T_v=20^{\circ}\mathrm{C}$。它们只是演示用的设定，不是实测参数。第一瓶放进去后，温度变成
+
+$$
+T_1=\frac{83{,}600(4)+240(20)}{83{,}840}\approx4.046^{\circ}\mathrm{C}.
+$$
+
+第一瓶只让温度升高约 $0.046^{\circ}\mathrm{C}$。这个变化不大，和“小瓶子的热容远小于蓄冷体”的设定相符。但第二瓶不会简单地再加同样多：箱子已经暖了一点，第一瓶也还留在里面。若把最初的蓄冷体和后来 $n$ 个瓶子带入的能量放在一起算，会得到
+
+$$
+T_n=\frac{C_cT_0+nC_vT_v}{C_c+nC_v}.
+$$
+
+分子是初始蓄冷体与所有新瓶带入的能量，分母是它们合起来的热容。要求 $T_n\le T_{\max}=8^{\circ}\mathrm{C}$，代入数字就是
+
+$$
+\frac{83{,}600(4)+240n(20)}{83{,}600+240n}\le8.
+$$
+
+分母一直是正的，整理后得到 $12(240)n\le4(83{,}600)$，也就是 $n\le116.11\ldots$。瓶子不能只放 0.11 个，所以在这套设定里，**最多是 116 瓶**：第 116 瓶后约为 $7.997^{\circ}\mathrm{C}$，第 117 瓶后约为 $8.023^{\circ}\mathrm{C}$。这个临界点很清楚，但它只属于我们刚才画出的那个理想箱子。若真要装样本，还得让测量和保存规范来决定能否采用它。
+
+你可能会想：既然目标温度已经定在 $8^{\circ}\mathrm{C}$，能不能直接做一次总能量平衡？可以。蓄冷体从 4 度升到 8 度，吸收 $C_c(8-4)$ 焦耳；每瓶从 20 度降到 8 度，放出 $C_v(20-8)$ 焦耳。两者相等，就得到同一个瓶数上限。不过，这并不表示“每次放瓶，传入箱内的热量都一样”：装箱过程中的即时温差一直在变。逐步更新的公式仍然有用，尤其当你要检查中途温度、不同瓶子或开盖漏热时。
+
+### 系统边界的实证检验
+
+现在想象你真的把“116”写进工作安排。写之前，我会想再去箱子旁边看看：蓄冷体到底有多大热容？每瓶进箱时是多少度？开盖要多久？箱顶和箱底的温度一样吗？如果上下温差很大，一个“箱温”已经说不清现场；如果一瓶都不放，箱子也慢慢变暖，外界进热就不能忽略。我们可以先把箱盖关好，观察与放十瓶相同的一段时间，再和实际装瓶时的升温比较。
+
+记录时，至少写下第几瓶、放入时间、放入前后的温度、瓶子类型和开盖多久。哪怕先认真记录十次，也能看出第一瓶的升温是否接近 $0.046^{\circ}\mathrm{C}$。如果实测升温大得多，我们再逐项找原因：瓶子的热容估小了吗？开盖时带进了热空气吗？温度计放的位置合适吗？蓄冷体有多少真正参与换热？瓶子不同，就让第 $n$ 瓶使用自己的 $C_{v,n}$；外界也在加热，就在能量平衡里补上一个以焦耳计的热量项。每加一层，都要能指出它对应的现实过程。
+
+假如现场放到 70～90 瓶就越过温度线，模型报出的 116 便值得重新审视。也许开盖带进了热，也许蓄冷体真正参与换热的部分比我们想的少；多报几位小数并不能弥补这些缺口。反过来，若保存规范本来只允许放 40 瓶，把热学估计从 116 修正为 110，眼前的决定也不会变。我们不需要把每一处细节都算到极致，只要先认真弄清哪些细节真的会改变选择。比如蓄冷体的热容减半时，在其余条件不变的模型里，未经取整的可装瓶数也会减半；这是一个很好用的方向检查。
+
+保温箱这段看的是热量如何在箱内分配。接下来我们换一个没有温度计的场景：食堂经理要安排员工。我们仍然先问同一个朴素的问题——她说出的每句话，在模型里究竟对应什么？
+
+## 语言到结构
+
+
+<Callout type="tip">
+
+**核心原则 · 从语言到数学**
+
+读题时可以先留意三类词：**名词**提示我们有哪些对象和已知量，**动词**提示能做什么或会怎样变化，**限定词**则提示目标、硬性规则和不确定性。
+
+
+  
+
+    - “把员工分配给工位”提示二元变量 $x_{ij}\in\{0,1\}$。
+
+    - “至多一个”提示和不超过一；“总时间最短”提示目标函数。
+
+    - “每天”引入时间下标；“需求不确定”引入情景或概率分布。
+
+  
+
+  列式之前，先试着补全一句话：**“已知___，我们要估计或决定___，希望___。”**
+
+</Callout>
+
+
+这当然不是让我们看见一个名词就添一个字母。它更像是在聊天时停下来确认：“这些信息是已经知道的，还是还要去量？我们究竟能改变什么？改到什么程度才算有用？”这几个问题若还含糊，先把话说清楚，比急着写目标函数更省时间。
+
+假如食堂经理坐下来问：“中午有付款、备餐、取餐三个工位，都得有人；我手里只有四名员工。第四个人放在哪儿，大家能少等一些？”我们可以先在纸上画四个小圆点代表员工，三个方框代表工位。谁能做哪个岗位，就在两者之间连线。现在才给连线一个名字：$x_{ij}=1$ 表示员工 $i$ 被安排到工位 $j$，没安排就记作 0。这半小时里，每人只负责一个完整岗位，所以 $\sum_jx_{ij}=1$；每个工位至少有人，则是 $\sum_ix_{ij}\ge1$。这些式子还没告诉我们哪种安排最好，只是先保证建议真能执行。
+
+要回答经理，下一句自然是：“每个工位半小时究竟能处理多少人？”假设付款一人处理 25 人、两人处理 50 人；备餐一人处理 40 人、两人处理 70 人；取餐一人可以处理 80 人。预计有 60 人来。若第四个人去付款，三个工位的能力是 $(50,40,80)$，大家还是会在备餐前等；若他去备餐，就变成 $(25,70,80)$，队伍又会堵在付款处。再加第五个人、让付款和备餐各有两人，付款仍只有 50 的能力。算到这里，也许会有点沮丧：四人怎么安排都不够，五人也没把瓶颈消掉。但这恰恰是诚实的发现。经理可以考虑改流程、提高某个工位的处理能力，也可以把目标暂定为“让等待尽量少”，而不是假装眼下能让 60 人完全不排队。
+
+
+![顾客依次通过付款、备餐与取餐工位的食堂流程](/mathematical-modeling/modeling-01-dining-flow.svg)
+
+*顾客经过的是一条相连的服务链。提高一个工位的能力，只会一直有效到另一个工位成为新的最小容量环节。*
+
+
+如果这时把纸分成两栏，一栏写经理说过的话，一栏写模型里的对应项，遗漏会更容易看见。“每个人都能做所有岗位吗？”要落实为哪些连线存在；“取餐一直要有人吗？”要落实为岗位约束；“换人后能少等多久？”则需要服务时间和排队数据。假如一句重要的话找不到落脚点，我们可能漏了规则；反过来，若某个变量说不出从何而来，也值得问问自己是不是把精力放错了地方。
+
+题目若还有好几个小问，可以再画几支箭头：到客预测交给排班，排班带来人工成本，最后才形成建议。箭头上写清传过去的是什么，队友接手时就不必猜。尤其要留意时间：如果 12:30 就得定排班，模型便不能偷偷用上 12:30 以后才会知道的到客情况。这样的预测即使漂亮，也帮不了当时的经理。说到这里，现实的话已经慢慢变成了数学结构；但那些“半小时能处理多少人”的数字，我们还只是暂时相信。接下来要谈的，就是怎样对待这种暂时的相信。
+
+## 假设
+
+
+<Callout type="tip">
+
+**核心原则 · 受控近似**
+
+**好的假设会替我们省去不重要的细节，但不能把决定答案的机制也省掉。** 每做一个假设，都要说得出为什么暂时接受它、它让计算发生了什么变化，以及什么观察会让我们放弃它。
+
+
+  
+
+    - **结构假设：**相互作用、独立性、网络拓扑或状态的定义。
+
+    - **参数假设：**常数、范围、概率分布或速率。
+
+    - **操作假设：**资源、规则、时间安排与执行限制。
+
+    - **测量假设：**噪声、缺失、分辨率与传感器偏差。
+
+</Callout>
+
+
+比如我说：“这段路短，平时也不太堵，先近似认为车速不变；这样车程就和距离成正比。”你马上知道我为什么敢这么做，也知道它会怎样影响计算。如果只在报告开头列一句“假设速度恒定”，却不解释为什么，读者当然会问：下雨天或放学高峰也能这么算吗？假设不是一句求读者通融的话，而是我们主动交代的取舍。
+
+保温箱刚好给我们一个可以检验的假设：箱内只有一个共同温度。我们不必凭感觉争论，在箱盖附近和箱底各放一支温度计就好。如果每次装瓶后两边读数接近，一个温度或许够用；如果一边是 $7^{\circ}\mathrm{C}$，另一边仍是 $4^{\circ}\mathrm{C}$，这一个数显然遮住了重要差异。等看见这种差异，再把箱子分成两个温区，有理由，也更容易知道新模型在解决什么问题。
+
+“所有瓶子的热容都是 $240\,\mathrm{J}/^{\circ}\mathrm{C}$，入箱温度都是 $20^{\circ}\mathrm{C}$”同样只是暂时的方便。小塑料瓶和装满液体的金属容器当然不同。可以记录类型、内容物、入箱温度，并让第 $n$ 瓶使用对应的 $C_{v,n}$。知道放入顺序，就按实际顺序更新；不知道，就试几个合理顺序，或根据观察到的比例做情景。还担心开盖进热？量开盖时长和估计热流功率。功率的单位是瓦，也就是焦耳每秒；**功率乘时间，才是能与瓶子换热量放在同一方程里的能量**。
+
+我会把这些暂时的相信记在一张小表里：“箱温均匀”“瓶子热容相同”“开盖进热可以忽略”。每一行后面，再写为什么这样想、哪项结论靠着它，以及怎样观察才能发现它不成立。这样做不是为了让表格看起来专业。如果只需要装 20 瓶，哪怕真实上限比 116 低不少，安排可能仍很稳；如果计划装 115 瓶，少许漏热就值得认真对待。我们关心的是哪条假设会改变决定，而不是给每个参数都配一张好看的图。
+
+承认假设，并不等于被现实的复杂吓住。我们可以先让一个小模型站起来，看看它在哪儿与观察不合，再补上缺的那一部分。这个过程通常比一开始就把所有可能的细节都装进去，更让人知道自己在做什么。
+
+## 基线与扩展
+
+
+<Callout type="tip">
+
+**核心原则 · 复杂度要有理由**
+
+**模型不是越复杂越好。先搭起能核对的第一层，再让数据告诉我们下一层要补什么。**
+
+
+  
+
+    - 先做一个透明、可以手算核对的基线。
+
+    - 针对观测到的最大失败，增加一层机制。
+
+    - 在相同条件下比较新旧模型；新层确实改变相关结论，才保留它。
+
+</Callout>
+
+
+如果简单的线性模型已经能稳稳地支持眼前的决定，我们不必因为深度网络听起来更厉害，就急着换掉它。当然，复杂方法有时非常值得用；只是希望它能换来某种说得清的好处，例如预测更准、关键机制更贴近现场，或者最终建议真的更好。
+
+保温箱的第一层，就是刚才那个“温度均匀、没有外界进热”的递推式。下一层不必直接上机器学习，先做个实验：十分钟不放瓶，箱子自己会暖多少？若关着箱盖从 $4$ 升到 $4.1^{\circ}\mathrm{C}$，快速装箱时这部分影响也许很小；若升到 $6^{\circ}\mathrm{C}$，就不能再装作它不存在。数据指出了漏洞，我们才给方程补上这股热量。
+
+食堂也一样。先比较每半小时来多少人、能服务多少人。如果经理要知道的是“90% 的人会等多久”，只看总量就不够了：客人可能一阵一阵地来，服务时间也有长有短。我们可以让模拟器按时间记录事件：顾客来了，有空闲员工就开始服务，没有就排队；员工做完一单，再接下一位。这样得到的等待时间，再和真实午餐记录对照。如果高峰期的排班建议因此改变，复杂的一层就有了用处；若在需要决策的范围内，两种模型总给出同样的建议，简单的那一个也许已经够了。
+
+下面这个例子，刚好能把前面讲过的目的、边界、状态、机制、假设和分层都串起来。它从一句听着不太对劲的话开始：“滑雪场的缆车，对老板来说可能越慢越好。”我们先不急着反驳它，而是问问它在什么目标下会成立，又在什么地方会失效。
+
+### 滑雪场循环系统中的容量配置
+
+
+<Callout type="tip">
+
+**建模提问 · “容量”究竟指什么？**
+
+雪场的可滑面积已经固定。老板应该多修缆车、尽可能快地把人送上山，还是让上山系统慢一些，在不增加雪道人数的情况下多卖一些票？
+
+</Callout>
+
+
+<Callout type="tip">
+
+**停下来想一想 · 先猜，再往下读**
+
+先不要看后面的分析。假设雪道数量和面积一点都没变，所有缆车却突然能以原来两倍的速度把人送上山。拿张纸，分别猜一猜下面三件事会怎样变：
+
+
+  
+
+    - 同一时刻待在雪道上的人数；
+
+    - 雪场能够放进来的持票游客总数；
+
+    - 一位滑雪者一天能滑的趟数和他的体验。
+
+  
+
+  最后，再用一句话写下你刚才所说的**“容量”**究竟指什么：雪道上的人数、每小时运送的人次、整个雪场里的总人数，还是老板的利润？先把猜测留在手边，等小模型搭好之后，我们再回来对照。
+
+</Callout>
+
+
+站在滑雪者的位置，答案几乎不用想：缆车越快越好，队越短越好，一天最好能多滑几趟。这是很合理的**游客目标**。但老板可能问的是另一句话：“在雪道上同时滑行的人不超过舒适上限时，我最多能放多少位游客进来？”在这个很窄的目标里，游客坐在缆车上或排在围栏里的时间越长，他待在雪道上的比例就越小。他仍然是一位买了票的游客，却暂时不占用雪道。
+
+所以，这个例子首先把我们拉回建模契约的第一句：你到底在为谁优化什么？“把缆车变好”不是目标。缩短平均等待、让每位游客多滑几趟、提高当日利润、限制雪道密度、增加入园人数，是五个不同的目标，它们甚至会给出相反的建议。
+
+而且，日常语言里都叫“容量”的东西，至少要拆成三个量：
+
+- **雪道容量：**某个时刻，坡面上能够安全、舒适地容纳多少人；
+- **缆车运力：**一小时能向山上运送多少人次；
+- **雪场总人数：**已经入园的所有人，包括正在下滑、排队、乘车、休息和吃饭的人。
+
+如果把这三个概念混在一起，“慢缆车可以提高容量”当然像一句胡话。一旦把它们拆开，我们就能看见背后其实是一个“人在系统里怎样流动”的问题。
+
+
+![包含雪道、缆车、基地排队区和休息区域的滑雪场循环示意图](/mathematical-modeling/modeling-01-ski-circulation.svg)
+
+*雪场不是一条孤立的雪道，而是一个循环系统。游客在雪道状态与缆车、队列、连接区和休息区等非雪道状态之间不断移动。*
+
+
+#### 单循环流动模型
+
+我们先画最小的边界：一部缆车服务一组雪道，雪场里有 $N$ 位游客重复做着同一件事——上山、滑下来，再去上山。记 $T_d$ 为一次真正待在雪道上的平均下滑时间，$T_o$ 为两次下滑之间的平均**非雪道时间**，它包括排队、乘缆车上山、上下车和走过连接区。一整圈需要
+
+$$
+T_{\mathrm{cycle}}=T_d+T_o.
+$$
+
+先做几个很清楚的假设：我们只看一段大致稳定的时间，游客不断重复这个循环，大家的平均用时可以用同一组数来表示。一位游客在雪道上的时间比例，就是 $T_d/(T_d+T_o)$。因此，某个普通时刻正在雪道上的预期人数可以写成
+
+$$
+S=N\frac{T_d}{T_d+T_o}.
+$$
+
+假如雪道上同时容纳 $C$ 人时还算舒适，要求 $S\le C$，便得到
+
+$$
+N\le C\frac{T_d+T_o}{T_d}
+  =C\left(1+\frac{T_o}{T_d}\right).
+$$
+
+所以，雪场总人数相对于雪道同时容量的倍数，可以写成
+
+$$
+M=\frac{N_{\max}}{C}=1+\frac{T_o}{T_d}.
+$$
+
+这就是老板那句话背后的第一层道理。下滑时间 $T_d$ 不变，排队和上山时间 $T_o$ 越长，每位游客一天里真正占用雪道的比例就越小。因此，在不超过雪道人数上限的情况下，系统里可以留着更多买了票的人。
+
+但一定要看清这个式子没说什么。它没说雪山变大了，没说缆车运力提高了，更没说游客滑得更开心。它只是说：在我们画出的边界里，可以把更多人留在排队区、缆车上和基地，同时让雪道上的人数不变。
+
+#### 容量的数值比较
+
+假设雪道上同时有 $C=400$ 人时还算舒适，滑完一趟平均需要 $T_d=12$ 分钟。在缆车比较快的情形下，排队、上山、上下车合计 $T_o=18$ 分钟，那么
+
+$$
+M_{\mathrm{fast}}=1+\frac{18}{12}=2.5,
+\qquad
+N_{\max}=400(2.5)=1{,}000.
+$$
+
+这表示，雪场里有 1,000 位游客时，在这个平均模型里，大约 400 人在雪道上，其余 600 人在其他地方。现在假设服务变慢，队也更长，使 $T_o$ 增加到 36 分钟，则
+
+$$
+M_{\mathrm{slow}}=1+\frac{36}{12}=4,
+\qquad
+N_{\max}=400(4)=1{,}600.
+$$
+
+如果老板只看卖出去多少张票，这个慢一些的系统看起来可以多放 600 人进来，而雪道上的平均人数没有增加。若每张票卖 $p$ 元，客源永远充足，排队又不影响投诉、退票和下次是否再来，收入 $pN$ 当然希望 $N$ 越大越好。在**这个特定模型**里，“缆车越慢，老板越喜欢”是可以推出来的，不是一句玩笑。
+
+
+![快循环与慢循环下雪道人数和非雪道人数的堆叠比较](/mathematical-modeling/modeling-01-ski-capacity.svg)
+
+*两个情景都把演示用的雪道人数保持在 400。慢循环下更高的总人数，完全来自更多游客被留在雪道之外；它并不意味着服务更好。*
+
+
+不过，请先别把 1,600 人写成经营建议。刚才的算法其实把长队当成了一个“存人的仓库”。它假设游客不会离开、不会投诉、不会要求退票，也不会因为今天只滑了几趟，明年就换一家雪场。它还只看全山平均人数；两条窄雪道的交叉口已经很危险时，全山平均数仍然可能很好看。这些都不是可有可无的细节，它们足以把结论翻过来。
+
+“缆车变慢”本身也需要继续拆。如果吊椅之间相距 $d$ 米，每把坐 $q$ 人，缆索速度是 $v$ 米/分钟，一个理想化的小时运力与下式成正比：
+
+$$
+\mu(v)=60q\frac{v}{d}.
+$$
+
+降低缆索速度，不仅会让乘车时间变长，也会让每小时通过登车点的吊椅减少。新建一部缆车则会增加总运力，同时改变哪些雪道被输送更多游客。所以 $T_o$ 不是一个老板可以随意拧动的旋钮；它是缆车速度、数量、停车故障、游客数量和排队共同产生的结果。当来的人比能运走的人还多，队伍会一直增长，不会自动停在刚才那个整齐的平均值上。
+
+#### 多目标运营决策模型
+
+第一层模型已经完成了它的任务：它解释了那个反直觉结论从哪里来。下一层不应该只是多加几个字母，而应该补上最可能改变决定的那部分：老板不仅赚今天的门票钱，还要支付设备成本，也离不开安全、口碑和明年再来的客人。
+
+记 $v$ 为缆车速度，$m$ 为运行中的缆车数，$N$ 为入园人数，$W(v,m,N)$ 为预期等待时间，$S(v,m,N)$ 为预期雪道人数。一个比较诚实的示意模型可以写成
+
+$$
+\max_{v,m,N}
+\quad pN-c(v,m)-\alpha W(v,m,N)-\beta L(v,m,N),
+$$
+
+同时要满足
+
+$$
+S(v,m,N)\le C,
+\qquad
+W(v,m,N)\le W_{\max},
+\qquad
+v_{\min}\le v\le v_{\max}.
+$$
+
+$c(v,m)$ 表示设备与运行成本，$L$ 概括退票、客源流失、基地拥挤或服务失败带来的代价；$\alpha$ 和 $\beta$ 用来衡量老板对这些后果有多在意。速度的上下限也不是为了让式子显得完整：设备、风速、上车安全与疏散规则都会限定真正可用的速度。初级、中级和高级雪道还可以分开设密度约束，因为全山一个平均数很容易遮住真正危险的位置。
+
+这个新模型并不会自动告诉我们“越快越好”。多修一部缆车可能很贵，也可能把游客太快送进本就拥挤的雪道。它同样不会告诉我们“越慢越好”：排队时间一旦损害口碑和未来收入，故意制造长队的损失可能比多卖几张票还大。真正的合理速度很可能在两个极端之间。建模最有价值的结果，不是一句“快”或“慢”，而是能讲清哪个权衡把我们推向了某个速度。
+
+#### 实证验证方案
+
+缆车问题很适合做一张假设登记表。闸机时间戳可以估计运力和循环时间；定时人工计数或保护隐私的摄像头计数可以估计 $S$；售票与入场记录告诉我们现在有多少人；队列传感器、问卷、投诉、退票和复购情况则能检验等待是否真的不影响需求。这些数据还要按天气、工作日与周末、水平以及开放雪道分组。下了新雪、只开半座山的早晨，不是普通周二的那个系统。
+
+在写复杂模拟之前，先找一个平稳时段检查小模型。如果雪场里 $N=1{,}000$、$T_d=12$、$T_o=18$，现场是否真的大约有 400 人在雪道上？如果相差很大，也许游客会去餐厅休息，也许不同水平的下滑时间差得很多，也许我们的边界漏了另一部缆车。偏差不是丢脸的失败，它在告诉我们下一层该补什么。如果这些差异真的会改变经营决定，我们再把缆车队列当成节点、雪道当成有向连线，做一个随时间变化的网络模型。
+
+现在，最开头的话可以被写得很准确：**若老板只想在限制平均雪道人数的同时，让入园持票人数尽可能多，那么慢缆车确实可以让雪场总人数成为雪道容量的更大倍数。**但若他在意的是几年的利润、安全、体验和复购，“越慢越好”就不再是必然结论。这个例子最有意思的地方，正是两句话都能在不同的建模契约里被推导出来。
+
+保温箱的递推式、食堂的供需平衡和滑雪场的循环模型，都在声明好的假设下给出了答案。但任何一个都不能只凭纸上的漂亮结果，就保证现场会照着它走。接下来，我们把“检查”拆成几层，沿着从故事到代码再到建议的路慢慢走回去。
+
+## 验证
+
+
+<Callout type="tip">
+
+**核心原则 · 五层验证**
+
+**最后的数字看起来合理，远远不够。** 至少从五层问：
+
+
+  
+
+    - **实现：**代码真的在解写出来的方程吗？
+
+    - **内部：**单位、范围、守恒与极端情形合理吗？
+
+    - **经验：**没参与拟合的观测也能被预测吗？
+
+    - **比较：**在同一测试条件下比基线好吗？
+
+    - **决定：**可信的输入误差会改变建议吗？
+
+</Callout>
+
+
+五层检查问的并不是同一件事。代码照着方程运行了，方程仍可能没有抓住现实；过去几天预测得不错，明天一场雨也可能让建议失效。我们要做的，是让读者能从最后的建议一步步走回去，看见它从什么问题出发，经过哪些简化，凭什么相信结果。竞赛里提交的是这样一份能让人理解、核对的论证，而不只是一个会运行的程序（[MCM/ICM 官方说明](https://www.contest.comap.com/undergraduate/contests/mcm/instructions.html)）。
+
+还是回到班车。第一层很好懂：**程序有没有做我们交代它做的事？** 站上十个人、车里八个空位，程序应该留下两个人。若它让十个人全上了车，我们就知道要先修实现。修好了也先别庆祝得太早：这只说明程序忠实执行了规则，还没说明规则本身描绘了真实的班车。
+
+第二层，查**结果本身有没有违反常识与约束**。八个座位坐不下九个人；进教室不可能发生在上车之前；如果没有人自行离开队伍，下一分钟的等车人数应等于原来的人数加新来的人数，再减去上车的人数。容量、守恒和时间顺序，常常在还没收集大量数据时就能抓出错误。
+
+第三层，拿**没用来调模型的早晨**做检验。记录实际到站、上车、行车、进教室的时间，用一部分日子估计参数，另一部分日子检验。若只在同一批早晨里又拟合又打分，模型可能只是记住了那几天。还有一种更隐蔽的作弊：8:30 要预测是否迟到，却把当天后来实际花了多少车程当成输入。每次都问自己：作决定的那个时刻，这项数据真的已经知道了吗？
+
+第四层，是**给旧方案一个公平的比较机会**。假设原班次的准时比例是 78%，新方案预测达到 92%。这听着很鼓舞人，但我们得确认两边面对的是同样的到站情景、预算，以及同一个“准时”定义。新方案若超了预算，便不能直接推荐；旧方案测在雨天、新方案测在晴天，也没法凭两个百分比宣布胜负。简单的基线同样值得被认真对待。
+
+第五层，看看**建议有多稳**。若车程比上周慢五分钟，新方案还够得到 90% 吗？若最忙的车站多来 20% 的人，谁会迟到？改动输入，重新计算，再找出哪个环节先失守。如果很小且合理的波动就能推翻建议，我们要说明它的适用条件，甚至预备加车、提前发车或换线路的方案。
+
+假如现在要把结果交给调度员，我希望他看到的不只是“92%”。他真正需要知道的是：要改哪一班车，预计会好多少，遇到什么情况又可能不灵。我们可以这样写：“若预算允许，给 8:35 到站的班次增加一辆八座车；在演示数据中，预测准时率从 78% 升到 92%，但车程比平时慢五分钟以上时会跌破 90%。”这些数字只是为了示范怎样交代结论，**不是**哥伦比亚班车的实测数据。
+
+也许你会觉得：这样讲下去，每个答案都带着条件，还能不能下结论？我觉得当然能，只是我们要说清结论是哪一种。通勤谜题在往返车速相同的条件下，给出确定的 25 分钟；两日行程靠连续性保证“存在”，却不告诉我们地点；保温箱的瓶数取决于参数和上限；缆车倍数是在一个故意缩小的循环模型里成立的数量关系，不是“让游客多排队就一定更赚钱”的经营证明；班车方案在普通日子可能经得起检验，大雨天却未必。把这些差别讲清楚，不会削弱答案，反而让人知道该在什么地方相信它。
+
+### 计算前检查清单
+
+遇到一个新问题时，我会先给自己半分钟，把几句最基本的话说出来：要选择什么或预测什么？哪些数是量到的，哪些只是先假定的？能不能做个小到手算得出的版本？它最可能在哪儿失效？以后拿什么证据检验？有一两句暂时说不清也没关系，那正好告诉我们下一步该问谁、查什么。带着这些问题，我们回到食堂，把从请求到建议的过程完整走一遍。
+
+## 食堂案例
+
+假设学校找到我们，说：“食堂排队能不能短一点？每周人工预算最好不要增加。”这句话听起来已经是一个任务了，真要动手时却还差几块拼图。谁能改排班？哪些岗位可以调？“短一点”是希望平均等待减少，还是最忙时不再排那么长？我们多问几句，不是在为难提问的人，而是在确保最后给他的建议真的能用。
+
+### 第一步：定义决策陈述
+
+我们试着把决定说成一句经理听得懂、也能点头或摇头的话：“根据预计到客量、各工位的服务速度、员工与工资，每半小时决定谁在哪个工位，尽量缩短等待，同时不违反预算和排班规则。”如果经理说：“其实我最担心的是有人排过十分钟”，那很好，我们现在就能调整目标，而不用等论文写完才知道自己听岔了。
+
+现在再给量起名字。$T$ 是时间段集合，$S$ 是工位集合；$\lambda_{st}$ 是时段 $t$ 到达工位 $s$ 的预计顾客率，$\mu_s$ 是工位 $s$ 每名员工的服务率，$x_{st}$ 是那段时间分配到该工位的员工数。这里最重要的区别不是符号长什么样，而是**谁能改变它**：经理能决定 $x_{st}$，却不能命令顾客少来。$\lambda_{st}$ 和 $\mu_s$ 得从数据估计。若把到客量也丢给优化器“自由选择”，它自然会给出一个没人来吃饭的完美食堂——却毫无用处。
+
+### 第二步：确定系统边界
+
+我们可以先把顾客到达、点餐、付款、备餐和取餐圈进来，拿到餐后去哪里则暂时不管。但要看看取餐口：如果它一堵，备好的餐没地方放，备餐也跟着慢下来，那它就在系统里；如果不会影响上游，第一版可以略去。边界没有标准答案，关键是别把决定排队长短的环节划到外面。
+
+顺手在每个量旁边写单位。$\lambda_{st}$ 是顾客/分钟，$\mu_s$ 是顾客/(员工·分钟)，所以 $x_{st}\mu_s$ 是顾客/分钟。于是可以先估一个利用率
+
+$$
+\rho_{st}=\frac{\lambda_{st}}{x_{st}\mu_s}
+$$
+
+它没有单位，就是“来的人有多快”除以“能服务得有多快”。若 $\rho_{st}\ge1$，平均到客速度已经追上或超过服务速度；在这种近似下，队伍很难稳定地消下去。我们还没用复杂排队论，却已经有了一道很有用的第一关。
+
+### 第三步：区分观测与假设
+
+收银记录里的到客时间、每单耗时和实际排班，是我们观察到的；“各单服务时间互不影响”“一名员工这半小时的服务速度不变”，才是模型加上的假设。尤其别只看一个平均数：同样是平均两分钟，可能每单差不多两分钟，也可能大多数半分钟、少数十分钟。两种午餐高峰的队伍会很不一样。
+
+刚才的假设记录表这时就派上用场了。以“服务率在半小时内不变”为例：理由也许是这段时间工作方式相同；好处是容量容易算；检验方法是看午餐开始的五分钟是否总比后面慢。说不出数学后果的假设太空，说不出怎样检查的假设则暂时只是猜测。
+
+### 第四步：构建基线与一项扩展
+
+第一版可以很朴素：安排足够多的人，让估计的利用率低于一个预先选定的线，比如 $0.85$。它没有描述顾客扎堆到来的波动，但一眼能查。若经理特别关心“最慢的那 10% 顾客要等多久”，我们再用排队近似，或按每位顾客到来和离开的事件做模拟。用**同一批到客情景**比较新旧模型：建议若相同，第一版也许够用；只有尖锐的午餐高峰让建议变了，我们就知道该在哪一层加入波动。
+
+### 第五步：定义证伪标准
+
+先留几天数据，专门用来验模型。不要拿全部日子把参数调到最好，再拿同一批日子宣布自己预测得准。我们可以比较预测与实际的队伍长度、平均等待、90% 分位的等待时间，以及有多少时段超过服务目标；还要按星期几、每天的时间段拆开看。若中午准、快关门时不准，结论就该写“适用于午间”，而不是“适用于所有时候”。
+
+这些符号暂时放在一边，我们陪经理看一个半小时。预计 12:00 到 12:30 会有 60 人来到付款台，一名员工半小时大约能服务 25 人。先猜猜：安排两人还是三人？两人的总能力约 50 人，因此只要 60 人都来了、也没人放弃，至少会有十人到半小时结束仍未被服务。三人约能处理 75 人，从总量看有余地；但如果顾客同时涌来，仍可能等上一阵。这个小计算没有给出完整排班，却已经帮我们排除了一个明显紧张的安排。
+
+改成每分钟来看：到客率 $\lambda=60/30=2$ 人/分钟，单人服务率 $\mu=25/30\approx0.833$ 人/分钟。两人时 $\rho=2/(2\mu)=1.2$，三人时 $\rho=2/(3\mu)=0.8$。前者意味着如果这种速度持续下去，队伍会越积越长；后者说明平均能力留有余量，但客人若集中在某五分钟出现，照样会排队。
+
+算到这儿，你也许会问：我们要不要马上学一套排队论？先看经理接下来想知道什么。如果只是问“第三个人值不值得考虑”，半小时的收支已经很有帮助；如果他问“90% 的人能不能在五分钟内轮到”，我们就得认真看顾客的到来时间和每单耗时。数学工具可以慢慢加，等它真正能回答一个前面答不了的问题时再请它上场。
+
+也别只盯付款台。付款加了一个人，备餐可能就少了一个人，队伍只是换了个地方。假如额外找人每小时要 18 美元，半小时就是 9 美元；这笔钱是否值得花，要结合预算和等候时间的价值判断。若既没给等待上限，也没说明等待一分钟值多少钱，“最优排班”到底对什么最优，仍没有定义完整。
+
+再故意把到客过程变得极端一点：60 人中有 30 人在前五分钟涌来。三名员工虽然半小时能服务 75 人，但头五分钟只能服务约 $3(25/30)(5)=12.5$ 人，眼前还是会积下十七八个人。半小时总量把这个高峰抹平了。我们不必争论“真实情况也许如此”，直接查时间戳就能检验。若有记录，可以画累计到客量与累计服务能力，两条线拉开的距离大致对应队伍；再画预测等待与实际等待，看看误差是否总出现在午餐高峰。图应该帮助我们发现机制，而不只是装点页面。
+
+最后把几种量再分清一次。60 位顾客会来，是观测或预测，不是经理能改写的决定；安排几名员工，才是她能选择的；半小时 9 美元是由工资算出的成本；“付款台最多三人”是硬约束；12:05 还有 18 人在等，是系统当时的状态。若到客数变成 75，三人利用率就到 1；若在 60 人时派四人，利用率降到 $0.6$，成本却更高；若收银变慢、每人只能服务 15 人，三人也只处理 45 人。这些变化各有不同的现实原因，别都含糊地叫作“调了一下参数”。
+
+如果现在要和一位没看过公式的朋友聊食堂，我会这样说：“两个人赶不上来客的速度，队伍会积起来；加第三个人，平均能力够了，可大家若一起到，还是会等。真要改班次，还得看看其他工位和预算。”能用平常的话把这层意思讲明白，公式才算帮到了我们——它把决定照亮了，而不是把决定藏进符号里。
+
+食堂这个例子把一整轮建模走完了。接下来不重新开三套流程，我们只换三副眼镜：有时找一个不变量，就不用知道所有速度；有时靠连续性，就能证明某件事必然发生；有时把过程拆成几个阈值，才能做出安全的选择。
+
+## 计算前的分析
+
+### 不变量分析：提前到达的通勤者
+
+还记得开头那个提前到站的人吗？他 5:30 开始往家走，家人照平时的时间开车来，半路遇见他，结果早十分钟到家。你当时猜的是不是 30 分钟？这个答案很诱人，可他是在路上被接到的，不会一直走到 6:00。
+
+我们不知道车速、步速和家离车站多远，先不要为缺数据发愁。只要车在往返这段路上速度一样，就盯住**相遇点到车站**这一小段：平常开车的人先向车站经过它一次，接到人后又往家经过它一次；今天两次都不用走。来回合计省了十分钟，单程自然是五分钟。所以车与人相遇的时刻，比平常到站时间早五分钟，也就是 5:55。人从 5:30 走到 5:55，走了**25 分钟**。
+
+
+![相遇后省去两段相同车程的通勤路线示意图](/mathematical-modeling/modeling-01-commuter-invariant.svg)
+
+*总共提前十分钟，是因为“相遇点到车站”这段路在去程与回程各省一次；两段相同，因此每段对应五分钟。*
+
+
+现在反过来挑毛病：如果回程开得更快，或者去回走的不是同一条路，两段车程就未必各省五分钟；如果家人接到电话提前出门，拿“平常 6:00 到站”作参照也不成立。我们用到的**不变量**，正是在未知速度和距离之外仍保持不变的往返对称。你当然可以把双方的位置都写成时间函数，再引入速度和距离联立求解；但看出那段路被省了两次，既省力，也把答案成立的理由亮了出来。
+
+### 连续性论证：两天的行程
+
+再换个场景。星期一早上 9:00，有人从村庄 $A$ 出发，沿一条路走向 $B$，下午 5:00 前走到；星期二同样在 9:00，他从 $B$ 沿原路回 $A$，也在 5:00 前走完。假设提前走到终点后，他会在那里待到 5:00。**他会不会在两天的同一个钟点，站在路上的同一个地方？** 两天走得快慢不必一样，中途停一停甚至折返也没关系。
+
+不妨让“星期一的他”和“星期二的他”同时出现在眼前。早上 9:00，两人各在路的一端；下午 5:00，他们的位置正好对调。只要沿的是同一条连续的路，途中又不能瞬移，两人交换前后顺序就必定会碰面。那个碰面的地点，就是现实中他两天在同一钟点经过的地点。我们证明了**一定存在**，但还不知道它具体在哪里。
+
+如果想写成数学语言，就用 $x$ 表示从 $A$ 沿路走出的距离，令 $f(t)=x_{\mathrm{Mon}}(t)-x_{\mathrm{Tue}}(t)$。9:00 时两人分别在两端，$f=-D0$。只要两人的位置连续变化，$f$ 也连续。一个连续函数从负值变成正值，中途必定有 $f(t^*)=0$ 的时刻；那一刻两人的位置相同。
+
+
+![两天的位置曲线在同一时刻和同一位置相交](/mathematical-modeling/modeling-01-continuity-crossing.svg)
+
+*两条曲线不需要是直线，也不要求始终单调。共同的端点关系与连续性，已经足以保证至少一次相交。*
+
+
+不过，证明里每句话都有分量。两天得有可比较的**同一段钟表时间**；走的得是同一条路；移动不能突然跳过某处。如果星期二凌晨就走完了，时间不再重叠；如果回程换了路，“离 $A$ 一样远”也未必是同一个地方；如果允许瞬移，连续性便没了。一个看似短短的定理，背后仍是我们亲手划出的边界与假设。
+
+### 阈值分析：配送车与定时闸门
+
+再看一个必须在两个动作之间选的情境。一辆小型自动配送车正靠近校园服务闸门，控制器告诉它：闸门再过 $T_g$ 秒就开始关。它还在入口外，要么现在刹住，要么继续走、赶在关门前让整辆车通过。**如果车恰好处在“再近就来不及舒适刹停”的位置，闸门至少还要开多久，继续通行才说得通？** 这里只是在纸上练习建模，绝不是实际闸门的安全参数；真正设备还要做障碍检测、故障安全设计和现场验证。
+
+收到刹车指令到开始减速，并不是零时间。设延迟为 $t_d$，这段时间车以速度 $v$ 先走了 $vt_d$；之后若以近似恒定的减速度 $a>0$ 刹停，还需要 $v^2/(2a)$ 米。两段加起来，舒适停车距离为 $d_s=vt_d+v^2/(2a)$。如果车正好在这个距离边界，选择以恒速继续驶向入口，所需时间是
+
+$$
+T_{\mathrm{reach}}=\frac{d_s}{v}=t_d+\frac{v}{2a}.
+$$
+
+但车头**到达入口，不等于整辆车已经出去**。闸门区若有 $w$ 米深，车身长 $L$ 米，从车头进入到车尾离开，还需要约 $T_{\mathrm{clear}}=(w+L)/v$。所以，在我们假定的恒速通行方案下，闸门开放时间必须满足 $T_g\ge T_{\mathrm{reach}}+T_{\mathrm{clear}}$。真实控制器也许会另设“保持通道清空”的阶段；无论如何，模型不能把抵达入口和完整离开混成同一件事。
+
+代一组演示数值：$t_d=0.4$ 秒、$v=2$ 米/秒、$a=1$ 米/秒²、$w=3$ 米、$L=0.8$ 米。到入口要 $0.4+2/(2\cdot1)=1.4$ 秒，车尾离开还要 $3.8/2=1.9$ 秒，加起来是 $3.3$ 秒。每一项都应当是时间单位。先别把这个数当安全线：刹车弱一点、车身长一点、指令晚一点，会怎样？若闸门内出现障碍，正确动作是触发安全响应，而不是拿更乐观的公式说服自己继续走。
+
+
+![自动配送车接近定时闸门时的停车或通行阈值](/mathematical-modeling/modeling-01-cart-gate.svg)
+
+*决策比较的是剩余开放时间与两段所需时间：先到达入口，再让整辆车完全离开闸门区域。*
+
+
+这三个例子用的是三种不同的数学眼光，但并没有脱离我们前面那一轮建模步骤。到了竞赛，一道题可能同时有数据、好几个小问、互相依赖的任务和论文写作要求。先把这些东西理顺，再去挑软件和算法。
+
+
+竞赛选题、工具使用、论文阅读、可视化复现、算法扩展与 AI 辅助工作流，已经独立整理到第二篇博客 **Competition Techniques**。这一篇先把建模基础收完整，最后换一道新的决策题，看看前面的思路能否迁移过去。
+
+## 自习室案例
+
+最后换个没在前面算过的问题，看你能不能自己把方法带过去。假设图书馆说：“考试周自习室老是满，我们想做一个最好的使用模型。”先别搜索优化算法，问管理员三个问题：您究竟能改开放时长、预约规则、房间分配，还是房间数量？您更在意被拒绝的人数、等待时间、学生满意度，还是房间空着的时数？明早必须作决定时，手里已经有哪些数据？这三个问题不清楚，“最好”就没有明确含义。
+
+假设管理员回答：“明早决定三间自习室各延长多少开放时间，每间最多两小时，总共最多增加六个工作人员小时，希望少拒绝一些学生。”再假设每间开放的房间都由一名工作人员照看。现在我们知道边界至少包括学生到来、预约、房间和工作人员。令 $x_i$ 表示房间 $i$ 多开放几小时，那么 $0\le x_i\le2$；三间房所需的额外工作人员小时合计就是 $x_1+x_2+x_3\le6$。每小时有多少人在等，是会变化的状态；过去的预约时间是数据；减少被拒人数是可量的目标。到这里，我们还没挑优化器，模型已经开始成形。
+
+
+![三间自习室在共同工作人员时数约束下分配额外开放时间](/mathematical-modeling/modeling-01-library-allocation.svg)
+
+*决策变量控制各房间延长多久；被拒人数与空置房间时数，则从两个方向检验新增容量有没有真正被用好。*
+
+
+先做个很粗的小估算：如果一间房多开两小时，刚好只能接一组新的两小时预约，那么三间各多开两小时，就有接待三组的额外容量。但容量不等于实际有人预约；也只有在每组都占满两小时的假设下，这个估算才成立。若历史记录显示第三间关门后从来没人预约，给它加时可能白白耗人力；若二十个人同时来、每组只预约一小时，“两小时一组”又会把容量算错。正是这些观察告诉我们，下一版该看预约时长、小时级的到来高峰，还是更灵活的安排规则。
+
+怎样检验建议？拿上周或上学期考试周的记录，让现行安排与延时方案在**同样的日子**各运行一遍，比较会拒绝多少人，同时报告新增开放时间里有多少小时其实没人用。这里还要保持谦虚：房间开放得更久，学生也可能改变预约习惯，历史回放不能替代真实试行；考试高峰更忙的情景也值得测。最后给管理员的建议也许是：“先给一、二号房加时，每小时记录被拒人数，一周后再调整。”它没喊“全局最优”，却更容易执行和检验。
+
+临走前，把它和保温箱放在一起看。两者都从一句模糊的请求出发，找到了会变化的量——这里是等候学生数，那里是蓄冷体温度——也都有一道不能越过的线，并且都需要设计能推翻建议的测试。但两者不一样：瓶子不会发现箱子更暖就改变行为，学生却可能因为开放时间改变而重新安排预约。物理守恒给了保温箱一个很强的起点；涉及人的选择时，我们更需要观察反馈。会建模，不仅是会套用一张流程图，也要知道这个类比走到哪里就不再适用。
+
+### 总结与可迁移原则
+
+今天我们从班车聊到保温箱，中间还在滑雪场停了一会儿，然后又去了食堂和图书馆。这些例子放在一起，可能还没有在你心里排成一条整齐的线。也许有些地方你觉得太简单，不明白为什么要花这么多时间；也许某一步你得停下来想很久。两种感觉都很正常。毕竟这是第一篇博客，我们还没有正式学习那些有名字的模型。第一次试着从一件现实中的事里找出问题、挑选变量、说明假设，再追问答案靠不靠谱，本来就需要一点时间适应。别让某一道暂时没想通的例题吓住你。
+
+如果读完后只带走一件事，我希望是你对“数学建模”这四个字多了一点自己的理解。**数学**帮我们把话说准确：什么在变化，哪些量彼此有关，一个结论为什么成立。**建模**则是先认真听懂现实中的问题，再为这个问题搭一个可以推理的小世界；我们知道它省略了什么，也愿意用观察和数据检验它。一个算得漂亮的答案，如果答非所问，或经不起检验，就还没有完成这件事。今天不用记住每个例子的数字；开始留意问题、边界、假设和证据，就已经是很好的起点。
+
+后面的博客会慢慢介绍具体的模型和方法，我们到时再一步步学。今天先到这里。关上电脑，休息一下吧。
+
+## 课后测验
+
+下面的十道题会从基本识别逐步走向综合推理。有些是单选，有些是多选，提交前请看清题卡上的说明。题目中的难度百分比是设计目标，不是已经收集的学生统计：第一题希望约 90% 的认真读者能做对，最后一题则是为约 10% 的挑战难度设计的。
+
+
+
+</LanguagePanel>
+
+</LanguageTabs>

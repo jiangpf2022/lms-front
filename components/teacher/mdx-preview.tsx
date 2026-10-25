@@ -4,6 +4,9 @@ import { MDXClient, type SerializeResult } from 'next-mdx-remote-client'
 import { useState, useEffect } from 'react'
 import { lessonMdxComponents } from '@/components/lesson/mdx-components'
 import { inlineCodeBlockBodies } from '@/lib/lesson/mdx-source'
+import remarkGfm from 'remark-gfm'
+import remarkMath from 'remark-math'
+import rehypeKatex from 'rehype-katex'
 
 interface MDXPreviewProps {
     content: string
@@ -34,6 +37,8 @@ export function MDXPreview({ content }: MDXPreviewProps) {
                     source: inlineCodeBlockBodies(content),
                     options: {
                         mdxOptions: {
+                            remarkPlugins: [remarkGfm, remarkMath],
+                            rehypePlugins: [rehypeKatex],
                             development: process.env.NODE_ENV === 'development',
                         },
                     },

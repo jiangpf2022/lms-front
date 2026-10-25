@@ -1,0 +1,1493 @@
+<LanguageTabs>
+
+<LanguagePanel language="en" label="English">
+
+
+Today begins with a disagreement. One teammate wants the cheapest plan, another wants the safest plan, and the client insists that service quality cannot fall. Nobody is necessarily wrong. The modeling mistake would be to hide that disagreement inside one unexplained score.
+
+This blog develops two related ideas. **Multi-objective optimization** makes conflicting goals visible instead of pretending they are one. **Robust optimization** asks whether a chosen decision survives reasonable errors in the data. Our real competition case comes from 2024 MCM Problem A, where Outstanding papers modeled how environmentally responsive sex ratios alter sea-lamprey populations and surrounding ecosystems. It is a natural multi-objective problem: suppress an invasive population, preserve ecosystem stability, and avoid an intervention so aggressive that it creates a new failure.
+
+The mathematical habit throughout is to keep every trade-off visible. A convenient solver score must not hide which objectives were exchanged, which uncertainty set was protected, or how the recommended decision changes when those judgments move.
+
+
+Two promises, two tests
+A multi-objective model promises that the trade-off has been exposed. A robust model promises that feasibility or performance survives a declared uncertainty set. Neither promise is fulfilled by adding the words “comprehensive” or “robust” to a weighted score.
+
+
+## Multiple Objectives
+
+Suppose a city chooses bus frequency $x$. Annual cost $C(x)$ decreases when buses are removed, passenger waiting $W(x)$ decreases when buses are added, and emissions $E(x)$ depend on both fleet use and congestion. There is no physically meaningful unit in which dollars, minutes, and tonnes can simply be added.
+
+Write the vector objective
+
+$$\min_{x\in X}F(x)=\big(C(x),W(x),E(x)\big).$$
+
+$X$ contains hard rules such as fleet size, driver hours, and minimum coverage. The optimizer no longer returns “the” smallest vector because vectors are only partially ordered. A plan can be cheaper but slower. The result we need is a set of efficient compromises, followed by a transparent decision rule.
+
+Separate hard constraints from soft objectives. If every district must receive at least one bus per hour, that is usually a constraint, not another weighted preference. Turning a legal or safety minimum into a small penalty permits the optimizer to violate it whenever another term pays enough.
+
+### Begin with people who disagree for good reasons
+
+Imagine a town deciding where to place a new ambulance base. The finance director wants to minimize annual cost. The emergency physician wants to minimize the longest response time. The mayor wants no neighborhood to receive systematically worse service. The operations manager wants a site with enough room for future vehicles. If we ask each person for “the objective,” we receive four answers because the decision genuinely has four consequences.
+
+It is tempting to avoid the conversation by writing
+
+$$
+\min_x\ 0.25C(x)+0.25T(x)+0.25F(x)+0.25G(x).
+$$
+
+This formula looks balanced, but the equal coefficients mean almost nothing. Cost may be measured in millions of dollars, response time in minutes, future capacity in vehicles, and inequality in minutes or a dimensionless index. The largest numerical scale dominates. Even after normalization, equal weights assert that a specific movement across each chosen range is equally valuable. That is a policy judgment, not a mathematical fact.
+
+Start instead with an objective inventory. For each candidate consequence, record:
+
+- its definition and unit;
+- the stakeholder who cares about it;
+- whether it is a benefit to maximize or harm to minimize;
+- whether a threshold is mandatory;
+- the time horizon over which it is measured;
+- how uncertainty affects it;
+- and what evidence would validate it.
+
+For the ambulance example, annualized cost might include rent, vehicles, staffing, and expected overtime. Average response time weights busy neighborhoods heavily. Maximum response time protects the worst incident but can be driven by one remote location. A 90th-percentile response time protects the tail without letting a single extreme case determine everything. A group disparity metric compares neighborhoods, but its result depends on how groups are defined.
+
+Definitions should be tested on small distributions. Consider response times under two plans:
+
+$$
+A=(4,4,4,4,14),\qquad B=(6,6,6,6,6).
+$$
+
+Plan A has mean six minutes, exactly like B, but a maximum of fourteen rather than six. If the service promise is “most calls are fast,” A may be attractive. If a fourteen-minute delay is medically unacceptable, the mean conceals the failure. A single-objective average model has not merely simplified the story; it has selected a distribution of harm.
+
+The word “fairness” also needs a mathematical object. Possible definitions include the maximum difference between group averages,
+
+$$
+\max_{g,h}|\bar T_g-\bar T_h|,
+$$
+
+the maximum group response time, a ratio between best and worst service, or an inequality index. Each detects different patterns. Small average differences can coexist with terrible individual tails. A strict individual guarantee can be infeasible in a large rural region. Show multiple summaries before choosing one fairness objective.
+
+### Hard rule, aspiration, or tradeable preference?
+
+A hard constraint defines the feasible set. A soft objective ranks feasible points. A target with penalized deviation lies between them. Confusing these roles is one of the most consequential modeling errors.
+
+Suppose regulations require every emergency call to be reachable within twenty minutes under normal road conditions. That is
+
+$$T_i(x)\le20\qquad\forall i,$$
+
+not a term $w\sum_i\max(0,T_i(x)-20)$ with an arbitrary finite weight. The penalty version permits a violation when another objective improves enough. Use it only if violations are genuinely allowed and the penalty represents their consequence.
+
+Conversely, declaring every aspiration hard can make the model infeasible. A council may say “keep cost below 2 million, average response below 6 minutes, every response below 8 minutes, and use only existing property.” The correct outcome may be that no plan can satisfy all four. An elastic diagnostic introduces slacks $s_j$ and minimizes a prioritized violation measure. It tells stakeholders which promises conflict; it does not quietly redefine the promises.
+
+A useful interview question is: “If this threshold cannot be met, should the model return no plan, or should it return the least harmful violation?” The answer distinguishes a hard requirement from a goal. A second question is: “Would you accept a one-unit violation in exchange for enough improvement elsewhere?” If the answer is never, use priority or a hard constraint rather than a finite weighted sum.
+
+### Objectives are accounting identities
+
+Cost should be built from components rather than imported as a mysterious column:
+
+$$
+C(x)=C_{\mathrm{fixed}}(x)+C_{\mathrm{staff}}(x)
++C_{\mathrm{travel}}(x)+C_{\mathrm{failure}}(x).
+$$
+
+Each component needs a unit and horizon. Annual fixed cost cannot be added directly to one-day travel cost. Convert both to the same horizon or present them separately. Discount future cash flows consistently if plans have different lifetimes.
+
+Environmental impact can be equally ambiguous. Tailpipe emissions, lifecycle emissions, local particulate exposure, energy use, and habitat disruption are not interchangeable. A zero-tailpipe electric fleet may shift emissions to power generation. A single carbon-equivalent measure may be suitable for climate comparison but not local air-quality justice. State the boundary of every objective.
+
+Service quality may be endogenous. Adding buses can reduce waits, attract more passengers, and create new demand. If demand is treated as fixed, the model captures short-run operations rather than long-run behavioral response. That may be acceptable, but the conclusion should not be extended beyond the modeled horizon.
+
+### A first complete model: a neighborhood clinic
+
+A mobile clinic must choose visits $x_j$ to four neighborhoods. Each visit costs $c_j$, serves expected patients $a_j$, and consumes $h_j$ staff-hours. Let $u_j$ be unmet need and $H$ total staff-hours:
+
+$$
+\begin{aligned}
+u_j&\ge d_j-a_jx_j,\qquad u_j\ge0,\\
+\sum_jh_jx_j&\le H,\qquad x_j\in\mathbb Z_+.
+\end{aligned}
+$$
+
+Three natural objectives are
+
+$$
+f_1(x)=\sum_jc_jx_j,qquad
+f_2(x)=\sum_ju_j,qquad
+f_3(x)=\max_j\frac{u_j}{d_j}.
+$$
+
+$f_1$ measures cost, $f_2$ total unmet need, and $f_3$ the worst neighborhood shortage rate. Minimizing only $f_2$ favors large neighborhoods because one visit may cover more people. Minimizing only $f_3$ pushes toward proportional fairness. Neither is wrong; they answer different questions.
+
+Linearize $f_3$ with epigraph variable $t$:
+
+$$u_j\le td_j\quad\forall j,$$
+
+and minimize $t$. If $d_j>0$ are data, these constraints are linear. We can now compute a frontier between total unmet need and worst shortage while constraining cost. A map should show which neighborhoods gain or lose across the frontier; a scalar plot alone may hide the distribution.
+
+Suppose one neighborhood has tiny reported demand because previous clinic hours were inaccessible. Treating $d_j$ as objective truth reproduces measurement bias. A robust or scenario analysis can explore higher latent demand, but structural investigation is also needed. Uncertainty mathematics cannot substitute for asking why the observation is low.
+
+### Why “comprehensive evaluation” is not automatically multi-objective optimization
+
+Some reports calculate entropy weights, analytic-hierarchy weights, or principal-component scores and then call the result multi-objective optimization. Scoring and optimization are different. A score ranks objects given attributes; an optimization chooses decisions subject to constraints. A weighted evaluation can inform an objective, but it does not reveal a Pareto frontier or prove that the selected decision is feasible.
+
+Analytic hierarchy process can elicit pairwise judgments. Entropy weights reflect dispersion in observed data, not social importance. A criterion with little historical variation can receive low entropy weight even if it is ethically essential. Principal components preserve variance, not stakeholder value. Use these tools only for the role they actually perform.
+
+Multi-objective modeling begins with a feasible decision set and multiple consequences of those decisions. It makes the disagreement inspectable. The outcome may ultimately be one selected compromise, but the route to that point should show what alternatives were discarded and why.
+
+## Pareto Frontiers
+
+For minimization, decision $x$ dominates $y$ if
+
+$$f_i(x)\le f_i(y)\quad\forall i,$$
+
+and at least one inequality is strict. A feasible point is Pareto efficient if no other feasible point dominates it.
+
+Consider four plans with (cost, average wait):
+
+$$A=(10,14),\quad B=(12,9),\quad C=(15,7),\quad D=(14,12).$$
+
+$B$ dominates $D$: it is cheaper and faster. None of $A,B,C$ dominates another, so they form the discrete Pareto set. Removing $D$ is a mathematical conclusion; choosing among $A,B,C$ is a value judgment.
+
+For a smooth continuous frontier $w=h(c)$, the slope $-h'(c)$ is the local exchange rate: how many minutes of waiting can be reduced by accepting one more unit of cost. A “knee” is a region where small improvement in one objective suddenly requires a large sacrifice in another. Knee points are useful candidates, not automatic answers.
+
+
+Stop and compare
+If Plan P costs 2% more than Plan Q but cuts worst-district waiting by 30%, which plan is better? You cannot answer until you know whether equity is a hard requirement, whose waiting is measured, and how much budget flexibility exists. Write those missing facts before choosing weights.
+
+
+### Dominance is simple; frontier construction is not
+
+For two objective vectors $p$ and $q$ in minimization, implement dominance with a numerical tolerance $τ$:
+
+$$p_i\le q_i+\tau\quad\forall i,qquad
+p_j0$ is small. The maximum term improves the worst weighted shortfall; the augmentation promotes strong efficiency. If aspirations are infeasible, the solution shows which dimensions prevent achievement. If they are easily exceeded, stakeholders can revise them interactively.
+
+### Regret with a hand-checkable table
+
+A town must select one flood project before learning whether the next decade is mild, wet, or extreme. Total costs including damage are
+
+$$
+\begin{array}{c|rrr}
+&\text{mild}&\text{wet}&\text{extreme}\\\hline
+A&12&28&70\\
+B&18&23&46\\
+C&31&31&36
+\end{array}
+$$
+
+The scenario-wise best costs are 12, 23, and 36. Subtract them columnwise:
+
+$$
+\begin{array}{c|rrr}
+A&0&5&34\\
+B&6&0&10\\
+C&19&8&0
+\end{array}.
+$$
+
+Worst regrets are 34, 10, and 19, so minimax regret selects B. Worst absolute costs are 70, 46, and 36, so minimax cost selects C. Expected cost would require scenario probabilities. Three reasonable attitudes to uncertainty produce different answers.
+
+Regret depends on the comparison set. Adding a project that performs extraordinarily in one scenario raises every other plan's regret in that scenario even though their physical outcomes do not change. Regret measures forgone opportunity relative to available alternatives, not harm in isolation.
+
+### Objectives under uncertainty
+
+When objectives and data are uncertain, distinguish a nominal frontier, worst-case frontier, expected frontier, and reliability-constrained frontier. A decision may be Pareto efficient nominally yet dominated under stress. Plot nominal and adverse objective vectors with lines joining the same decision. Large movement reveals fragility.
+
+Mixed risk attitudes can be appropriate: minimize expected operating cost while protecting a safety constraint robustly and controlling a tail-risk service objective. State which quantity uses which uncertainty treatment. Comparing nominal cost with worst-case service without labeling them invites a false impression that both coordinates mean the same kind of evidence.
+
+## Uncertainty
+
+Do not use “uncertainty” as one undifferentiated word. At least four forms matter:
+
+- **measurement error:** observed input differs from the true quantity;
+- **parameter uncertainty:** a fitted coefficient is estimated from finite data;
+- **process variability:** arrivals, weather, or demand genuinely vary;
+- **structural uncertainty:** the equations omit a mechanism or use the wrong causal form.
+
+Robust optimization handles declared parameter sets well. It cannot repair a missing mechanism. If the bus model ignores passengers abandoning long queues, widening a demand interval does not correct the structure.
+
+An interval $a_i\in[\bar a_i-\rho_i,\bar a_i+\rho_i]$ creates a box uncertainty set. An ellipsoid $a=\bar a+Pu$, $\|u\|_2\le\rho$, captures correlated directions. A finite scenario set is appropriate when the uncertainty is naturally described by named futures. The set must be large enough to include plausible errors but not so large that it represents physically impossible combinations.
+
+### Aleatory and epistemic uncertainty
+
+Aleatory uncertainty describes variation inherent in repeated operation, such as which emergency calls arrive tomorrow. Epistemic uncertainty describes limited knowledge, such as an imprecisely estimated service rate. More data may reduce epistemic uncertainty; it does not eliminate future random arrivals. The distinction is imperfect but useful because it tells us what evidence can improve the model.
+
+Probability distributions are natural for repeatable variability when enough data exist. Confidence regions, parameter sets, or posteriors can represent estimation uncertainty. Competing equations—linear versus saturating response, immediate versus delayed feedback—represent structural uncertainty and should often be tested as separate models rather than hidden inside a wider coefficient interval.
+
+### Measurement and censoring
+
+Suppose demand is recorded through sales. During stockouts, sales fall below true demand. A symmetric interval around recorded sales is not an honest measurement model; its center is biased. Collect lost-sale or queue information, or fit a censoring model. Robust optimization around biased data protects the wrong center.
+
+Data-arrival time also matters. A seven-day weather forecast has wider uncertainty than an hour-ahead update. If decisions can be revised daily, use rolling or multistage planning instead of protecting one fixed hourly schedule against every weekly possibility. Write a timeline showing what is known when each decision is made.
+
+### Constructing intervals
+
+An interval for parameter $θ$ might come from instrument tolerance, historical quantiles, expert limits, or a confidence interval. These sources have different meanings. A confidence interval for a fixed mean is not a prediction interval for future observations. A historical minimum–maximum grows with sample size and may miss unseen extremes.
+
+Use asymmetric bounds when consequences or distributions are asymmetric:
+
+$$\theta\in[\bar\theta-\rho^-,\bar\theta+\rho^+].$$
+
+Travel time has a physical lower bound but can have a long upper tail. Demand may surge farther than it can fall. Document whether intervals are marginal for individual parameters or intended to hold simultaneously.
+
+### Boxes and impossible corners
+
+A box
+
+$$
+\mathcal U_{\mathrm{box}}=
+\{a:|a_i-\bar a_i|\le\rho_i\}
+$$
+
+allows all coefficients to reach either extreme independently. It is transparent and tractable but includes every corner. Crop yields for all crops may not simultaneously attain their separate historical minima; demands for substitute products may not all hit maxima together.
+
+Use a box when simultaneous extremes are defensible or when safety requires protection regardless. Otherwise use budgeted sets, factor models, ellipsoids, or coherent scenarios. Two-dimensional projections help readers see which combinations each geometry includes.
+
+### Ellipsoids and factors
+
+An ellipsoid
+
+$$
+\mathcal U_{\mathrm{ell}}=
+\{\bar a+Pu:\|u\|_2\le\rho\}
+$$
+
+represents joint directions through $P$. If $PP^T$ relates to covariance, historically variable directions extend farther. A factor model can encode common weather, demand, or macroeconomic shocks with far fewer independent dimensions.
+
+Estimated covariance can be unstable when data are scarce relative to dimension. Shrinkage, domain restrictions, or low-rank factors may be needed. A precise ellipse built from ten observations and fifty coefficients is not credible merely because the conic solver accepts it.
+
+### Scenario sets as coherent stories
+
+Named scenarios preserve relationships. A heat wave can raise demand, reduce equipment efficiency, and alter renewable generation together. A recession can lower aggregate demand while changing price sensitivity. Severe weather can slow roads and increase emergency calls. Independent parameter draws often destroy these relationships.
+
+Scenario reduction should retain decision-critical extremes. Two scenarios close in statistical distance can lead to different active constraints. Always preserve mandatory stresses even when their empirical probability is small. Include scenario probabilities only when evidence supports them; otherwise report scenario-wise outcomes without pretending to know likelihood.
+
+### Structural alternatives
+
+In the lamprey example, uncertainty about logistic slope $k$ is parametric. Uncertainty about whether sex ratio responds logistically, piecewise linearly, or with a delay is structural. Fit and challenge multiple candidate mechanisms, then test policies across all credible ones. A policy that succeeds only under one weakly supported response is fragile.
+
+Every structural candidate should have a rejection test. Without one, adding models becomes unlimited storytelling. Held-out trajectories, intervention responses, residual patterns, and biological constraints can eliminate alternatives. Robustness across credible structures is stronger evidence than robustness across arbitrary equations.
+
+### Calibration and coverage
+
+Calibrate sets using evidence separate from final performance evaluation where possible. If a claimed 90% prediction interval covers only 60% of held-out outcomes, decisions based on it inherit that failure. Check joint coverage, tail behavior, seasonality, and temporal drift rather than only marginal histograms.
+
+Larger sets are not automatically better. Protection against impossible combinations wastes resources and may move risk elsewhere. Plot nominal performance, out-of-sample violations, and decision changes as set size grows. Choose protection through evidence and consequence rather than calling the largest set “most robust.”
+
+## Robust Counterparts
+
+Consider uncertain resource usage
+
+$$a^Tx\le b\quad\forall a\in\mathcal U.$$
+
+For a box $a_i\in[\bar a_i-\rho_i,\bar a_i+\rho_i]$ and $x\ge0$, the worst case independently raises every coefficient:
+
+$$\sum_i(\bar a_i+\rho_i)x_i\le b.$$
+
+For signed $x$, introduce $t_i\ge|x_i|$ through $-t_i\le x_i\le t_i$, giving
+
+$$\bar a^Tx+\sum_i\rho_i t_i\le b.$$
+
+The robust counterpart remains linear.
+
+For ellipsoidal uncertainty $a=\bar a+Pu$, $\|u\|_2\le\rho$,
+
+$$\max_{\|u\|\le\rho}(\bar a+Pu)^Tx
+=\bar a^Tx+\rho\|P^Tx\|_2.$$
+
+So the robust constraint is
+
+$$\bar a^Tx+\rho\|P^Tx\|_2\le b,$$
+
+an SOCP. The price of protection is visible: larger $\rho$ shrinks the feasible set.
+
+Budgeted uncertainty avoids assuming every coefficient reaches its worst value simultaneously. With normalized deviations $z_i\in[0,1]$ and $\sum_i z_i\le\Gamma$, the parameter $\Gamma$ controls how many coefficients may be adverse together. Plot objective value and constraint violations across $\Gamma$ rather than hiding the protection choice.
+
+### Box uncertainty with signed decisions
+
+Write $a_i=\bar a_i+\rho_i u_i$, $|u_i|\le1$. Then
+
+$$
+\max_{|u_i|\le1}\sum_i(\bar a_i+\rho_i u_i)x_i
+=\bar a^Tx+\sum_i\rho_i|x_i|.
+$$
+
+The adversary chooses $u_i$ with the sign of $x_i$. Introduce $t_i\ge x_i$ and $t_i\ge-x_i$ to obtain the linear robust row
+
+$$
+\bar a^Tx+\sum_i\rho_it_i\le b.
+$$
+
+If $x_i\ge0$ is already known, replace $|x_i|$ by $x_i$ directly. Sign information simplifies the model and avoids unnecessary variables.
+
+### Uncertain capacities
+
+For $a^Tx\le b$ and $b\in[\bar b-\rho_b,\bar b+\rho_b]$, the worst capacity is the smallest:
+
+$$a^Tx\le\bar b-\rho_b.$$
+
+If usage coefficients and capacity share one physical driver, choosing their extremes independently may be impossible. Move uncertain terms to one side and construct a joint uncertainty set. “Worst” always means the value maximizing violation after the algebraic signs are fixed.
+
+### Ellipsoids through support functions
+
+For $a=\bar a+Pu$ and $‖u‖_2\leρ$, the uncertain part is
+
+$$
+\max_u u^TP^Tx.
+$$
+
+Cauchy–Schwarz gives $ρ‖P^Tx‖_2$, attained at
+
+$$u^*=\rho\frac{P^Tx}{\|P^Tx\|_2}$$
+
+when $P^Tx\ne0$. The conic counterpart is exact. If $P^Tx=0$, uncertainty in these directions has no effect on the row.
+
+Dual norms generalize the result. If $‖u‖_p\leρ$, then
+
+$$
+\max u^Tv=\rho\|v\|_q,
+\qquad\frac1p+\frac1q=1.
+$$
+
+An $ℓ\infty$ uncertainty ball creates an $ℓ1$ protection term; an $ℓ1$ ball creates an $ℓ\infty$ term. Uncertainty geometry determines regularization geometry.
+
+### Budgeted uncertainty derivation
+
+Let nonnegative activity $x_j$ have nominal resource coefficient $\bar a_j$ and maximum adverse deviation $\hat a_j$. Protect against $z_j\in[0,1]$ with $∑_jz_j\leΓ$:
+
+$$
+\bar a^Tx+
+\max_z\left\lbrace\sum_j\hat a_jx_jz_j:
+0\le z_j\le1,\sum_jz_j\le\Gamma\right\rbrace
+\le b.
+$$
+
+The inner problem is an LP. Dualizing it gives variables $π\ge0$ and $q_j\ge0$:
+
+$$
+\bar a^Tx+\Gamma\pi+\sum_jq_j\le b,
+$$
+
+$$
+\pi+q_j\ge\hat a_jx_j\qquad\forall j.
+$$
+
+This counterpart remains linear. Integer $Γ$ roughly protects against that many full deviations; fractional $Γ$ permits one additional partial deviation. A probability guarantee for $Γ$ requires assumptions and should not be improvised.
+
+### A small protection example
+
+A workshop chooses quantities $x_1,x_2,x_3\ge0$. Nominal machine times are $(2,3,4)$ hours, each may rise by $(0.5,1.0,1.5)$, and capacity is 120 hours. Nominal feasibility is
+
+$$2x_1+3x_2+4x_3\le120.$$
+
+Full box protection is
+
+$$2.5x_1+4x_2+5.5x_3\le120.$$
+
+With budget $Γ=1$, only the largest adverse contribution among $0.5x_1$, $x_2$, and $1.5x_3$ is added. The model does not choose in advance which coefficient worsens; the robust counterpart protects against whichever is most damaging for the chosen production plan.
+
+If the plan concentrates on product 3, its deviation dominates. Diversifying production may reduce the largest exposure even when nominal profit is slightly lower. This is how robustness can alter decisions rather than merely subtracting a fixed safety margin.
+
+### Robust equalities and recourse
+
+Requiring
+
+$$a(u)^Tx=b(u)\quad\forall u\in\mathcal U$$
+
+with one fixed $x$ is often impossible. Balance equalities usually need adjustable recourse. Under uncertain demand, production, inventory, or shortage can adapt after demand becomes known. Do not robustify equality rows mechanically.
+
+A two-stage robust model chooses $x$ now and $y(u)$ later:
+
+$$A(u)x+B(u)y(u)\le b(u)
+\quad\forall u\in\mathcal U.$$
+
+Arbitrary response functions are difficult. Affine rules $y(u)=y_0+Yu$ provide tractable approximations in many cases. They are more flexible than static decisions but can be conservative relative to fully adaptive policies. List which decisions actually can change after information arrives.
+
+### Objective and constraint robustness
+
+Worst-case objective
+
+$$\min_x\max_{u\in\mathcal U}f(x,u)$$
+
+protects performance. Robust constraints protect feasibility. A model may reasonably minimize expected operating cost while enforcing safety for every member of an uncertainty set. Label each treatment rather than calling the entire model robust because one coefficient was inflated.
+
+Measure the price of robustness. Compare nominal objective, out-of-sample objective, violation frequency, violation magnitude, and decision changes over set size or $Γ$. If cost rises 4% and nearly all meaningful violations disappear, the protection is interpretable. If cost rises 40% while tested violations barely improve, revisit the set or failure metric.
+
+## Robust vs. Stochastic
+
+Stochastic optimization requires probability distributions and optimizes expectations, chance constraints, or risk measures. Robust optimization requires an uncertainty set and protects against every member. Distributionally robust optimization protects against every distribution in an ambiguity set.
+
+A chance constraint
+
+$$\Pr(a(\xi)^Tx\le b)\ge1-\epsilon$$
+
+permits violation with probability at most $\epsilon$. It can be less conservative than worst-case robustness, but only if the probabilistic model is credible. Scenario testing after optimization is not the same as embedding the probability statement in the optimization.
+
+Use robustness when feasibility failure is costly and only ranges are defensible. Use stochastic models when repeated outcomes and probability estimates are meaningful. Use both when appropriate: optimize expected service while robustly protecting a safety constraint.
+
+### The information structure comes first
+
+Before choosing a method, draw a timeline. Mark when uncertainty is revealed and which decisions remain adjustable. A two-stage problem has here-and-now decision $x$, uncertain outcome $ξ$, and recourse decision $y(ξ)$:
+
+$$
+\min_x c^Tx+\mathbb E_\xi[Q(x,\xi)],
+$$
+
+where
+
+$$
+Q(x,\xi)=
+\min_y\{q(\xi)^Ty:W(\xi)y\ge h(\xi)-T(\xi)x\}.
+$$
+
+For a relief system, $x$ may position supplies before a storm while $y$ routes them after damage is observed. A static model that fixes routes before knowing road closures is unnecessarily rigid. A model that chooses warehouse locations after seeing the storm uses future information and is unrealistically optimistic.
+
+The expected value of perfect information compares the stochastic optimum with a clairvoyant planner allowed to choose $x$ after observing every scenario. It quantifies the maximum value of resolving uncertainty early. The value of the stochastic solution compares the stochastic policy with a plan optimized only for mean inputs. These measures show whether representing uncertainty changes the decision enough to justify its complexity.
+
+### Expected value is not typical performance
+
+Minimizing $\mathbb E[C(x,ξ)]$ treats equal expected cost as equal even when distributions differ. Plan A may cost 10 almost always. Plan B may cost 0 with probability 0.99 and 1,000 with probability 0.01. Both have expected cost 10, but their operational risk differs.
+
+Report distributional summaries: median, quantiles, tail mean, violation probability, and worst observed scenario. Do not describe the mean scenario as “most likely”; for continuous multivariate uncertainty, the vector of means may never occur and can combine values that are not jointly typical.
+
+Jensen's inequality also matters. For convex cost $f$,
+
+$$f(\mathbb E[\xi])\le\mathbb E[f(\xi)].$$
+
+Evaluating a nonlinear cost at mean demand can systematically understate expected cost. Optimizing with mean inputs is not generally equivalent to stochastic optimization.
+
+### Chance constraints and a Gaussian counterpart
+
+Suppose uncertain coefficient $a$ is Gaussian with mean $μ$ and covariance $Σ$. For fixed $x$, $a^Tx$ is Gaussian with mean $μ^Tx$ and standard deviation $√x^TΣx$. The chance constraint
+
+$$\Pr(a^Tx\le b)\ge1-\epsilon$$
+
+is equivalent to
+
+$$
+\mu^Tx+\Phi^{-1}(1-\epsilon)
+\sqrt{x^T\Sigma x}\le b,
+$$
+
+assuming the Gaussian model and $εc$, and salvage value $v Plan B costs 3.2% more than the nominal minimum but keeps all service constraints feasible across the declared demand set and reduces worst-scenario regret by 41%; beyond this point, each additional 1% of cost buys less than 0.2% regret reduction.
+
+That statement tells the reader what was traded, over what uncertainty, and why the selected point is defensible.
+
+### A recommendation has six parts
+
+A complete recommendation should name the decision, comparison, trade-off, protection scope, evidence, and limitation. “Choose Plan B” names only the decision. A fuller structure is:
+
+1. **Decision:** what should be implemented, where, and when?
+2. **Comparison:** which baseline and alternatives were evaluated?
+3. **Trade-off:** what was sacrificed and gained in original units?
+4. **Protection:** against exactly which parameter set, scenarios, or probability model?
+5. **Evidence:** what bounds, held-out tests, or stress results support the claim?
+6. **Limitation:** what mechanism, data, or uncertainty remains outside scope?
+
+This structure keeps a result from outrunning its model. Use “guarantees” only for a mathematically verified property under stated assumptions. Use “observed in tests” for finite simulations. Use “suggests” for evidence that is indirect or structurally uncertain.
+
+### Put original units back
+
+Normalized objectives help computation but make poor conclusions. Replace “objective 2 improved by 0.17” with “90th-percentile wait fell from 14.2 to 10.8 minutes.” Replace “robustness cost 0.06” with “annual operating cost rose by $310,000.” Readers can judge an exchange only in interpretable units.
+
+Report absolute and relative differences. A 50% reduction may mean two failures to one, statistically unstable in a small sample. A 0.2% cost increase may still mean millions of dollars. Include denominators and time horizons.
+
+### Separate evidence from preference
+
+The model may establish that Plan A is cheaper and Plan B is safer under specified scenarios. Selecting B because safety is prioritized is a policy choice informed by evidence. Write the two steps separately. Do not claim mathematics proved the stakeholder's value judgment.
+
+If stakeholders disagree, present the region in which each plan is preferred. “Plan B is selected whenever one minute of worst-district waiting is valued above $42,000 annually” is more informative than one unexplained weight vector. If no consensus exists, the frontier itself may be the legitimate result.
+
+### Explain the price of protection
+
+The price of robustness can be expressed as
+
+$$
+\operatorname{PoR}(\rho)=
+\frac{f_{\mathrm{nom}}(x^R(\rho))-f_{\mathrm{nom}}(x^N)}
+{|f_{\mathrm{nom}}(x^N)|},
+$$
+
+where $x^N$ is nominal optimum and $x^R(ρ)$ robust solution. Pair it with reliability improvement. A price without benefit is not interpretable; a violation reduction without cost hides the trade-off.
+
+Protection curves often have a knee. Increasing $Γ$ from zero to two may eliminate common violations cheaply, while increasing it from eight to nine may protect an implausible corner at large cost. Recommend a protection level based on consequence and calibration, not the word “maximum.”
+
+### Give implementation triggers
+
+A robust plan should specify monitoring. If observed demand leaves the calibrated set, if intervention efficacy falls below its protected range, or if preference constraints change, trigger reoptimization or escalation. A guarantee has an expiration condition.
+
+For a feedback policy, give the observable threshold and action: “If estimated adult abundance exceeds $\bar A$ for two surveys and resource index remains above $R_0$, raise trapping effort one level, subject to ecosystem floor.” The deployed rule must use measurable quantities and account for observation error.
+
+### Show one counterfactual
+
+Reoptimize under a meaningful restriction to explain opportunity cost: no new depot, no intervention in year one, fixed current bus frequency, or no robust protection. Compare full system response, not only subtracting one objective term. Counterfactuals reveal why the recommended action matters.
+
+### End with a boundary
+
+Finish with conditions under which the recommendation should not be used. Perhaps correlations outside the scenario library, delayed ecological response, a policy change, or a demand level beyond capacity invalidates it. Boundaries are not weakness; they prevent a local model from becoming an unlimited claim.
+
+For the easter egg, look back at plans $A,B,C,D$ in Section 2. Add a fifth plan $E=(12,9)$—identical to $B$. The Pareto set has not changed, but a careless program may report two “different” solutions. Decide whether duplicates should be merged by objective values or retained because their underlying decisions differ. That tiny choice becomes important when a frontier contains several operationally distinct ways to achieve the same score.
+
+### Sources
+
+- [COMAP 2024 MCM/ICM results and Outstanding papers](https://www.contest.comap.com/undergraduate/contests/mcm/contests/2024/results/).
+- [COMAP previous contests archive](https://contest.comap.com/undergraduate/contests/mcm/previous-contests.php).
+- [CUMCM official archive](https://www.mcm.edu.cn/).
+- Boyd and Vandenberghe, [*Convex Optimization*](https://web.stanford.edu/~boyd/cvxbook/).
+
+## Worked Cases
+
+The final studios combine preference uncertainty, parameter uncertainty, and operational validation in complete decisions rather than isolated formulas. Each begins with a baseline, identifies the information timeline, constructs a frontier, adds protection, and ends with evidence a decision maker can inspect.
+
+### Studio A: a resilient campus microgrid
+
+A campus chooses solar capacity $S$, battery energy capacity $B$, and grid connection capacity $G$ for the next fifteen years. Hourly operations choose grid import $g_{th}$, battery charge $c_{th}$, discharge $d_{th}$, state of charge $e_{th}$, renewable curtailment $r_{th}$, and unserved critical demand $ℓ_{th}$ in representative year $t$ and hour $h$.
+
+The planning decision occurs before future demand, solar production, grid price, and outages are known. Operating decisions adapt after each scenario is observed. This is a two-stage capacity-and-dispatch problem. Treating all hourly decisions as here-and-now would buy excessive capacity; allowing capacity to change by scenario would be clairvoyant.
+
+For scenario $ω$, hourly balance is
+
+$$
+g_{h\omega}+d_{h\omega}+s_{h\omega}-r_{h\omega}
+=D_{h\omega}+c_{h\omega}-\ell_{h\omega},
+$$
+
+where $s_{hω}\le S\phi_{h\omega}$ is available solar used. Battery dynamics are
+
+$$
+e_{h+1,\omega}=e_{h\omega}
++\eta_cc_{h\omega}\Delta t
+-\frac{d_{h\omega}\Delta t}{\eta_d},
+$$
+
+with $0\le e_{hω}\le B$ and power limits tied to installed equipment. Grid import satisfies $0\le g_{hω}\le G$ when grid is available and $g_{hω}=0$ during outage hours.
+
+Check signs with four cases. With demand but no supply, $ℓ$ must equal demand. With excess solar, curtailment can absorb surplus. Charging increases next state; discharging reduces it by more than delivered energy because efficiency is below one. Summing the state equation over a cyclic horizon should return the battery to its initial energy.
+
+Three objectives are natural:
+
+$$
+J_C=K_SS+K_BB+K_GG+
+\mathbb E_\omega\sum_h p_{h\omega}g_{h\omega},
+$$
+
+$$
+J_E=\mathbb E_\omega\sum_he_{h\omega}^{\mathrm{grid}}g_{h\omega},
+$$
+
+and a reliability measure such as expected unserved energy
+
+$$J_R=\mathbb E_\omega\sum_h\ell_{h\omega}\Delta t.$$
+
+Cost and emissions are soft trade-offs. Critical-load service may be a hard rule:
+
+$$
+\sum_h\ell_{h\omega}^{\mathrm{critical}}\Delta t=0
+\quad\forall\omega\in\Omega_{\mathrm{protected}}.
+$$
+
+Do not combine critical and flexible loads in one shortage penalty. A laboratory freezer, dormitory lighting, and optional vehicle charging have different consequences. Use priority classes or value-of-lost-load values justified by operations.
+
+The transparent baseline is grid-only operation sized to observed peak demand. It establishes current cost, emissions, and complete dependence on grid availability. A nominal plan optimizes capacity under average prices and solar. A stochastic plan minimizes expected operating cost over scenarios. A robust plan protects critical load during every declared outage and low-solar scenario.
+
+Generate a cost-emission frontier under the critical-service rule. One epsilon formulation is
+
+$$
+\min J_C\quad\text{s.t.}\quad J_E\le\epsilon_E,
+$$
+
+plus dispatch and reliability constraints. Sweep $ε_E$ from the cost-optimal emissions to the minimum-emission feasible level. Report installed capacities and renewable curtailment at each point. The frontier alone can hide a design switch from large grid connection to solar-plus-storage.
+
+Solar and battery are not perfect substitutes. Extra solar helps when sunlight overlaps demand or can charge storage. Extra battery shifts energy but cannot create it. During a multi-day low-solar outage, battery duration matters. Plot critical-load survival hours under outage start time and duration; average annual metrics will not reveal this vulnerability.
+
+Uncertainty is structured. Demand and solar have daily patterns and weather correlation. Electricity price may rise during high demand. Outages correlate with severe weather, which may also reduce solar and increase heating load. Independent sampling of each hourly coefficient can generate impossible jagged scenarios and understate compound risk.
+
+Build coherent scenario families:
+
+- ordinary weekday and weekend operation;
+- heat-wave demand with price stress;
+- winter low-solar sequence;
+- short daytime grid outage;
+- multi-hour evening outage;
+- compound outage plus low initial battery charge.
+
+Use historical sequences or weather-conditioned models for ordinary probability. Retain compound outage stresses even if probability is unknown. The robust guarantee applies to the protected family; independent held-out years test ordinary performance.
+
+Chance-constrained planning might require loss of load probability below $ε$. But reliability events are temporally dependent: one depleted battery creates failures across consecutive hours. Counting each hour as independent exaggerates sample size. Evaluate event frequency, duration, energy not served, and maximum consecutive shortfall.
+
+CVaR of operating cost protects expensive years:
+
+$$
+\min J_C+\lambda\operatorname{CVaR}_{0.95}(C_\omega).
+$$
+
+CVaR of unserved critical energy may be inappropriate if any protected-scenario shortage is unacceptable. Use a robust hard constraint for safety and CVaR for less critical service or cost. Risk measures should match consequences.
+
+Preference uncertainty enters through cost versus emissions. Ask how much annualized cost the campus will pay per tonne of carbon reduction, but also test policy thresholds such as a carbon budget. If carbon price $p_C$ is used, solve over a range rather than presenting one ceremonial value. Record capacity breakpoints where storage becomes worthwhile.
+
+The price of resilience is
+
+$$
+\frac{J_C(x^{\mathrm{robust}})-J_C(x^{\mathrm{nominal}})}
+{J_C(x^{\mathrm{nominal}})}.
+$$
+
+Pair it with added outage survival and reduction in unserved energy. A 7% cost increase has no meaning until readers know whether it buys one extra hour or three days of critical operation.
+
+Battery degradation and replacement can change the answer. A simple throughput cost may approximate wear, but deep cycles and calendar aging matter. Include replacement in the same discounted horizon as generation assets. Stress-test battery lifetime and efficiency; otherwise a storage-heavy robust plan can look artificially cheap.
+
+The model should also prevent simultaneous charging and discharging if tariffs or negative prices make that loophole profitable. Binary mode variables are one solution; under ordinary positive prices and efficiency losses, simultaneous flows may be dominated, but verify output rather than assuming.
+
+Validation begins with one day and one scenario. Hand-calculate energy balance, state trajectory, cost, and emissions. Then independently reconstruct every scenario's balance and capacity residuals from exported dispatch. Check installed assets are identical across scenarios and recourse varies only after uncertainty is known.
+
+Backtest on held-out weather years. For each, simulate the selected capacity with a dispatch policy using only information available at the time. Compare grid-only, nominal, stochastic, and robust designs on paired years. Report cost, emissions, curtailment, peak import, shortage events, and battery cycles.
+
+A recommendation might read: “Install design R rather than nominal design N if the campus requires full critical-load service through the declared 12-hour compound outage. R increases annualized nominal cost by 6.4%, reduces grid emissions by 18%, and had no critical shortfall in protected scenarios or held-out years; resilience beyond 12 hours and battery failure remain outside the guarantee.” Every number must come from verified output, not this illustrative template.
+
+The limitation is structural. Representative days can break storage chronology across seasons. A battery cannot borrow energy from a sunny representative day to survive a winter outage unless the weighting construction preserves sequence. Use chronological simulation for validation even if clustered days accelerate planning. If seasonal storage matters, the planning model itself needs linked chronology.
+
+### Studio B: equitable emergency inventory
+
+A regional agency prepositions emergency kits at warehouses before hurricane season. Communities differ in population, vulnerability, travel access, and storm exposure. After a scenario is observed, shipments respond to realized demand and road availability. Objectives include annualized inventory cost, expected unmet demand, and worst-community shortage rate.
+
+Let $x_i$ be kits stored at warehouse $i$. Under scenario $ω$, shipment $y_{ijω}$ and shortage $u_{jω}$ satisfy
+
+$$
+\sum_i y_{ij\omega}+u_{j\omega}=d_{j\omega},
+$$
+
+$$
+\sum_jy_{ij\omega}\le x_i,
+$$
+
+and $y_{ijω}=0$ when route $(i,j)$ is closed. Here inventory is first-stage; shipments are recourse.
+
+Expected total shortage
+
+$$\mathbb E\sum_ju_{j\omega}$$
+
+favors populous communities. Worst proportional shortage
+
+$$
+\max_{j,\omega}\frac{u_{j\omega}}{d_{j\omega}}
+$$
+
+protects smaller communities but can be dominated by a remote location. A vulnerability-weighted shortage $∑_jv_ju_{jω}$ incorporates priority but requires transparent $v_j$. Present all three before deciding which is objective, constraint, or reporting metric.
+
+An epsilon model can minimize expected cost subject to total-shortage and equity limits:
+
+$$
+\mathbb E\sum_ju_{j\omega}\le\epsilon_U,
+$$
+
+$$
+\frac{u_{j\omega}}{d_{j\omega}}\le\epsilon_F
+\quad\forall j,\omega\in\Omega_{\mathrm{protected}}.
+$$
+
+If demand can be zero, define the fairness denominator carefully. Use a service target or condition only on positive demand. A tiny denominator can make percentage shortage unstable.
+
+Road uncertainty creates network-specific vulnerability. A warehouse with large inventory may become isolated. Nominal distance optimization tends to concentrate stock; resilience rewards geographic diversity. Plot inventory placement and scenario flows. Explain whether added sites reduce expected travel or provide backup under closure.
+
+Budgeted uncertainty can protect demand within each region without assuming every community reaches maximum simultaneously. A factor set can model common storm intensity plus local deviations. Named track scenarios preserve correlated road closures and demand. Compare them rather than choosing geometry solely for tractability.
+
+Minimax regret offers another view. In every storm scenario, compute the best inventory placement that a clairvoyant planner would have chosen. Regret measures avoidable extra shortage or cost from the fixed prepositioning plan. A plan can have high absolute loss in a catastrophic scenario but low regret if every plan suffers similarly.
+
+Validate fairness out of sample. For each held-out storm, report shortage distribution by vulnerability group, not only an aggregate. Examine whether the model's vulnerability weights actually reduce harmful disparity. If groups are defined using the same outcome data, guard against circularity.
+
+An implementable policy specifies emergency transfer rules when inventory is insufficient. Lexicographic recourse can prioritize life-critical kits, then vulnerable communities, then total distance. A finite weighted penalty may unintentionally trade a critical kit for several kilometers of travel saving.
+
+The decision table should include nominal cost, expected shortage, worst protected shortage, held-out group disparity, number of isolated communities served, and inventory turnover. A robust plan earns its name only with the declared scenario coverage and independent tests visible.
+
+### Studio C: a transit corridor that must be fast and fair
+
+A city redesigns bus frequency and limited-stop service along a corridor with twelve neighborhoods. Decisions include hourly departures $f_{rt}$ on route $r$, whether a limited-stop pattern opens, fleet allocation, and transfer coordination. The city cares about operating cost, passenger time, emissions, and access disparity. Demand and travel time are uncertain.
+
+Begin with the passenger path rather than an aggregate score. For origin $i$, destination $j$, and time period $t$, estimated generalized time is
+
+$$
+T_{ijt}(f)=W_{it}(f)+R_{ijt}(f)+X_{ijt}(f),
+$$
+
+where $W$ is waiting, $R$ in-vehicle time, and $X$ transfer or walking burden. A common approximation under random arrivals is $W\approx1/(2f)$ for regular service. It fails under schedules, bunching, low frequency, and passengers timing arrival. Validate the waiting model before optimizing frequency.
+
+Passenger-time objective is
+
+$$
+J_T=\sum_{i,j,t}d_{ijt}T_{ijt}(f).
+$$
+
+This demand-weighted total values a minute equally for each trip but gives populous origins more aggregate influence. Equity alternatives include maximum neighborhood average,
+
+$$
+J_F=\max_i
+\frac{\sum_{j,t}d_{ijt}T_{ijt}}{\sum_{j,t}d_{ijt}},
+$$
+
+or maximum change relative to current service. Use an epigraph variable for the maximum. Report low-demand neighborhoods separately because noisy averages with few observations can dominate.
+
+Operating cost can be built from vehicle-hours, vehicle-kilometers, peak fleet, and fixed route activation:
+
+$$
+J_C=\sum_{r,t}(c_hH_{rt}+c_kK_{rt})
++c_FF^{\mathrm{peak}}+\sum_rF_rz_r.
+$$
+
+Emissions depend on technology, speed, load, and deadheading. If electric buses have zero tailpipe emissions, a lifecycle or grid-emission boundary may still be relevant. State which boundary the objective uses.
+
+Hard constraints include minimum coverage, fleet conservation, driver rules, capacity, and perhaps an accessibility promise. Frequency and fleet cycle time are linked:
+
+$$n_{rt}\ge f_{rt}\tau_{rt},$$
+
+where $τ_{rt}$ is round-trip time in hours. If $τ$ is uncertain, nominal allocation can fail when congestion lengthens cycles. A robust row or recovery policy can reserve vehicles.
+
+The first baseline keeps current route structure and optimizes only frequency. The second allows limited-stop activation. Comparing them shows whether structural redesign earns its complexity. A third baseline allocates buses proportional to observed demand; it is simple and useful but may neglect access equity.
+
+Generate a frontier with cost primary and constraints on total passenger time and worst-neighborhood time:
+
+$$
+\min J_C
+\quad\text{s.t.}\quad
+J_T\le\epsilon_T,\quad J_F\le\epsilon_F.
+$$
+
+Vary one epsilon at a time first, then inspect joint combinations. Plot cost versus total time, color by disparity, and label route activations. A frontier point where a limited-stop route switches on may create a jump; do not smooth it away.
+
+Demand uncertainty is partly random and partly forecast error. Morning peaks shift by day; special events create structured surges; a new route changes ridership. Use held-out days for ordinary variation and named event scenarios for structural stresses. If ridership response to service is important, iterate demand and service or use elasticity scenarios. A fixed-demand model estimates short-run benefit only.
+
+Travel times across route segments are correlated. An accident delays adjacent segments together. A factor model with common corridor congestion plus segment residuals is more realistic than independent intervals. Protect cycle-time feasibility against a budgeted or ellipsoidal set, while evaluating passenger-time distribution stochastically.
+
+A chance constraint might require enough fleet with 95% probability:
+
+$$
+\Pr(f_{rt}\tau_{rt}\le n_{rt}\ \forall r,t)
+\ge0.95.
+$$
+
+Joint reliability is harder than separate route probabilities. Allocating 5% failure allowance to every route does not create 95% system reliability. Use scenario constraints, risk allocation, or a conservative union bound with disclosed assumptions.
+
+Recourse exists. Dispatchers can insert reserve buses, short-turn vehicles, or change holding. Model reserve capacity now and scenario dispatch later. A static robust frequency schedule that assumes no operating response may overpay. An optimistic model with unlimited reserve dispatch understates resources. Add realistic recourse limits.
+
+Equity under uncertainty should not be checked only at mean demand. A neighborhood may be acceptable on average but repeatedly suffer in high-congestion scenarios. Report distribution of neighborhood waits, probability of exceeding a service threshold, and worst protected scenario. Weighting by vulnerability may be justified, but publish the index construction and sensitivity.
+
+Suppose the cost-efficient plan removes a low-ridership branch. Total time improves because buses move to crowded routes, yet residents in one neighborhood lose access. If minimum geographic coverage is a public commitment, encode it as a hard rule. If alternatives such as demand-responsive service exist, model their cost and service rather than assigning infinite penalty.
+
+Validate in a microscopic or event simulation using the optimized timetable. Simulate passenger arrivals, capacity denial, bunching, transfers, and travel-time variability. The optimization approximation may use $1/(2f)$; simulation reveals when bunching or denied boarding breaks it. Reoptimize only after diagnosing systematic failure.
+
+Use paired historical or simulated days for comparison. Report mean passenger time, 90th percentile, denied boardings, worst-neighborhood service, cost, emissions, and reserve activation. Confidence intervals on paired plan differences are more informative than separate error bars.
+
+Implementation cost includes change. Drivers and passengers adapt to stable schedules; weekly route switching can destroy usability. Add transition cost or constrain distance from current service:
+
+$$
+\sum_{r,t}|f_{rt}-f_{rt}^{\mathrm{current}}|\le\Delta.
+$$
+
+Near-optimal analysis can find a plan with slightly higher modeled cost but far fewer timetable changes. That may be the more robust institutional decision.
+
+The final recommendation should state a service envelope: demand range, travel-time uncertainty, reserve availability, and event types under which it was tested. If observed loads exceed the envelope, trigger extra service or reoptimization. A schedule is not permanently robust.
+
+### Studio D: crops, water, profit, and drought resilience
+
+A farming cooperative allocates land and irrigation among crops across seasons. It seeks profit, employment, and soil diversity while limiting water use and downside loss. Yield, price, water availability, and demand are uncertain and correlated through weather and markets.
+
+Let $x_{kts}$ be area of crop $k$ in year $t$ and season $s$. Produced quantity under scenario $ω$ is
+
+$$q_{kt\omega}=\sum_s y_{kts\omega}x_{kts},$$
+
+with sold quantity $v_{ktω}\le q_{ktω}$ and $v_{ktω}\le D_{ktω}$. Profit is
+
+$$
+\Pi_\omega=
+\sum_{k,t}p_{kt\omega}v_{kt\omega}
+-\sum_{k,t,s}c_{kts\omega}x_{kts}
+-C^{\mathrm{irrig}}_\omega.
+$$
+
+Separate production and sales so surplus does not receive full revenue. If surplus is processed, fed to livestock, or sold at discount, add explicit channels and capacities.
+
+Water use is
+
+$$W_{ts\omega}=\sum_kw_{kts\omega}x_{kts}.$$
+
+Land allocation is chosen before seasonal yield and price are fully known, while supplemental irrigation or market allocation may adapt. Distinguish first-stage planting from recourse. If the cooperative can replant after early-season information, add that stage rather than granting all adaptation in advance.
+
+Multi-objective endpoints include negative expected profit, water use, employment shortfall, and crop concentration. A diversity metric can be a Herfindahl index
+
+$$H=\sum_k\left(\frac{\sum_{t,s}x_{kts}}{\sum_{j,t,s}x_{jts}}\right)^2,$$
+
+which is smaller for diversified area. This quadratic metric does not automatically represent soil health; rotation and legume constraints capture specific agronomy more directly. Use $H$ only for the diversification value it actually measures.
+
+Employment target may be seasonal. Annual labor totals can hide a harvest peak impossible to staff:
+
+$$
+\underline L_{ts}\le
+\sum_kh_{kts}x_{kts}
+\le\overline L_{ts}.
+$$
+
+The lower bound supports employment; the upper bound enforces capacity. If labor demand itself is uncertain, hard lower employment may conflict with failed crops. Decide whether it is a job commitment or expected benefit.
+
+Water safety under drought can be robust:
+
+$$
+W_{ts\omega}\le A_{ts\omega}
+\quad\forall\omega\in\Omega_{\mathrm{protected}},
+$$
+
+where $A$ is available irrigation. Profit can be optimized in expectation with CVaR protection:
+
+$$
+\max\ \mathbb E[\Pi]-\lambda
+\operatorname{CVaR}_{0.95}(-\Pi).
+$$
+
+Here CVaR acts on loss $-Π$. Check signs carefully: maximizing positive profit while adding CVaR of profit with the wrong sign can reward bad tails.
+
+Construct scenarios coherently. Drought lowers water availability and many yields, but price may rise for scarce crops. Regional drought can also raise all farms' prices, while a farm-specific failure does not. Cost inflation may correlate with energy-intensive irrigation. A scenario table should expose these relationships.
+
+Start with three plans: expected-profit optimum, minimum-water plan meeting a profit floor, and current-practice baseline. Add robust water feasibility. Generate profit-water frontier and show CVaR as a third dimension. A plan can use slightly more expected water yet be safer under drought if it shifts to crops with responsive irrigation schedules; inspect scenario use, not only nominal coefficients.
+
+Preference questions should be concrete. How much expected annual profit is the cooperative willing to sacrifice to save one thousand cubic meters? What minimum seasonal employment is a commitment? What probability or scenario class of exceeding water rights is unacceptable? Convert answers into epsilon constraints before inventing weights.
+
+Regret is useful because price scenarios have different scales. For each weather-market scenario, compute the clairvoyant planting profit. Regret is the opportunity lost by the fixed plan. A catastrophic drought may give low profit to every plan and high absolute loss, yet moderate regret. Report both solvency risk and regret.
+
+Multi-year rotation makes decisions path-dependent. A crop planted today changes next year's feasible set. End-horizon effects can make the model exploit the last year by ignoring future soil consequences. Add a terminal rotation state or solve a longer horizon and compare early-year choices.
+
+Robustifying every yield downward and every cost upward can create an implausible universal disaster. Budgeted uncertainty can limit simultaneous coefficient extremes; named drought scenarios preserve mechanisms. Compare protection choices through out-of-sample years. A robust plan should reduce actual violations or downside, not merely have a larger safety coefficient.
+
+Decision stability matters to farmers. If tiny price changes completely replace crop patterns while profit barely moves, seek a stable near-optimal plan. Limit year-to-year area changes, include transition costs, or optimize similarity to current capabilities within a 1% profit gap.
+
+Validation uses independent accounting. Recalculate land, water, labor, rotations, production, sales, and scenario profit. Verify sales never exceed demand or production. Check robust water rows in every protected scenario. Recompute CVaR by sorting losses and comparing with the linearized value.
+
+Backtest by historical year blocks to preserve weather correlation. At each planning date, estimate scenarios using prior years only. Evaluate realized profit, water rights violations, labor, and soil rules. Compare mean-optimal, robust, and current practice on paired years. A strategy that wins only because future prices informed scenario construction is invalid.
+
+Communicate with maps and crop calendars. Show where crops are planted, water draw by season, and which rotation or water constraints bind. A frontier plot says what is traded; the calendar shows whether the plan looks implementable. Ask agronomists to review surprising combinations before interpreting them as innovation.
+
+The recommendation might select a robust compromise only if its profit sacrifice, drought protection, and operational change are acceptable. State the declared drought set, the held-out years, and what happens under a drought more severe than the set. Robustness is a bounded claim.
+
+### Studio E: hospital staffing with service and burnout objectives
+
+A hospital schedules nurses across seven days and three shifts. It needs qualification coverage, legal rest, and continuity of care. It also seeks low labor cost, low understaffing risk, fair workload, and limited undesirable shift transitions. Patient demand and absence are uncertain.
+
+Let $x_{nsh}\in\{0,1\}$ indicate nurse $n$ works shift $s$ on day $h$. Coverage by skill $k$ is
+
+$$
+\sum_na_{nk}x_{nsh}\ge R_{ksh},
+$$
+
+with contract hours, consecutive-day limits, and rest rules. A night-to-next-morning transition can be forbidden by
+
+$$x_{n,\mathrm{night},h}+x_{n,\mathrm{morning},h+1}\le1.$$
+
+Costs include regular and overtime hours. Burnout is not directly observed by one coefficient; use measurable proxies such as consecutive nights, short rest, overtime, or deviation from preferences, and state their limitation. A quadratic workload variance may promote fairness but can conflict with individual contracts.
+
+Hard rules should include legal rest and mandatory qualifications. Patient coverage may be hard for critical care but allowed emergency shortage with costly agency staff. Preferences are soft. Keeping these tiers separate prevents a cheap schedule from purchasing an illegal rest violation.
+
+Demand $R_{ksh}$ is forecast. Absence removes scheduled capacity. A box that assumes every nurse is absent simultaneously is useless; named absence levels, budgeted uncertainty, or a probabilistic model is more appropriate. Correlated illness outbreaks and weather disruptions deserve explicit stresses.
+
+A two-stage model schedules regular staff now and calls agency or float staff after absence and demand are observed. Recourse variables have capacity and higher cost. Without recourse, robust scheduling overstaffs every shift. With unlimited recourse, it underinvests in regular coverage. Model the actual response channel.
+
+Objectives may include expected labor cost $J_C$, expected patient-to-nurse shortfall $J_S$, fairness $J_F$, and preference violation $J_P$. Instead of one score, impose zero critical shortage in protected scenarios, cap workload disparity, and generate a cost-preference frontier.
+
+Fairness can mean equal total hours, equal undesirable shifts, proportional burden by contract, or balanced opportunity for preferred shifts. Equal hours are unfair when contracts differ. Define normalized undesirable burden
+
+$$b_n=\frac{\text{undesirable shifts assigned to }n}
+{\text{eligible undesirable shifts for }n},$$
+
+then limit maximum disparity or deviations from group norms. Protect individual privacy in published outputs.
+
+Continuity of care may reward assigning the same nurse team across related shifts. Pairwise products can introduce quadratic or linearized binary terms. Before adding them, test whether continuity affects patient outcomes or is only a preference. More objectives can dilute the critical ones.
+
+Generate a payoff table: minimum cost, minimum preference violation, minimum disparity, and maximum resilience. Evaluate each on shortage scenarios. The cheapest schedule may rely heavily on agency recourse; the fairness optimum may require extra staff; the resilience optimum may distribute skill redundancy.
+
+Use epsilon constraints: minimize expected cost subject to no critical shortage in protected scenarios, agency use below a limit, and fairness $J_F\leε_F$. Sweep $ε_F$. Discrete schedules create jumps, so show roster changes and not only objective curves.
+
+Preference uncertainty belongs to nurses and managers. Elicit acceptable trade-offs through examples: would the hospital pay one extra overtime shift to remove three night-to-morning transitions? Would a nurse accept another weekend for fewer consecutive nights? Aggregate answers carefully and show disagreement.
+
+Stochastic evaluation should simulate demand and absence jointly. Record understaffed patient-hours, critical shortage events, agency calls, overtime, undesirable-shift disparity, and schedule changes. Use the same scenario streams for every roster. Rare but serious failures require many tests or targeted stresses.
+
+Rolling rescheduling can harm stability. When forecasts change, a mathematically better roster may repeatedly alter nurses' lives. Penalize changes from the published roster:
+
+$$J_\Delta=\sum_{n,s,h}|x_{nsh}-x_{nsh}^{\mathrm{published}}|.$$
+
+Set a freeze window where near-term assignments cannot change except emergencies. This is a robustness property of the decision process, not of demand coefficients.
+
+Validate every logical constraint with truth-table or enumeration tests. Create a tiny roster of three nurses and two shifts whose optimum can be enumerated. Independently calculate hours, rest, qualifications, and objectives from exported assignments. A violation hidden by an index offset can have real legal consequence.
+
+Human review is essential. Charge nurses may identify skill combinations or ward realities absent from data. Record overrides and update the model when patterns reveal a missing rule. Do not let informal overrides silently erase fairness or safety commitments.
+
+A responsible recommendation presents several verified rosters if objectives are nearly tied. Operational managers can choose using context not encoded, while the model supplies cost, risk, and fairness evidence. If one roster is selected, state the preference and uncertainty region supporting it.
+
+### Studio F: urban flood adaptation under deep uncertainty
+
+A river city must decide which flood defenses to build over thirty years. Options include levee reinforcement, retention basins, wetland restoration, property elevation, drainage upgrades, and warning systems. Capital is limited. Climate, land use, and future asset exposure are uncertain. Objectives include discounted cost, expected damage, worst-neighborhood risk, ecological impact, and flexibility.
+
+This case differs from ordinary operational uncertainty. A levee is long-lived and difficult to reverse; climate probabilities may be poorly known; one investment changes future development and behavior. A precise expected-value optimum can be fragile even when calculations are correct.
+
+Let binary $z_{it}$ indicate project $i$ begins in period $t$, and $y_{it}$ indicate whether it is available. Lead time $ℓ_i$ gives
+
+$$y_{it}=\sum_{\tau\le t-\ell_i}z_{i\tau},$$
+
+with at most one start. Budget is
+
+$$
+\sum_iK_{it}z_{it}\le B_t,
+$$
+
+possibly with multi-period construction cash flow. Ignoring lead time grants protection before completion.
+
+Under scenario $ω$, event $e$ has water level, duration, and spatial footprint. Damage in neighborhood $j$ can be approximated by
+
+$$
+D_{je\omega}(z)=
+V_{j\omega}\,p_{je\omega}(z)\,
+g_j(h_{je\omega}(z)),
+$$
+
+where $V$ is exposed value, $p$ probability or event weight, $h$ inundation depth, and $g$ a depth-damage fraction. In a finite event catalog, annual expected damage sums across events. But if event probabilities are deeply uncertain, keep scenario-wise damage visible rather than hiding it in one expectation.
+
+Model interactions. A wetland may reduce peaks modestly and improve habitat; a levee can protect one bank while shifting water elsewhere; drainage helps intense rainfall but not river overtopping; warnings reduce human loss but not property exposure. Simply assigning independent “damage reduction percentages” and adding them can exceed 100% or miss transfer risk.
+
+Use a hydrologic or hydraulic simulator where needed, but construct a surrogate carefully if optimization requires many evaluations. Train on a designed set of project combinations and events, validate on held-out combinations, and enforce physical monotonicity when appropriate. A black-box surrogate with low average error can still fail near safety thresholds.
+
+Objectives may be
+
+$$J_C=\sum_{i,t}\frac{K_{it}z_{it}+M_{it}y_{it}}{(1+r)^t},$$
+
+$$J_D^\omega=\sum_{t,e,j}\frac{D_{jte\omega}(z)}{(1+r)^t},$$
+
+and equity risk
+
+$$J_F^\omega=\max_j
+\frac{D_{j\omega}(z)}{V_{j\omega}+\varepsilon}.$$
+
+The denominator makes relative loss visible but is unstable for neighborhoods with little recorded property value. Social vulnerability, displacement, critical facilities, and nonmarket loss need separate consideration. Property value alone can direct protection toward wealthy areas.
+
+Ecological impact may be a constraint or objective. Wetland loss, river connectivity, and habitat quality have thresholds and recovery dynamics. A dollar valuation can be informative but should not automatically replace legal or ecological minimums.
+
+Construct a payoff table: minimum capital cost, minimum expected damage under a reference scenario, minimum worst-scenario damage, minimum disparity, and maximum ecological benefit under a damage cap. This exposes projects that look attractive only for one outcome.
+
+For deep uncertainty, scenario probabilities may not be credible. Use robust satisficing: find plans that meet thresholds across many plausible futures rather than maximizing a disputed expectation. For example,
+
+$$
+D_\omega(z)\le\bar D,qquad
+J_F^\omega(z)\le\bar F
+\quad\forall\omega\in\Omega_{\mathrm{protected}}.
+$$
+
+Minimize cost subject to these conditions. If no plan satisfies them, minimize maximum threshold exceedance and show which futures cause failure.
+
+Minimax regret is also useful. Compute the best plan for each future with the same budget and timing constraints. Regret measures how much extra damage or cost the chosen adaptive pathway incurs compared with hindsight. Avoid combining dollar damage and ecological score in one regret without a declared value model.
+
+Adaptation pathways preserve flexibility. Instead of committing to every project today, choose an initial action and decision triggers. A pathway may restore wetlands now, reserve land for a basin, then reinforce levees if monitored sea level crosses a threshold. The decision is a policy tree, not one fixed project set.
+
+Let observation $m_t$ update climate state. Trigger rule might be
+
+$$
+\text{start project }i
+\quad\text{if}\quad
+m_t\ge\tau_i
+\text{ for two consecutive periods}.
+$$
+
+Optimize or compare thresholds $τ_i$, accounting for construction lead time. A trigger set too high reacts after protection is needed; too low commits early and loses flexibility.
+
+Real options language helps. Delaying an irreversible project has information value, while early construction has protection value. A flexible preliminary action can keep multiple futures feasible. Standard net present value that ignores learning undervalues flexibility.
+
+Scenario discovery reverses ordinary sensitivity analysis. Rather than asking how output varies one parameter at a time, label simulations where a plan fails and find combinations of sea-level rise, rainfall intensity, development, and project effectiveness associated with failure. The resulting vulnerable region supports monitoring and contingency planning.
+
+Equity must be tested dynamically. Protection can encourage new development behind a levee, increasing future exposure. Property buyouts can reduce risk but disrupt communities. Wetland restoration may shift land use. Model or discuss induced behavior; a static asset map cannot support unlimited long-run conclusions.
+
+Validate hydrologic outputs on known events, damage functions on observed losses, and project effects on engineering evidence. Backtesting rare extremes is limited, so combine empirical validation with physical constraints and stress testing. Clearly separate calibrated events from extrapolated futures.
+
+Use maps that show inundation, depth change, protected critical facilities, and risk transfer. Use pathway diagrams showing actions and triggers. Frontier plots alone cannot reveal that one neighborhood's improvement comes from moving water to another.
+
+The recommendation should name an initial action, reserved options, monitoring variables, trigger thresholds, lead times, and failure conditions. “Build Project A” is incomplete when future learning and adaptation are central.
+
+### Studio G: resilient procurement and supply networks
+
+A manufacturer selects suppliers, contracts base quantities, and reserves emergency capacity before demand and disruptions are known. After uncertainty is observed, it allocates orders, expedites shipments, uses inventory, or accepts shortage. The company values cost, service, emissions, supplier diversity, and disruption resilience.
+
+First-stage decisions include supplier activation $z_i$, contract capacity $q_i$, and safety stock $I_0$. Scenario recourse includes order $x_{itω}$, expedited quantity $e_{itω}$, inventory $I_{tω}$, and shortage $u_{tω}$. Balance is
+
+$$
+I_{t-1,\omega}+\sum_i(x_{it\omega}+e_{it\omega})
+=d_{t\omega}+I_{t\omega}-u_{t\omega},
+$$
+
+under a consistent sign convention. Supplier capacity is
+
+$$x_{it\omega}\le a_{it\omega}q_i,$$
+
+where availability $a$ falls during disruption.
+
+Fixed qualification cost and minimum order quantities create integer structure:
+
+$$L_iz_i\le q_i\le U_iz_i.$$
+
+If $L_i>0$, activating a supplier commits volume. A diversification objective that activates many suppliers can conflict with minimum orders and raise obsolete inventory.
+
+Expected cost includes qualification, purchase, holding, expediting, and shortage. Carbon includes production and transport under a stated boundary. Service can be fill rate or expected shortage. Resilience may be worst-scenario service, recovery time, or performance after loss of a major supplier.
+
+Supplier count is a crude diversity measure. Two suppliers in the same floodplain or relying on the same upstream factory are not independent. Build a dependency network or disruption factors. Geographic diversity without upstream visibility can create an illusion of resilience.
+
+A transparent baseline buys from the cheapest supplier and holds current safety stock. A deterministic diversified plan caps each supplier's share. A stochastic plan weighs disruption scenarios. A robust plan protects a declared set such as loss of any one supplier plus demand deviation.
+
+An $N-1$ rule requires service under removal of each single supplier. For every $i$, solve or include scenario with $a_i=0$. It does not protect against common-mode failures. Add named regional, transport, and upstream scenarios.
+
+Budgeted uncertainty can model uncertain yields or lead-time capacity without assuming all suppliers fail simultaneously. But binary complete failure is often better represented by scenarios than continuous coefficient deviation. Choose uncertainty form from mechanism.
+
+The cost-service-emission frontier may be generated with service as a hard threshold:
+
+$$
+\Pr\left(
+\frac{\sum_tu_{t\omega}}{\sum_td_{t\omega}}
+\le\alpha
+\right)\ge1-\epsilon,
+$$
+
+or scenario-robust service for protected disruptions. Chance constraints need a credible probability model. If rare disruption probability is disputed, show results over probability ranges or use regret.
+
+CVaR of total cost captures expensive disruption tails. CVaR of shortage emphasizes high-shortage scenarios. A weighted sum of both can double-count shortage if shortage penalties already dominate cost. Display objective components and check whether the risk term adds distinct information.
+
+Multi-objective fairness may apply to customers. Cost optimization can ration remote or low-margin customers during disruption. Minimum service by region or customer class can prevent this. State whether priority reflects medical necessity, contract, vulnerability, or profitability.
+
+Lead time creates temporal recourse limits. An emergency supplier cannot serve tomorrow if qualification and shipping take two weeks. Model order arrival with lag:
+
+$$I_{t\omega}=I_{t-1,\omega}
++\sum_ix_{i,t-L_i,\omega}-d_{t\omega}+u_{t\omega}.$$
+
+Incorrect same-period arrivals make disruption recovery unrealistically fast.
+
+Information arrives gradually. Demand forecasts update before supplier disruption is fully known; shipment status updates later. A multistage scenario tree can represent this, but tree size grows rapidly. Rolling-horizon policies or decision rules may be more practical. Ensure policies do not distinguish scenarios before their histories diverge; these are nonanticipativity constraints.
+
+For scenarios $ω$ and $ω'$ identical through time $t$, decisions before $t$ must match:
+
+$$x_{i\tau\omega}=x_{i\tau\omega'}
+\quad\text{for }\tau\le t.$$
+
+Omitting this constraint lets the model know future disruptions and underprices resilience.
+
+Regret compares the contracted network with the best network for each future. Because supplier qualification is irreversible in the horizon, scenario-specific hindsight can be much better. Use regret to identify plans that avoid severe lock-in, but also report absolute shortage in catastrophes.
+
+Preference sensitivity asks how much the firm values a tonne of emissions, a point of fill rate, or one fewer single-source component. Use operational thresholds when possible: regulatory carbon limit, contractual service level, and board-approved concentration cap.
+
+Validate on historical disruptions and synthetic compound events. Preserve temporal sequences. Evaluate recovery time, peak shortage, total shortage, expedite use, cost, emissions, and supplier concentration. Use common scenarios for all plans.
+
+Audit recourse feasibility independently. For each scenario and period, reconstruct inventory balance, supplier capacity, lead time, contract bounds, and customer service. Verify first-stage contract choices are identical across scenarios and nonanticipativity holds.
+
+A plan that opens a second supplier at small expected cost may sharply reduce worst-case shortage. Another supplier may add no resilience because it shares the same dependency. Explain resilience through scenario flow and dependency diagrams rather than supplier count.
+
+Implementation needs triggers: when to expedite, when to ration, when to activate reserved capacity, and when to qualify a new source. Monitor lead time, fill rate, geographic events, financial health, and upstream dependencies. Reoptimize when observations leave the calibrated set.
+
+### Studio H: an end-to-end robust decision audit
+
+The same audit applies to every studio. First, write a timeline of decisions and information. Circle any variable allowed to react before its data are known. This catches perfect-information leakage.
+
+Second, create a payoff table by optimizing each objective alone. Check every resulting decision for feasibility and evaluate it on every objective. This reveals conflicts, scales, and accidental redundancy.
+
+Third, classify every criterion as a hard rule, target, or tradeable objective. Ask what should happen if it cannot be met. Use lexicographic priorities for nontradeable goals rather than giant arbitrary weights.
+
+Fourth, construct the uncertainty model from evidence. List units, data source, dependence, time horizon, and calibration. Draw low-dimensional projections of sets and write named scenarios as stories. Identify structural mechanisms that no parameter set covers.
+
+Fifth, derive at least one robust counterpart by hand. Verify signs, dual norms, and recourse timing. Test a scalar special case. A solver accepting the model is not evidence that the counterpart represents the intended adversary.
+
+Sixth, generate the frontier with at least two methods when feasible: weights for supported points and epsilon constraints for coverage. Remove infeasible and dominated points with tolerances. Preserve links from objective vectors to decisions.
+
+Seventh, select representative policies before choosing a winner: baseline, cheapest, safest, fairest, knee, and robust. Show their actual schedules, locations, or allocations. A point in objective space is not an implementable description.
+
+Eighth, verify optimization output independently. Recompute constraints, objectives, scenario metrics, integrality, and bounds from exported decisions. Reevaluate after rounding. Keep run identifiers so figures and tables cannot mix experiments.
+
+Ninth, evaluate on independent data and outside-set stresses. Use paired scenarios, confidence intervals, tail metrics, and decision stability. Label formal guarantees separately from empirical results.
+
+Tenth, perform preference sensitivity. Show thresholds or regions in which each policy is selected. If small judgment changes switch decisions with little performance difference, present alternatives or choose a stable near-optimal plan.
+
+Eleventh, quantify price of protection, value of recourse, and residual risk. Protection without cost is incomplete; cost without reliability benefit is meaningless. State which events remain outside the model.
+
+Twelfth, write a conditional recommendation with a monitoring trigger and fallback. A robust decision is maintained through observation and revision, not declared once forever.
+
+### Audit lab 1: prove that the frontier is what it claims
+
+Export every candidate as a row containing a stable decision ID, objective values, feasibility residuals, method, parameter setting, seed, solver status, and bound. Never identify a solution only by its rounded objective values; distinct decisions can share them.
+
+Recompute objectives in a separate evaluator. The frontier generator may normalize, negate maximization objectives, or aggregate scenarios. The evaluator should reconstruct raw cost, service, emissions, equity, regret, and risk from exported decisions. Compare evaluator and solver values within stated tolerance. A sign error in one maximization objective can invert dominance while every plot still looks smooth.
+
+Convert all objectives to a consistent minimization convention for dominance, but retain original units for reporting. If profit is maximized, store dominance value $-Π$ and display value $Π$. Name columns explicitly so a later script cannot minimize profit accidentally.
+
+Filter infeasible points using domain tolerances before nondominated sorting. Preserve a rejected-points file with the largest violation and semantic location. This reveals whether an algorithm appears competitive only because it violates a difficult service or safety row.
+
+Deduplicate in two stages. Objective duplicates satisfy
+
+$$
+\|S(F(x)-F(y))\|_\infty\le\tau_F,
+$$
+
+where $S$ scales objectives. Decision duplicates satisfy an appropriate decision metric below $τ_x$. Merge points for plotting only when objective-duplicate, but retain all decision-distinct alternatives. A policymaker may prefer one equivalent route or crop plan for unmodeled reasons.
+
+For each remaining point $x$, search for any $y$ satisfying tolerance-aware dominance. If found, record the dominating decision and objective differences. Unit-test the routine on hand-built sets containing exact duplicates, weakly dominated points, near ties, infeasible attractive points, and a nonconvex unsupported point.
+
+Check endpoints against single-objective solves. The lowest-cost frontier point should reproduce the cost optimum subject to shared hard constraints. If not, the sweep missed an endpoint or used different constraints. Repeat for every objective. Compare exact and heuristic frontiers on a small instance.
+
+For weighted sums, verify weights are nonnegative, normalized only for presentation if needed, and applied after declared scaling. Record the actual coefficients sent to the solver. Two teams can report the same nominal weights but solve different problems because their normalization ranges differ.
+
+For epsilon constraints, store requested epsilon, achieved secondary objective, slack, and feasibility. A constraint can be inactive; that is informative. If the achieved value exceeds epsilon beyond tolerance, reject the point. If many requested values map to the same decision, report stability intervals.
+
+For a purported unsupported point, demonstrate it. In two objectives, test whether any supporting line can make it optimal or show a three-point calculation like the earlier example. In higher dimensions, solve an inverse weight feasibility problem. The label should come from geometry, not visual impression.
+
+Knee selection requires its own audit. Recompute after alternative reasonable scaling and endpoint estimates. If the selected knee changes dramatically, do not call it a natural compromise. Present the competing candidates and marginal trade-offs in original units.
+
+Hypervolume comparisons must use the same fixed reference and scaling. Bootstrap or repeat stochastic algorithms and report distributions, not one maximum. A tiny hypervolume difference can be smaller than run variation. Pair algorithm runs on shared instances and evaluation budgets.
+
+Finally, inspect decision transitions along the frontier. Plot binary activation, resource allocation, or schedule features against the frontier order. Sudden changes may be real integer thresholds. They may also reveal inconsistent indexing or warm-start artifacts. Re-solve near breakpoints with tighter tolerances and alternative starts.
+
+### Audit lab 2: challenge the uncertainty model
+
+Create an uncertainty dictionary. For each uncertain quantity, record symbol, unit, nominal estimate, range or distribution, data period, sample size, dependence, decision-time availability, and calibration method. Add a column specifying whether the uncertainty is aleatory, epistemic, structural, or mixed. This classification determines what additional evidence can reduce it.
+
+Plot raw and transformed data. If a Gaussian model is used, inspect tails, skew, heteroskedasticity, autocorrelation, and regime change. Do not demand perfect normality mechanically; identify which departures affect the decision guarantee. A central-limit approximation may support an aggregate while failing for extremes.
+
+Verify correlations on the same aligned observations. Pairwise covariance built from different missing-data subsets may not be positive semidefinite. Repairing the matrix numerically can be necessary, but explain the method and assess how the repair changes robust decisions.
+
+For interval sets, test coverage on held-out data. Record marginal coverage and simultaneous coverage. A collection of 95% marginal intervals does not mean the full vector lies in the box 95% of the time. For temporal sequences, test whole-path coverage as well as hourly coverage.
+
+For ellipsoids, plot Mahalanobis radii
+
+$$
+r_t^2=(a_t-\bar a)^T\Sigma^{-1}(a_t-\bar a).
+$$
+
+Compare empirical quantiles with the chosen radius. Investigate points outside the ellipsoid: data error, rare but real regime, or omitted factor? Do not automatically delete inconvenient extremes.
+
+For budgeted uncertainty, explain $Γ$ through concrete deviations. At $Γ=2.5$, identify how the inner adversary allocates two full and one half deviations for the selected decision. Plot which coefficients become worst-case active. If the same coefficient dominates every plan, a simpler targeted stress may communicate better.
+
+For scenario sets, maintain a scenario card: narrative, parameter vector, source, internal consistency checks, and protected versus evaluation status. Detect duplicates and impossible combinations. Ensure event probabilities sum correctly only when probabilities are actually used.
+
+Perform leave-one-scenario-out analysis. Remove each optimization scenario, reoptimize, and test on the removed scenario. A plan that collapses whenever one scenario is omitted depends heavily on scenario enumeration. Add scenario discovery or broader protection if that dependence is unacceptable.
+
+Stress beyond the boundary. Increase uncertainty radius gradually, combine two adverse mechanisms, delay recourse, and corrupt one data feed. Locate the first feasibility failure and decision switch. This does not enlarge the formal guarantee; it tells readers how failure begins.
+
+Structural alternatives should share a validation protocol. Fit each using the same training information, test on the same held-out observations, and optimize policies without allowing one model future knowledge. If models remain indistinguishable empirically, protect across them or report model-contingent recommendations.
+
+Audit the probability language. “95% confidence,” “95% prediction,” “95% chance constraint,” “95% empirical coverage,” and “95% of scenarios” are not synonyms. Rewrite every percentage with its reference population and assumptions.
+
+### Audit lab 3: test information and recourse
+
+Draw a scenario tree with nodes labeled by observed history. Decisions at the same information node must be identical. In a deterministic-equivalent program, nonanticipativity constraints enforce this. Verify them numerically by grouping scenarios with shared histories and comparing decisions.
+
+Plant a leakage test. Give two scenarios identical histories through period three but different futures. If first-period decisions differ, the model has future information. This tiny test detects an error that large objective tables can hide.
+
+Check recourse bounds. Emergency supply, agency staffing, reserve buses, or expedited shipping must have capacity, lead time, eligibility, and cost. Unlimited recourse makes first-stage resilience look cheap. No recourse makes it unnecessarily expensive. Compare both extremes to understand the value of flexibility.
+
+Compute value of perfect information and value of the stochastic solution with consistent sign conventions. For minimization,
+
+$$
+\operatorname{EVPI}=z_{\mathrm{stochastic}}
+-\mathbb E[z_{\mathrm{wait-and-see}}]\ge0,
+$$
+
+and
+
+$$
+\operatorname{VSS}=z_{\mathrm{expected-value\ policy}}
+-z_{\mathrm{stochastic}}\ge0
+$$
+
+when both policies are evaluated stochastically and solved accurately. Negative results beyond tolerance reveal inconsistent evaluation or local solutions.
+
+Test policy execution, not only perfect recourse optimization. In reality, operators use forecasts, thresholds, and limited computation. Simulate the actual rolling policy with delayed or noisy observations. A two-stage optimum with full scenario realization can overstate achievable adaptation.
+
+Check terminal conditions. Inventory, battery energy, ecological state, and staff obligations at the horizon influence apparent recourse. Free disposal or leftover value must be intentional. Extend the horizon and compare early decisions to detect endpoint exploitation.
+
+### Audit lab 4: verify robustness and reliability claims
+
+For every robust row, generate an adversarial parameter attaining or approximating the support function. Substitute it into the original uncertain constraint and check equality at an active robust solution. This connects the counterpart to the uncertainty it represents.
+
+For a box with signed $x$, adversary uses coefficient deviations aligned with sign. For an ellipsoid, use $u^*=ρP^Tx/‖P^Tx‖_2$. For budgeted uncertainty, solve the inner LP independently and compare its value with dual variables $Γπ+∑q_j$. Strong duality should match within tolerance.
+
+Sample inside the uncertainty set and confirm feasibility, but remember random sampling cannot prove a worst-case guarantee. The analytic adversary or independent inner maximization is stronger evidence. Sample outside the set to understand degradation.
+
+For chance constraints, estimate violation on independent data with confidence intervals. If $k$ failures occur in $n$ independent trials, report a binomial interval rather than only $k/n$. When observations are dependent, use blocks or event-level trials and say so.
+
+For CVaR, sort independent scenario losses and compare empirical tail average with the optimization variables. Check whether $η$ is a plausible VaR threshold and $ξ_s=\max(0,L_s-η)$. A sign or confidence-level error can optimize the best tail instead of the worst.
+
+For distributionally robust claims, document ambiguity set, radius, support, theorem conditions, and whether the guarantee is finite-sample or asymptotic. Reevaluate under distributions just outside the set. “Distribution free” always has conditions; quote them rather than turning the phrase into immunity.
+
+The price-of-robustness curve should start at the nominal model when protection is zero, unless another formulation changes simultaneously. Verify monotonicity where theory predicts it: enlarging a nested uncertainty set cannot improve the optimal value of a minimization problem with robust constraints, although reported out-of-sample performance can fluctuate.
+
+If robust objective improves as the set grows, inspect whether objectives, normalization, or feasible decisions changed. Apparent improvement may be caused by evaluating each plan under a different metric rather than the same nominal benchmark.
+
+### Audit lab 5: connect evidence to a human decision
+
+Prepare a one-page comparison of representative policies. Include original-unit objectives, formal guarantee scope, empirical test results, decision stability, implementation change, and residual risks. Use the same rows for every policy; blank cells reveal missing evidence.
+
+Write a claim ledger. Each sentence in the conclusion should link to a model result, table, figure, theorem, or source. Mark whether it is mathematical, empirical, interpretive, or normative. “Plan B has the lowest verified worst-case cost” is mathematical under the set. “Plan B is fairest” depends on a chosen fairness definition. “Plan B should be adopted” is normative and operational.
+
+Run a reversal test on fairness. If neighborhood or demographic labels were swapped while needs and constraints stayed the same, would the recommendation change for a legitimate reason? Investigate proxy variables and historical inequities. Mathematical symmetry alone does not guarantee social fairness, but unexplained label dependence is a warning.
+
+Conduct a stakeholder comprehension test. Ask someone not involved in modeling to explain what the uncertainty set contains, what the guarantee means, which trade-off selected the plan, and when the plan should be reconsidered. Misunderstanding is a deployment risk even when mathematics is correct.
+
+Create monitoring thresholds from the model boundary. Track whether demand, price, correlation, response efficacy, or service times leave validated ranges. Track active constraints and emergency recourse frequency. Reoptimization triggers should be defined before failure, not improvised afterward.
+
+Document override authority and fallback. If the robust policy becomes infeasible because a novel event occurs, who may relax which target? Which constraints remain inviolable? Which baseline can operate if software or data fail? A model without a fallback is not operationally resilient.
+
+Archive the final package: raw data hashes, preprocessing, uncertainty calibration, formulation, solver settings, candidate archive, independent evaluator, frontier construction, selection logic, figures, and decision memo. One command should regenerate the evidence from permitted inputs.
+
+The audit is complete only when another person can reproduce the frontier, locate the selected decision, verify its guarantee, observe its empirical performance, and state its limitations without relying on private explanation from the model author.
+
+### A numerical mini-case: one table, five decision rules
+
+A relief agency must preposition exactly 100 kits between west warehouse W and east warehouse E. Let $x$ be kits at W and $100-x$ at E. Three equally plausible scenarios describe regional demand:
+
+$$
+\begin{array}{c|rrr}
+&\text{west surge}&\text{balanced}&\text{east surge}\\\hline
+d_W&90&50&25\\
+d_E&30&50&85
+\end{array}.
+$$
+
+After demand is observed, unused kits can cross regions, but transport capacity permits at most 20 kits in either direction. Shortage in scenario $s$ is the minimum remaining unmet demand after local use and transfer. Because total demand is 120 in the two surge scenarios and 100 in the balanced scenario, at least 20 kits are missing in either surge even with perfect placement; extra shortage appears if the 20-kit transfer cannot correct spatial imbalance.
+
+Test five candidate placements:
+
+$$x\in\{20,35,50,65,80\}.$$
+
+For $x=50$ under west surge, W lacks 40 while E has 20 surplus. Transfer 20 east to west, leaving west shortage 20. East demand 30 is served locally. Total shortage is 20. Under east surge the result is symmetric. Under balanced demand, shortage is zero.
+
+For $x=20$ under west surge, W lacks 70 while E has 50 surplus. Only 20 can transfer, so west shortage is 50. Under east surge, E has 80 kits and lacks 5; W has surplus and can transfer 5, so shortage is zero. Balanced demand needs 30 transferred W-ward, above capacity 20, leaving shortage 10. By symmetry $x=80$ has scenario shortages $(0,10,50)$.
+
+For $x=35$, west surge begins with W shortage 55 and E surplus 35. Transfer 20, leaving shortage 35. Balanced demand needs 15 transferred to W, so shortage is zero. East surge has E inventory 65 and shortage 20; W surplus is 10 after local demand 25, so transferring 10 leaves shortage 10. Thus shortages are $(35,0,10)$. Placement $x=65$ gives $(10,0,35)$.
+
+The shortage table is
+
+$$
+\begin{array}{c|rrr|rr}
+x&\text{west surge}&\text{balanced}&\text{east surge}
+&\text{mean}&\text{worst}\\\hline
+20&50&10&0&20&50\\
+35&35&0&10&15&35\\
+50&20&0&20&13.33&20\\
+65&10&0&35&15&35\\
+80&0&10&50&20&50
+\end{array}.
+$$
+
+Both expected-shortage and minimax-shortage rules choose $x=50$. That agreement is not universal; it follows from symmetric equal probabilities. Change west-surge probability to 0.6, balanced to 0.2, and east surge to 0.2. Expected shortages become 32, 23, 16, 13, and 12. The expected rule chooses $x=80$, while minimax still chooses $x=50$. A probability judgment changes the decision.
+
+Now include annual holding costs: W costs 1 per kit and E costs 0.6. Total placement cost is
+
+$$C(x)=x+0.6(100-x)=60+0.4x.$$
+
+Cost rises from 68 at $x=20$ to 92 at $x=80$. We now have a cost-shortage frontier rather than one answer. Under equal scenario probabilities, candidate objective pairs $(C,\mathbb E[u])$ are
+
+$$
+(68,20),\ (74,15),\ (80,13.33),\ (86,15),\ (92,20).
+$$
+
+The last two are dominated by cheaper placements with no greater expected shortage. The first three form the discrete Pareto set. The move from $x=20$ to 35 costs 6 and reduces mean shortage by 5. Moving from 35 to 50 costs another 6 but reduces shortage by only 1.67. The point $x=35$ is a plausible knee, while $x=50$ provides stronger worst-case balance.
+
+An epsilon constraint makes the value judgment explicit. Minimize cost subject to expected shortage at most 16. Candidates $x=35,50,65$ satisfy the shortage cap, and $x=35$ is cheapest. Tighten the cap to 14 and only $x=50$ qualifies. The recommendation changes at a visible service threshold.
+
+Next compute regret in shortage. The scenario-specific best shortage among candidates is zero in each surge and zero in balanced demand: allocate toward the surge after seeing it. Regret therefore equals shortage here. Worst-regret choice is $x=50$. If scenario-specific unavoidable shortage differed, regret would subtract it and could select another plan.
+
+Add a robust service requirement: shortage no more than 25 for every scenario. Only $x=50$ satisfies it. A budgeted or interval model could reach the same conclusion if its uncertainty set contains the three demand patterns. The formal guarantee applies only to those patterns or their declared set; demand $(100,100)$ would violate it because total inventory is insufficient.
+
+Suppose a second truck raises transfer capacity from 20 to 35 at annual cost 7. Recompute shortages. Greater transfer makes extreme placements less fragile, and the optimal first-stage allocation may shift toward cheap E storage. This is recourse value: flexible transport substitutes for balanced prepositioning. Compare the cost of the truck with reduced expected and worst shortage rather than assuming more flexibility is always worthwhile.
+
+Add an equity objective: maximum regional shortage rate. Under west surge at $x=50$, W shortage rate is $20/90$, about 22.2%; east is zero. Under east surge it is $20/85$, about 23.5%. An expected-total objective does not show this difference. A fairness threshold can require each regional rate below 25% in protected scenarios.
+
+This mini-case supplies regression tests. A program should reproduce each shortage, mean, worst value, dominance result, epsilon selection, and robust-feasibility label. Change one transfer capacity, probability, or storage cost and predict the direction before running code. If results violate the hand calculation, inspect balance and transfer signs before trusting a larger model.
+
+It also exposes the conceptual distinctions cleanly. Expected optimization needs probabilities. Robust optimization needs a protected set. Minimax uses absolute worst harm. Minimax regret uses forgone opportunity. Multi-objective optimization shows cost-service alternatives. Recourse changes what can adapt. No method is “the advanced version” of all others; each encodes a different decision statement.
+
+### How to extend the mini-case without losing transparency
+
+The next useful extension is not a larger random table. Add one mechanism at a time and preserve the hand case as a regression test. First, allow emergency purchase $e_s$ after a scenario is observed, capped at 10 kits and costing 4 per kit. Shortage balance becomes
+
+$$u_s\ge d_s-\text{served from stock and transfer}-e_s.$$
+
+Expected-cost optimization may rely on emergency purchase, while a protected-service model may reserve it only for extreme scenarios. Report its frequency and maximum use. Recourse that is always saturated is evidence the first-stage plan may be underbuilt.
+
+Second, make transfer capacity uncertain. Suppose ordinary capacity is 20, but a road disruption reduces it to 5. Create paired demand-road scenarios rather than varying them independently if the same storm causes both. A plan diversified across warehouses becomes more valuable when transfer fails exactly during demand surge.
+
+Third, allow an inventory decision above or below 100 with procurement cost and a total budget. Now robust shortage can be reduced by both more inventory and better placement. Plot total stock and west share along the frontier. These are different decision levers, and a scalar objective can hide which one changes.
+
+Fourth, add two kit types, medical and food, with separate demands and transport volume. A single “kit” aggregation is valid only if types are interchangeable or always used in fixed proportions. Multi-commodity capacity becomes
+
+$$
+\sum_kv_ky_{ijks}\le U_{ij},
+$$
+
+where $v_k$ is volume. Forgetting the sum duplicates truck capacity for each commodity.
+
+Fifth, make vulnerability a service priority rather than a weight invented after seeing results. Require medical shortage rate in high-vulnerability communities below a threshold before minimizing ordinary shortage. If the threshold makes the model infeasible, the elastic diagnostic reveals additional stock or transport needed to honor it.
+
+At every extension, retain a small enumerated instance. Compare its exact frontier with any evolutionary or decomposition method used on the large network. The small instance checks model construction; the large case tests scale. Neither can substitute for the other.
+
+Finally, write the data needs implied by the model: demand distribution by region and kit type, road capacity under events, warehouse cost and loss, emergency purchase lead time, vulnerability definition, and service thresholds. If a parameter is unavailable, simplify the model or present sensitivity. Do not fill every missing cell with a confident-looking number.
+
+This extension discipline is how a tutorial becomes a research workflow. Every new term answers a named failure of the previous model, every parameter has evidence, and every conclusion remains traceable to a verified simpler case.
+
+One more check is worth preserving: reverse the roles of west and east, including demand, cost, and scenario probabilities. The transformed optimum should reverse consistently. If it does not, inspect hard-coded indices, asymmetric transfer equations, and scenario weights. Symmetry tests expose implementation mistakes that ordinary random tests rarely isolate.
+
+Then scale every kit quantity and transfer capacity by ten while keeping per-kit costs and rates consistent. Shortage quantities should scale, proportional shortage should not, and selected shares should remain comparable. Unexpected change may reveal fixed tolerances or penalties that were not scaled with the problem.
+
+Finally, add a dominated candidate deliberately. The frontier routine must remove it, while the raw archive retains it with the ID of a dominating plan. Add an objective duplicate with a distinct allocation; the plot may merge it, but the decision archive must keep it. These simple tests verify that mathematical cleanup does not erase operational alternatives.
+
+When all three transformations pass, the example serves as a compact certificate for balance equations, uncertainty evaluation, dominance, selection, and reporting. Keep it in the repository even after the real network grows much larger. It remains the fastest trustworthy explanation of what the larger system is supposed to do.
+
+### A compact reproducible experiment
+
+For teaching and regression testing, reduce any case to two decisions, two objectives, and three scenarios. Enumerate feasible decisions. Calculate the Pareto set, weighted selections, epsilon selections, scenario regret, robust feasibility, and expected loss by hand. Then make the general code reproduce every number.
+
+Include a nonconvex objective set so one efficient point is unsupported. Include a scenario in which the nominal optimum violates a hard rule. Include two objective-identical but decision-distinct solutions. These features test the cases most likely to be mishandled.
+
+Deliberately corrupt one scenario probability, reverse one inequality, and swap a unit. The independent verifier should fail with a meaningful message. A test suite that never detects a planted error has not demonstrated diagnostic power.
+
+### Final synthesis
+
+Multi-objective optimization does not manufacture consensus. It separates mathematical dominance from human preference and makes the consequences of value judgments visible. Robust optimization does not predict the future. It protects a decision against a declared family of errors and exposes the cost of that protection.
+
+The two disciplines belong together. A plan that is cheap, fair, and low-emission only under one precise forecast is not a reliable compromise. A plan that survives every imaginable disaster but consumes all available resources is not automatically desirable. We need a frontier of protected decisions, evidence about which futures are plausible, and an explicit rule for choosing among them.
+
+The most mature result may be a region rather than a point: a set of plans that remain near-optimal across data, scenarios, and defensible preferences. Within that region, choose the simplest implementable plan, monitor its assumptions, and retain a fallback. Stability and explainability can be legitimate decision values even when they were not in the first objective list.
+
+Before leaving this blog, return to the disagreement at the beginning. The teammate who wanted low cost, the teammate who wanted safety, and the client who protected service were not obstacles to modeling. Their disagreement supplied the structure. Mathematics became useful when it stopped hiding the disagreement and began showing exactly where the decision changes.
+
+## Knowledge Check
+
+These questions progress from Pareto dominance to unsupported efficient points, robust counterparts, adjustable decisions, and a complete ecological-policy audit. Some questions have multiple correct answers.
+
+
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+
+今天从一场争论开始：有人要最低成本，有人要最高安全，客户又不允许服务质量下降。三个人都未必错；真正的建模错误，是把这场争论藏进一个没有解释的综合分数里。
+
+多目标优化负责把冲突目标摊开，鲁棒优化负责检查方案能否承受合理的数据误差。真实案例来自 2024 美赛 A 题：七鳃鳗幼体性别比例会随食物条件变化，优秀论文需要同时考虑入侵种群控制、生态稳定和干预代价。
+
+
+两种承诺
+多目标模型承诺把权衡展示出来；鲁棒模型承诺在明确的不确定集合里保持可行或保持性能。把“综合”“稳健”写进标题，并不能自动兑现任何承诺。
+
+
+## 多目标
+
+公交方案同时涉及成本 $C(x)$、等待 $W(x)$ 和排放 $E(x)$：
+
+$$\min_{x\in X}F(x)=(C(x),W(x),E(x)).$$
+
+它们单位不同，不能未经解释直接相加。$X$ 中应放车辆、工时和最低覆盖等硬约束。安全或法律底线通常不是一个“小权重目标”，否则模型可能用其他收益买走一次违规。
+
+## Pareto 前沿
+
+最小化时，若 $f_i(x)\le f_i(y)$ 对所有目标成立且至少一项严格小，则 $x$ 支配 $y$。不被任何可行方案支配的点称为 Pareto 有效点。
+
+设四个方案的（成本，等待）为
+
+$$A=(10,14),\ B=(12,9),\ C=(15,7),\ D=(14,12).$$
+
+$B$ 比 $D$ 又便宜又快，所以 $D$ 可删除；$A,B,C$ 互不支配。删除 $D$ 是数学结论，在其余三者中选择则需要价值判断。前沿斜率表示局部交换率，“膝点”是继续改善一个目标将付出巨大代价的区域，但它只是候选，不是自动答案。
+
+## 加权和
+
+先归一化，再加权：
+
+$$\min_{x\in X}\sum_iw_i\frac{f_i(x)-f_i^{\min}}{f_i^{\max}-f_i^{\min}},\quad w_i\ge0,\ \sum_iw_i=1.$$
+
+不归一化时，数值尺度最大的目标会控制结果。权重表达在所选范围内的偏好，并不是求解器发现的客观真理。凸目标可行集上，变化正权重能找到受支持的 Pareto 点；非凸前沿的凹陷部分可能永远不是任何加权和的最优解。
+
+对权重做敏感性扫描。如果权重从 0.49 变到 0.51 就完全换方案，应报告这个决策边界，而不是只公布一组“专家权重”。
+
+## 标量化方法
+
+Epsilon 约束法选择一个主目标，把其他目标变成限制：
+
+$$\min f_1(x)\quad\text{s.t.}\quad x\in X,\ f_j(x)\le\varepsilon_j.$$
+
+它很符合客户语言：“成本最低，但平均等待不得超过 8 分钟。”目标规划用偏差变量
+
+$$f_i(x)+d_i^- -d_i^+=g_i$$
+
+衡量与目标 $g_i$ 的距离，并只惩罚真正不希望出现的方向。若高优先级目标绝不能被低优先级收益补偿，应采用词典序优化。
+
+场景 $s$ 下的遗憾为
+
+$$R_s(x)=f_s(x)-\min_{y\in X}f_s(y),$$
+
+最小最大遗憾 $\min_x\max_sR_s(x)$ 寻找“事后看来最不后悔”的方案。
+
+## 不确定性
+
+测量误差、参数估计误差、过程本身波动和模型结构错误不是同一件事。鲁棒优化善于处理明确的参数集合，却不能修复遗漏机制。公交模型如果忽略乘客放弃排队，简单扩大需求区间并不会修正结构。
+
+箱形集合表达各参数独立区间，椭球表达相关方向，场景集合表达若干有意义的未来。集合过小会虚假乐观，过大且包含物理上不可能的组合则会过度保守。
+
+## 鲁棒对应式
+
+对 $x\ge0$，若 $a_i\in[\bar a_i-\rho_i,\bar a_i+\rho_i]$，约束 $a^Tx\le b$ 的最坏情形为
+
+$$\sum_i(\bar a_i+\rho_i)x_i\le b.$$
+
+若 $x$ 可正可负，引入 $t_i\ge|x_i|$，得到
+
+$$\bar a^Tx+\sum_i\rho_it_i\le b.$$
+
+椭球不确定性 $a=\bar a+Pu,\|u\|_2\le\rho$ 给出
+
+$$\bar a^Tx+\rho\|P^Tx\|_2\le b,$$
+
+这是 SOCP。保护半径 $\rho$ 越大，可行域越小。预算不确定性再用 $\Gamma$ 控制能同时达到坏值的参数数量，避免假定所有参数同时最坏。
+
+## 鲁棒与随机
+
+随机优化需要概率分布，优化期望、机会约束或风险；鲁棒优化只需要不确定集合，并保护集合中的每一个元素；分布鲁棒优化则保护一个分布集合。
+
+机会约束
+
+$$\Pr(a(\xi)^Tx\le b)\ge1-\epsilon$$
+
+允许至多 $\epsilon$ 的违规概率。概率模型可信时，它可比最坏情况方法不那么保守。安全约束可以鲁棒保护，服务成本则优化期望，两种方法不必互斥。
+
+## 七鳃鳗案例
+
+令状态 $x_t$ 包含幼体、雌雄成体与生态指标，干预为 $u_t$：
+
+$$x_{t+1}=F(x_t,u_t,\theta).$$
+
+可定义三个目标
+
+$$J_1=\sum_tN_t^{\text{lamprey}},\quad J_2=\sum_tu_t^2,\quad J_3=\sum_t\|e_t-e^{\text{target}}\|^2.$$
+
+分别衡量入侵种群、干预负担与生态偏离。先画控制—生态前沿，再把干预预算设为硬约束，比一开始拍脑袋加权更透明。
+
+食物资源 $R$ 到雌性比例的响应可写成
+
+$$s(R;k,R_0)=s_{\min}+\frac{s_{\max}-s_{\min}}{1+e^{-k(R-R_0)}}.$$
+
+$k,R_0$ 未必准确。名义策略可能利用一个非常精确的阈值，一旦 $R_0$ 偏移就失败；鲁棒策略会更早或更平缓地干预。比较无干预、名义最优、鲁棒折中和不利场景，并报告种群下降、生态偏离、干预量与阈值违规次数。
+
+## 稳定性与验证
+
+对数据重采样、归一化方案和不确定集合重新计算前沿。离散问题的前沿可能跳跃，不要用平滑连线暗示不存在的中间方案。支配判断要带数值容差，并先剔除不可行点。
+
+优化时使用的不确定集合属于模型；评估时还应加入集合之外的压力场景。必须区分“集合内有数学保证”“场景中表现良好”和“尚未检验的结构风险”。
+
+## 决策结论
+
+先展示前沿，再选择方案；说明归一化、权重、硬约束与保护代价。结论应量化，例如：“方案 B 比名义最低成本高 3.2%，但在声明的需求集合内始终满足服务约束，并把最坏场景遗憾降低 41%。”
+
+最后留一个彩蛋：给第二节的方案集合增加 $E=(12,9)$，它与 $B$ 目标值相同。前沿没有变化，但程序可能报告两个解。若底层运营方案不同，你会合并它们还是都保留？这会决定前沿是“目标值目录”，还是“真实可执行方案库”。
+
+### 资料
+
+- [COMAP 历年赛题与优秀论文](https://contest.comap.com/undergraduate/contests/mcm/previous-contests.php)
+- [全国大学生数学建模竞赛官网](https://www.mcm.edu.cn/)
+- Boyd 与 Vandenberghe，[《Convex Optimization》](https://web.stanford.edu/~boyd/cvxbook/)
+
+
+
+</LanguagePanel>
+
+</LanguageTabs>

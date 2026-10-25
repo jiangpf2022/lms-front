@@ -1,5 +1,7 @@
 # LMS Platform
 
+> This fork includes a reproducible migration of Gavin Jiang's Mathematical Modeling course. See [the migration guide](docs/MATHEMATICAL_MODELING_MIGRATION.md) for content refresh, Supabase import, and deployment instructions.
+
 **Open-source, multi-tenant LMS for creators and schools.** Every school gets its own subdomain (`school.platform.com`), its own branding, and its own students. Educators build courses and sell them; students enroll, learn, take exams, and earn verifiable certificates.
 
 [![CI](https://github.com/guillermoscript/lms-front/actions/workflows/ci.yml/badge.svg)](https://github.com/guillermoscript/lms-front/actions/workflows/ci.yml)
