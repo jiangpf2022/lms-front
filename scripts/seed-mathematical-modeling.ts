@@ -2,6 +2,7 @@ import fs from 'node:fs/promises'
 import path from 'node:path'
 import process from 'node:process'
 import { createClient } from '@supabase/supabase-js'
+import { buildLessonFinalQuiz } from '../lib/modeling/math-quiz-bank'
 
 type ManifestLesson = {
   number: number
@@ -230,8 +231,8 @@ async function ensureQuizExercise(
     course_id: courseId,
     lesson_id: lessonId,
     title,
-    description: 'A progressive mathematical modeling knowledge check drawn from the original course quiz bank.',
-    instructions: `Complete the single-answer questions in the LMS. The migration archive also preserves ${multiCount} multi-select questions for the forthcoming multi-select checkpoint UI.`,
+    description: 'A 15-question mathematical modeling assessment that moves from calculation to decision-level reasoning.',
+    instructions: `Complete all 15 final-quiz questions after the chapter checkpoints. This bank includes ${multiCount} multi-select questions and preserves bilingual prompts and explanations.`,
     exercise_type: 'quiz' as const,
     difficulty_level: lesson.level >= 3 ? 'hard' as const : lesson.level === 2 ? 'medium' as const : 'easy' as const,
     status: lesson.status,
@@ -256,6 +257,20 @@ async function ensureQuizExercise(
   }
 }
 
+function generatedQuizBank(lessonNumber: number): QuizBank {
+  return {
+    prefix: `modeling-${lessonNumber}-final-`,
+    questions: buildLessonFinalQuiz(lessonNumber).map((item, index) => ({
+      target: index + 1,
+      exp: 1,
+      multiple: item.correct.length > 1,
+      answer: item.correct.map((choice) => 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[choice]),
+      en: { question: item.prompt.en, options: item.options.en, explanation: item.explanation.en },
+      zh: { question: item.prompt.zh, options: item.options.zh, explanation: item.explanation.zh },
+    })),
+  }
+}
+
 async function main() {
   const manifest = JSON.parse(await fs.readFile(path.join(contentRoot, 'manifest.json'), 'utf8')) as Manifest
   const quizBanks = JSON.parse(await fs.readFile(path.join(contentRoot, 'quizzes.json'), 'utf8')) as Record<string, QuizBank>
@@ -265,7 +280,10 @@ async function main() {
 
   for (const lesson of manifest.lessons) {
     const lessonId = await ensureLesson(courseId, lesson)
-    await ensureQuizExercise(courseId, lessonId, lesson, quizBanks[`lesson-${lesson.number}`])
+    const quizBank = lesson.status === 'published'
+      ? generatedQuizBank(lesson.number)
+      : quizBanks[`lesson-${lesson.number}`]
+    await ensureQuizExercise(courseId, lessonId, lesson, quizBank)
     console.log(`${lesson.number.toString().padStart(2, '0')} ${lesson.status.padEnd(9)} ${lesson.title}`)
   }
 

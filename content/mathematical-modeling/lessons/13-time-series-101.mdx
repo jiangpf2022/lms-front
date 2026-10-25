@@ -1,11 +1,304 @@
-## Lesson awaiting review
+<LanguageTabs>
 
+<LanguagePanel language="en" label="English">
 
-  
+Welcome back—leave a little room on the page for a timeline. In this blog we will learn to read data in the order it actually happened.
 
+A time series is not merely a table with a date column. Once observations are ordered in time, neighboring values can influence one another, tomorrow is unavailable when we predict today, and the error made three months ahead means something different from the error made one step ahead. Our objective is therefore not to memorize ARIMA notation. It is to build a forecasting argument whose timeline, baseline, validation design, uncertainty, and decision consequence can all be defended.
 
-  AUTHOR REVIEW IN PROGRESS
+We will use a campus bicycle-sharing system as the running example. The operator records hourly rentals at each station and must decide how many bicycles to reposition before the morning rush. A forecast that is numerically accurate on average can still be useless if it misses the peak, leaks future information, or ignores that a prediction made at 6 p.m. has different available data from a prediction made at 6 a.m.
 
+<Callout type="tip">
 
-  This lesson is locked for now
-  The author is reviewing this lesson before publication. Please wait for it to unlock.
+**Forecast contract.** Before choosing a model, write five lines: the target, the forecast origin, the horizon, the information available at that origin, and the loss caused by an error. These five lines determine what “accurate” means.
+
+</Callout>
+
+## Timeline
+
+Let $y_t$ denote rentals during hour $t$. The subscript is part of the model, not decoration. We must know whether $t$ advances by an hour, a day, or an irregular event. If a sensor records at 08:01, 08:59, and 10:03, the row number is not elapsed time. Resampling to a regular grid changes the data and must be documented.
+
+Suppose the decision is bicycle repositioning at 05:30 for the interval 07:00–09:00. Then the forecast origin is 05:30, the target is the total demand in the two-hour window, and weather forecasts available by 05:30 may be predictors. Realized 07:00 rainfall is not available at the forecast origin and cannot be used during honest backtesting. This is the first and most common time-series error: a column exists in the historical file, so we forget that it did not yet exist when the decision was made.
+
+Three clocks should be kept separate: **event time**, when the rental occurred; **availability time**, when its record became usable; and **decision time**, when the forecast had to be issued. Late reporting can make these differ. A daily hospital census may describe midnight occupancy but become reliable only at 08:00. A financial series may be revised weeks later. A competition report should state which version was available in real time.
+
+A useful first plot contains the raw series, missing intervals, interventions, holidays, and train-validation boundaries. Do not smooth the only copy of the plot. Sudden spikes that look ugly may be the events the decision maker most cares about.
+
+![A time-series case view from the course archive, used here to inspect pattern, scale, and evaluation windows.](/mathematical-modeling/timeseries-05.webp)
+
+### The smallest baseline
+
+For horizon $h$, the naïve forecast is
+
+$$\hat y_{T+h\mid T}=y_T.$$
+
+For seasonal period $m$, the seasonal naïve forecast repeats the corresponding value from the previous season. For hourly bicycle demand with a weekly rhythm, $m=168$. “Same hour last week” may outperform an impressive model when patterns are stable. That is not embarrassing. A proposed method earns its complexity only by improving a relevant metric on future-like windows.
+
+## Pattern
+
+We usually describe a series using four ideas: level, trend, seasonality, and remainder. An additive representation is
+
+$$y_t=T_t+S_t+R_t,$$
+
+while a multiplicative representation is
+
+$$y_t=T_tS_tR_t.$$
+
+The additive form says seasonal amplitude is roughly constant. The multiplicative form says the seasonal swing grows with the level. If weekday demand oscillates by about 50 rentals whether the station is busy or quiet, additive decomposition is plausible. If the swing is approximately 20% of demand, a log transform or multiplicative model is more natural.
+
+Trend is a long-run movement, not every local rise. Seasonality repeats at a known calendar frequency. A cycle may recur without a fixed period. Remainder is not “meaningless noise”; it contains measurement error, omitted mechanisms, rare events, and structural changes. We inspect it because a model that leaves obvious autocorrelation has not extracted all predictable structure.
+
+For an odd moving-average window $2k+1$,
+
+$$\widehat T_t=\frac{1}{2k+1}\sum_{j=-k}^{k}y_{t+j}.$$
+
+A centered moving average uses future values and is appropriate for retrospective description, not real-time forecasting at the right edge. A trailing average uses only current and past observations, but lags a turning point. This small distinction—centered versus trailing—often separates an attractive analysis from an implementable forecast.
+
+![A decomposition example from the course archive: inspect trend before deciding whether seasonal amplitude is additive or proportional.](/mathematical-modeling/timeseries-11.webp)
+
+<Callout type="tip">
+
+**Stop and decide.** A retail series doubles in level over five years and its December surge grows from 200 to 400 units. Should the seasonal effect be modeled as a fixed addition or a proportion of level? Explain the choice before fitting either form.
+
+</Callout>
+
+## Dependence
+
+Ordinary regression often assumes residual independence. Time-series data tell us to test rather than assume it. The lag-$k$ sample autocorrelation is
+
+$$r_k=\frac{\sum_{t=k+1}^{T}(y_t-\bar y)(y_{t-k}-\bar y)}{\sum_{t=1}^{T}(y_t-\bar y)^2}.$$
+
+An autocorrelation function (ACF) plots $r_k$ against $k$. A strong $r_{24}$ in hourly data suggests a daily relationship; a strong $r_{168}$ suggests a weekly one. But correlation at many lags can be induced by trend. Two neighboring points are both high simply because the whole series is rising. Detrending or differencing may be necessary before interpreting the ACF as short-run dependence.
+
+First differencing gives
+
+$$\nabla y_t=y_t-y_{t-1},$$
+
+and seasonal differencing gives $\nabla_m y_t=y_t-y_{t-m}$. Differencing can remove a stochastic trend or seasonal level, but it also amplifies high-frequency noise. We should not difference mechanically until every plot looks flat. The question is whether the resulting process has a stable enough mean, variance, and dependence structure for the intended model.
+
+Weak stationarity requires constant mean, constant finite variance, and covariance depending only on lag. Real systems are rarely stationary forever. We seek a window and representation over which stationarity is useful, while explicitly testing interventions and regime changes.
+
+For $y=(10,13,16,19)$, first differences are $(3,3,3)$, revealing linear growth in this tiny sample. A naïve level forecast gives 19; a drift forecast estimates slope
+
+$$\widehat b=\frac{y_T-y_1}{T-1}=3$$
+
+and predicts $\hat y_{5\mid4}=22$. This does not prove the future will rise by three. It proves what assumption the forecast makes. When the next value arrives, the error tests that assumption.
+
+## Smoothing
+
+Simple exponential smoothing updates a latent level:
+
+$$\ell_t=\alpha y_t+(1-\alpha)\ell_{t-1},\qquad 0<\alpha<1,$$
+
+and forecasts $\hat y_{t+h\mid t}=\ell_t$. Expanding the recursion shows geometrically decaying weights on past observations. Large $\alpha$ reacts quickly but follows noise; small $\alpha$ is stable but slow after a change.
+
+If $\ell_{t-1}=100$, $y_t=120$, and $\alpha=0.25$, then $\ell_t=105$. The model does not simply “average 100 and 120”; it applies an explicit response speed. That speed should be chosen from forecast performance rather than taste.
+
+Holt's method adds a trend:
+
+$$
+\begin{aligned}
+\ell_t&=\alpha y_t+(1-\alpha)(\ell_{t-1}+b_{t-1}),\\
+b_t&=\beta(\ell_t-\ell_{t-1})+(1-\beta)b_{t-1},\\
+\hat y_{t+h\mid t}&=\ell_t+hb_t.
+\end{aligned}
+$$
+
+A damped trend expresses skepticism that growth continues forever. Holt-Winters methods add seasonal states. Their strength is not that they are old or simple; it is that each state has a readable role and can be updated online.
+
+![Forecast trajectories from the course archive: compare the point forecast, horizon, and widening uncertainty rather than judging only the fitted line.](/mathematical-modeling/timeseries-17.webp)
+
+## ARIMA
+
+An autoregressive model of order $p$ writes the present as a linear combination of previous values:
+
+$$y_t=c+\phi_1y_{t-1}+\cdots+\phi_py_{t-p}+\varepsilon_t.$$
+
+A moving-average model of order $q$ writes it using previous shocks:
+
+$$y_t=c+\varepsilon_t+\theta_1\varepsilon_{t-1}+\cdots+\theta_q\varepsilon_{t-q}.$$
+
+ARIMA$(p,d,q)$ applies these structures after differencing $d$ times. “Moving average” here means a model of error terms, not the rolling average used for smoothing. Confusing those two meanings produces many bad explanations.
+
+For AR(1), $y_t=c+\phi y_{t-1}+\varepsilon_t$. If $|\phi|<1$, the stationary mean is $\mu=c/(1-\phi)$. The $h$-step conditional forecast tends toward that mean:
+
+$$\hat y_{T+h\mid T}=\mu+\phi^h(y_T-\mu).$$
+
+When $\phi$ is near one, shocks persist. When $\phi$ is negative, forecasts alternate around the mean. These are behavioral implications, so the fitted coefficient must be interpreted rather than merely reported.
+
+Model identification uses plots, ACF/PACF behavior, information criteria, and residual checks together. A lower AIC does not repair leakage or a wrong horizon. The residual ACF should contain no practically important structure, and residual scale should be stable enough for interval forecasts.
+
+## Validation
+
+Random train-test splitting destroys the forecasting question. A model trained on October should not predict March as though October were already known. Use a chronological holdout or rolling-origin evaluation. At origin $T_i$, fit using observations $1{:}T_i$, predict $T_i+h$, record the error, then advance the origin.
+
+For errors $e_i=y_i-\hat y_i$,
+
+$$\operatorname{MAE}=\frac1n\sum_i|e_i|,
+\qquad
+\operatorname{RMSE}=\sqrt{\frac1n\sum_ie_i^2}.
+$$
+
+RMSE penalizes large misses more strongly. MAE is in the target's units and is less dominated by one extreme. MAPE is unstable near zero. MASE scales error by an in-sample naïve benchmark and is useful across series. No metric is universally correct: a bicycle shortage of 20 at 08:00 may cost far more than an excess of 20 at 02:00, so decision-weighted loss may be required.
+
+![Rolling evaluation from the course archive: every test block must lie strictly after its training window.](/mathematical-modeling/timeseries-25.webp)
+
+<Callout type="tip">
+
+**Leakage audit.** Fit imputation, scaling, decomposition, feature selection, and hyperparameters inside each training window. Any statistic computed once on the complete timeline can carry future information backward.
+
+</Callout>
+
+## Uncertainty
+
+A point forecast is not a complete forecast. A prediction interval should widen with horizon because more future shocks accumulate. Under a simple independent Gaussian error approximation,
+
+$$\hat y_{T+h\mid T}\pm z_{1-\alpha/2}\,\widehat\sigma_h$$
+
+is a nominal $(1-\alpha)$ interval. The hard part is estimating $\sigma_h$ honestly. Residuals may be non-Gaussian, autocorrelated, heteroscedastic, or structurally changed. Bootstrap or simulation intervals can preserve more of that structure when designed carefully.
+
+Coverage is testable. If 95% intervals contain only 72% of held-out observations, they are overconfident even if point RMSE is excellent. Also inspect interval width: trivially wide intervals cover everything but support no decision.
+
+For bicycle repositioning, a station with predicted demand 50 and interval [20,80] should not be treated like one with [47,53]. A robust decision can test several demand quantiles or minimize expected shortage plus a tail-risk penalty.
+
+## Decision
+
+Return to morning repositioning. Let $s_i$ be bicycles placed at station $i$, $\tilde d_i$ uncertain demand, and $u_i=(\tilde d_i-s_i)_+$ unmet demand. A simple decision model is
+
+$$\min_s\;\text{repositioning cost}+\lambda\,\mathbb E\!\left[\sum_i u_i\right],$$
+
+subject to fleet and truck constraints. The forecast is now an input to a decision model. Better RMSE matters only insofar as it improves the decision, especially at constrained stations and peak hours.
+
+Report the baseline, proposed forecast, interval coverage, performance by horizon and station, and resulting operational change. Stress weather shifts, event days, sensor outages, and demand regimes. If the recommendation changes under a modest perturbation, that sensitivity is part of the answer.
+
+The practical workflow is: define origin, horizon, information set, and decision loss; audit timestamps and units; plot raw data and establish naïve baselines; decompose pattern and inspect dependence; fit a small family of interpretable candidates; validate with rolling origins; calibrate uncertainty; and translate forecasts into decisions.
+
+The main lesson is simple: **time order is a constraint**. Respecting it is more important than choosing a fashionable model.
+
+Further reading: [Forecasting: Principles and Practice](https://otexts.com/fpp3/) and the [NIST Engineering Statistics Handbook](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc4.htm).
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。今天先在纸上画一条时间轴，我们要学习的是：怎样按照事情真正发生的顺序读数据。
+
+时间序列并不是“带日期的一张表”。一旦数据有了先后顺序，相邻观测可能彼此相关；预测今天时不能偷看明天；一步预测和三个月预测也不是同一个问题。这篇博客的目的不是背 ARIMA 的符号，而是建立一套能够被检查的预测逻辑：时间线、基线、验证方法、不确定性和最终决策都要说得清楚。
+
+我们用校园共享单车作为贯穿全文的例子。运营人员记录每个站点每小时的借车量，并要在早高峰前决定怎样调车。一个平均误差很小的模型仍可能毫无用处：它可能总是错过峰值，可能不小心用了未来数据，也可能忽略了早上六点和晚上六点能获得的信息根本不同。
+
+<Callout type="tip">
+
+**预测契约。** 建模前先写五行：预测目标、预测起点、预测跨度、起点时可用的信息，以及预测错误带来的损失。这五行决定了“准确”到底是什么意思。
+
+</Callout>
+
+## 时间线
+
+用 $y_t$ 表示第 $t$ 个小时的借车量。这里的下标不是装饰。如果传感器在 08:01、08:59、10:03 才有记录，那么行号不能代替真实时间；把数据重采样到规则网格，本身就是一次需要说明的数据处理。
+
+假设每天 05:30 必须决定 07:00–09:00 的调车量。预测起点是 05:30，目标是两小时需求总量，05:30 已经发布的天气预报可以作为特征，而 07:00 真正发生的降雨不能进入历史回测。最常见的错误正是：历史文件里有这一列，于是我们忘了当时做决定的人还看不到它。
+
+建议区分事件发生时间、数据可用时间和决策时间。医院午夜人口普查可能到早上八点才可靠；经济数据可能之后还会修订。报告应当说明回测时使用的是哪个版本。
+
+![课件案例中的时间序列视图：先观察模式、尺度与评估窗口。](/mathematical-modeling/timeseries-05.webp)
+
+朴素预测用最后一个观测作为未来答案；季节朴素预测使用上一周期对应位置。小时数据若有稳定周周期，可以先试“上周同一小时”。新模型只有在真正面向未来的验证窗口上，针对有意义的指标超过这个基线，复杂度才有价值。
+
+## 模式
+
+时间序列常被拆成水平、趋势、季节性和剩余项。加法形式为
+
+$$y_t=T_t+S_t+R_t,$$
+
+乘法形式为
+
+$$y_t=T_tS_tR_t.$$
+
+加法模型表示季节波动幅度大致固定；乘法模型表示季节波动随整体水平按比例变化。如果十二月销量的增量一直约为 200，适合考虑加法；如果增幅总在 20% 左右，取对数或乘法结构更自然。
+
+趋势是长期移动，不是每一次局部上升。季节性按已知日历周期重复；周期波动可能重复，却没有固定周期。剩余项也不是“没有意义的噪声”，它可能包含测量误差、遗漏机制、罕见事件和结构变化。
+
+居中移动平均会使用未来值，因此适合事后描述，不适合序列最右端的实时预测。尾随平均只使用过去值，但在转折点处会滞后。这个看似微小的差别，常常决定分析究竟只是好看，还是能够部署。
+
+![分解示例：先判断趋势，再决定季节振幅是固定值还是相对比例。](/mathematical-modeling/timeseries-11.webp)
+
+<Callout type="tip">
+
+**停下来想一想。** 某零售序列五年内整体翻倍，十二月额外销量也从 200 增长到 400。季节效应更像固定加法，还是整体水平的一个比例？请先解释，再选择模型。
+
+</Callout>
+
+## 相关性
+
+滞后 $k$ 的样本自相关为
+
+$$r_k=\frac{\sum_{t=k+1}^{T}(y_t-\bar y)(y_{t-k}-\bar y)}{\sum_{t=1}^{T}(y_t-\bar y)^2}.$$
+
+小时数据中显著的 $r_{24}$ 可能表示日周期，$r_{168}$ 可能表示周周期。但趋势也会让许多滞后都显著，因此解释 ACF 前常需要去趋势或差分。
+
+一阶差分和季节差分分别为 $\nabla y_t=y_t-y_{t-1}$ 与 $\nabla_m y_t=y_t-y_{t-m}$。差分能消除某些趋势，却也会放大高频噪声。我们不是要机械地把图“差分到平”，而是寻找一个在目标窗口内足够稳定的表示。
+
+例如 $y=(10,13,16,19)$ 的一阶差分是 $(3,3,3)$。水平朴素预测得到 19；漂移预测给出 22。它没有证明未来必然增长 3，只是清楚说明了假设，下一次观测会检验这个假设。
+
+## 平滑
+
+简单指数平滑更新水平状态：
+
+$$\ell_t=\alpha y_t+(1-\alpha)\ell_{t-1}.$$
+
+大的 $\alpha$ 反应快，但容易追逐噪声；小的 $\alpha$ 更平稳，却会在结构变化后迟钝。若上一期水平为 100，本期观测为 120，$\alpha=0.25$，更新水平为 105。这里的参数是模型面对新信息时的响应速度。
+
+Holt 方法再加入趋势状态，阻尼趋势则表达我们对“趋势会永远延续”的怀疑；Holt-Winters 进一步加入季节状态。这类模型的优点是每个状态都有可解释含义，并可在线更新。
+
+![比较预测轨迹时，要同时看预测跨度和随跨度扩大的不确定性。](/mathematical-modeling/timeseries-17.webp)
+
+## ARIMA
+
+AR$(p)$ 用过去的序列值解释当前值，MA$(q)$ 用过去的随机冲击解释当前值，ARIMA$(p,d,q)$ 则在做 $d$ 次差分后组合两种结构。ARIMA 中的 MA 指误差项的移动平均，并不是画平滑线时使用的滚动平均。
+
+AR(1) 为 $y_t=c+\phi y_{t-1}+\varepsilon_t$。当 $|\phi|<1$ 时，长期均值为 $\mu=c/(1-\phi)$，多步预测会以 $\phi^h$ 的速度回到均值。$\phi$ 接近 1 表示冲击持续很久；$\phi<0$ 表示预测围绕均值交替。参数应当被解释，而不只是打印在表格里。
+
+定阶时需要共同参考序列图、ACF/PACF、信息准则和残差诊断。AIC 更小并不能弥补数据泄漏，也不能弥补错误的预测跨度。
+
+## 验证
+
+随机打乱训练集和测试集会破坏预测问题。正确方法是时间顺序留出，或滚动预测起点评估：在每个起点 $T_i$，只用 $1{:}T_i$ 拟合，再预测未来，记录误差，然后向前移动起点。
+
+$$\operatorname{MAE}=\frac1n\sum_i|e_i|,
+\qquad
+\operatorname{RMSE}=\sqrt{\frac1n\sum_ie_i^2}.$$
+
+RMSE 更严厉地惩罚大误差；MAE 保留目标变量单位；MAPE 在真实值接近零时会失真；MASE 可以用朴素预测误差作尺度。具体指标要服从决策：早高峰少 20 辆车造成的损失，可能远大于凌晨多放 20 辆车。
+
+![滚动评估：每个测试块都必须严格位于相应训练窗口之后。](/mathematical-modeling/timeseries-25.webp)
+
+<Callout type="tip">
+
+**泄漏审计。** 插补、缩放、分解、特征选择和超参数搜索都必须在每个训练窗口内部完成。凡是一次性利用完整时间线计算的统计量，都可能把未来信息带回过去。
+
+</Callout>
+
+## 不确定性
+
+点预测不是完整预测。跨度越长，未来冲击积累越多，预测区间通常应该越宽。区间覆盖率必须在留出数据上检验：声称 95% 的区间若只覆盖 72% 的真实值，就是过度自信。覆盖所有观测的巨大区间同样没有决策价值。
+
+对调车问题，预测 50 且区间为 [20,80] 的站点，不应与区间 [47,53] 的站点同等对待。可以在若干需求分位数下优化，或在期望缺车损失之外加入尾部风险。
+
+## 决策
+
+令 $s_i$ 为站点投放量，$\tilde d_i$ 为不确定需求，$u_i=(\tilde d_i-s_i)_+$ 为未满足需求。一个简单模型为
+
+$$\min_s\;\text{调车成本}+\lambda\,\mathbb E\!\left[\sum_i u_i\right],$$
+
+并满足车辆总量和卡车运力限制。预测至此才真正进入决策。更低的 RMSE 只有在它改善了受约束站点和高峰时段的决策时才有意义。
+
+完整工作流是：定义起点、跨度、信息集和损失；审计时间戳与修订；建立朴素基线；识别趋势、季节性与相关性；拟合少量可解释候选；用滚动起点评估；校准不确定性；最后把预测转换成决策并做压力测试。
+
+这篇博客最重要的一句话是：**时间顺序本身就是约束。** 尊重它，比选择一个看起来更先进的模型重要得多。
+
+延伸阅读：[Forecasting: Principles and Practice](https://otexts.com/fpp3/) 与 [NIST Engineering Statistics Handbook](https://www.itl.nist.gov/div898/handbook/pmc/section4/pmc4.htm)。
+
+</LanguagePanel>
+
+</LanguageTabs>

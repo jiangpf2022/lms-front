@@ -1,11 +1,271 @@
-## Lesson awaiting review
+<LanguageTabs>
 
+<LanguagePanel language="en" label="English">
 
-  
+Welcome—today we face a deceptively simple sentence: “Please evaluate these alternatives.” Before calculating a score, we must ask who is deciding, what counts as admissible, which criteria can compensate for one another, and how much the ranking changes when a judgment changes.
 
+Our running case is the selection of a location for a community resilience hub. Candidate sites differ in construction cost, travel time, population coverage, flood exposure, energy reliability, and accessibility. The city does not need a decorative ranking. It needs a recommendation whose criteria, weights, thresholds, and sensitivity are visible.
 
-  AUTHOR REVIEW IN PROGRESS
+<Callout type="tip">
 
+**Evaluation contract.** Separate hard admissibility rules from soft preferences. A site that violates a safety law must not become “best” because it is cheap.
 
-  This lesson is locked for now
-  The author is reviewing this lesson before publication. Please wait for it to unlock.
+</Callout>
+
+## Criteria
+
+Start with a decision tree, not a matrix. The root is the decision; the next layer contains dimensions such as safety, access, resilience, cost, and equity; measurable indicators sit below them. Every indicator needs direction, unit, time horizon, data source, and rationale.
+
+Avoid double counting. “Average travel time,” “distance to residents,” and “transport accessibility” may measure overlapping ideas. Giving each a separate weight can triple the influence of location. Map causal or semantic overlap before assigning numbers.
+
+Criteria can be benefit-type (larger is better), cost-type (smaller is better), target-type (closest to a desired value), or interval-type (values inside a range are preferred). Transformations must preserve that meaning. For min-max scaling,
+
+$$r_{ij}=\frac{x_{ij}-\min_i x_{ij}}{\max_i x_{ij}-\min_i x_{ij}}$$
+
+is suitable for a benefit criterion, while a cost criterion can use
+
+$$r_{ij}=\frac{\max_i x_{ij}-x_{ij}}{\max_i x_{ij}-\min_i x_{ij}}.$$
+
+If every candidate has the same value, the denominator is zero and the criterion cannot distinguish them; remove it from this ranking or handle it explicitly.
+
+![The hierarchy separates the decision, criteria, and measurable indicators before weights are estimated.](/mathematical-modeling/evaluation-ahp-hierarchy.svg)
+
+### Thresholds before scores
+
+Suppose flood exposure must be below 0.2 annual probability and emergency travel time below 30 minutes. These are feasibility filters. Among feasible sites, the city may then trade cost against coverage. Writing this order prevents a weighted sum from compensating an unacceptable safety risk with low cost.
+
+## Weights
+
+Weights may represent preference, trade-off, reliability, or statistical variability. Those meanings are not interchangeable. A weight of 0.4 on safety should be explained as a value judgment or elicited trade-off, not described as an objective truth.
+
+A simple weighted score is
+
+$$S_i=\sum_{j=1}^{m}w_jr_{ij},\qquad w_j\ge0,\quad\sum_jw_j=1.$$
+
+This model is compensatory: a low score on one criterion can be offset by high scores elsewhere. That may be acceptable after hard thresholds are enforced. It is dangerous when the low score represents a non-negotiable requirement.
+
+Entropy weighting uses dispersion in the observed decision matrix. It can assign higher weight to a variable that differs more across candidates. That does not make the variable more important to society. It means only that the variable has more discriminatory information in this dataset.
+
+Regression or machine-learning importance measures prediction, not preference. A feature can predict past choices because of historical inequity; using it as a normative weight may reproduce that inequity.
+
+## AHP
+
+The Analytic Hierarchy Process elicits pairwise judgments. For $m$ criteria, construct a reciprocal matrix $A=(a_{ij})$ where $a_{ij}$ expresses how strongly criterion $i$ is preferred to criterion $j$, with
+
+$$a_{ji}=\frac1{a_{ij}},\qquad a_{ii}=1.$$
+
+An approximate weight vector can be obtained by normalizing columns and averaging rows, or by the principal eigenvector satisfying
+
+$$Aw=\lambda_{\max}w.$$
+
+Perfectly consistent judgments satisfy $a_{ik}=a_{ij}a_{jk}$ and yield $\lambda_{\max}=m$. Real judgments deviate. The consistency index and ratio are
+
+$$CI=\frac{\lambda_{\max}-m}{m-1},\qquad CR=\frac{CI}{RI_m},$$
+
+where $RI_m$ is a reference random index. A large $CR$ is not a reason to force people to change an honest preference until a software threshold turns green. It is a prompt to revisit contradictory comparisons and clarify meaning.
+
+Consider three criteria: safety $S$, access $A$, and cost $C$. If safety is judged twice as important as access, access three times as important as cost, then consistency would imply safety six times as important as cost. If the direct safety-versus-cost judgment is only two, the contradiction is substantive and should be discussed.
+
+<Callout type="tip">
+
+**Pairwise questions should be concrete.** Ask “For selecting a resilience hub under the stated budget, how much more consequential is reducing flood exposure than reducing median travel time?” Do not ask which abstract word feels more important.
+
+</Callout>
+
+## TOPSIS
+
+TOPSIS ranks alternatives by distance from a positive ideal and a negative ideal. For decision matrix $X=(x_{ij})$, one common vector normalization is
+
+$$r_{ij}=\frac{x_{ij}}{\sqrt{\sum_i x_{ij}^2}},\qquad v_{ij}=w_jr_{ij}.$$
+
+After orienting all criteria so larger is better, define
+
+$$v_j^+=\max_i v_{ij},\qquad v_j^-=\min_i v_{ij}.$$
+
+Distances and closeness are
+
+$$D_i^+=\sqrt{\sum_j(v_{ij}-v_j^+)^2},\quad
+D_i^-=\sqrt{\sum_j(v_{ij}-v_j^-)^2},$$
+
+$$C_i=\frac{D_i^-}{D_i^++D_i^-}.$$
+
+Larger $C_i$ indicates closer to the positive ideal and farther from the negative ideal.
+
+![TOPSIS geometry: a strong candidate should be near the positive ideal and far from the negative ideal.](/mathematical-modeling/evaluation-topsis.svg)
+
+### Hand example
+
+Suppose two weighted normalized criteria give alternatives $A=(0.6,0.8)$ and $B=(0.9,0.4)$, with ideal $v^+=(1,1)$ and anti-ideal $v^-=(0,0)$. Then
+
+$$D_A^+=\sqrt{0.4^2+0.2^2}=\sqrt{0.20},\quad D_A^-=1,$$
+
+$$D_B^+=\sqrt{0.1^2+0.6^2}=\sqrt{0.37},\quad D_B^-=\sqrt{0.97}.$$
+
+The calculation makes the compromise geometry visible. It does not prove that Euclidean distance or the chosen weights represent public preference. Those are model assumptions.
+
+Rank reversal can occur when an alternative is added or removed because normalization and ideals change. Therefore report the candidate set and test whether irrelevant or dominated alternatives alter the decision.
+
+## Alternatives
+
+A weighted sum is readable and easy to audit. TOPSIS emphasizes distance to ideals. AHP structures preference elicitation. Other tools answer different questions:
+
+- **Pareto analysis** retains nondominated alternatives without forcing one weight vector;
+- **outranking methods** allow incomparability and veto thresholds;
+- **DEA** evaluates relative efficiency of multiple inputs and outputs;
+- **fuzzy evaluation** represents linguistic or imprecise judgments;
+- **probabilistic choice** represents uncertainty in performance and preference.
+
+Choose the method from the decision logic. If one criterion can veto an alternative, a fully compensatory weighted sum is structurally wrong. If stakeholders refuse exact trade-offs, show a Pareto set or scenarios instead of manufacturing precision.
+
+## Sensitivity
+
+A ranking without sensitivity is only one point in preference space. Vary weights over plausible ranges, change normalization, perturb uncertain measurements, and test thresholds. For two criteria with $w$ and $1-w$, score difference between alternatives $A$ and $B$ is
+
+$$S_A-S_B=w(r_{A1}-r_{B1})+(1-w)(r_{A2}-r_{B2}).$$
+
+Solve $S_A=S_B$ to find the weight where rank reversal occurs. If the estimated preference lies near that boundary, report the candidates as practically tied rather than claiming a decisive winner.
+
+Monte Carlo sensitivity can sample uncertain data and weights to estimate rank acceptability. Report how often each candidate ranks first and which inputs drive changes. This is more informative than a single ranking with six decimal places.
+
+![Rank sensitivity turns a table of scores into an honest statement about where the recommendation changes.](/mathematical-modeling/evaluation-rank-sensitivity.svg)
+
+## Validation
+
+Evaluation models need validation even when they do not predict a future outcome. Validate the structure and the consequence:
+
+- content validity: do criteria cover the actual decision?
+- construct validity: do indicators measure their named concepts?
+- data validity: are units, periods, and populations comparable?
+- preference validity: do weights reflect the relevant decision makers?
+- consequential validity: does the ranking support a feasible and equitable action?
+
+Back-testing against known historical decisions can be useful, but agreement with history is not automatically desirable. Historical choices may have been biased. Disagreement should prompt explanation, not automatic correction.
+
+## Case
+
+For the resilience hub, first remove sites that fail flood and emergency-access rules. Then normalize benefit and cost indicators on a declared reference set. Elicit a small number of interpretable weights from stakeholders, show a Pareto plot, compute weighted-score and TOPSIS rankings, and test AHP consistency if pairwise judgments were used.
+
+Finally, perturb weights, population estimates, hazard probabilities, and normalization bounds. If one site wins across most plausible settings, the recommendation is robust. If two sites exchange rank, present the conditions under which each is preferred and let the decision maker confront the actual trade-off.
+
+The goal of an evaluation model is not to hide judgment inside arithmetic. It is to make judgment structured, inspectable, and sensitive to evidence.
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。今天面对一句看似简单的话：“请评价这些方案。”在计算总分之前，我们必须先问：谁在做决定，什么条件不能违反，哪些指标可以互相补偿，以及判断稍微变化时名次会不会改变。
+
+贯穿本文的案例是选择社区韧性中心的位置。候选地点在建设成本、交通时间、人口覆盖、洪涝暴露、能源可靠性和无障碍程度上各不相同。城市需要的不是一张装饰性排行榜，而是一个标准、权重、门槛和敏感性都能被看见的建议。
+
+<Callout type="tip">
+
+**评价契约。** 必须把硬性准入条件与软性偏好分开。违反安全法规的地点，不能因为便宜就被加权平均成“最佳”。
+
+</Callout>
+
+## 指标
+
+先画决策树，再建矩阵。根节点是决策，中间层可以是安全、可达性、韧性、成本与公平，底层才是可测指标。每个指标都要写方向、单位、时间范围、来源和选择理由。
+
+避免重复计权。“平均出行时间”“居民距离”和“交通便利度”可能测量同一件事，分别给权重会让区位因素被算三次。应先梳理语义和因果重叠。
+
+指标可分为效益型、成本型、目标型和区间型。效益型极差归一化为
+
+$$r_{ij}=\frac{x_{ij}-\min_i x_{ij}}{\max_i x_{ij}-\min_i x_{ij}},$$
+
+成本型可写为
+
+$$r_{ij}=\frac{\max_i x_{ij}-x_{ij}}{\max_i x_{ij}-\min_i x_{ij}}.$$
+
+若所有候选值相同，分母为零，这个指标在当前候选集中没有区分能力，必须明确处理。
+
+![层级结构先区分决策、准则与可测指标。](/mathematical-modeling/evaluation-ahp-hierarchy.svg)
+
+安全暴露率必须低于 0.2、应急到达必须少于 30 分钟等规则，应先作为可行性筛选。只有在可行方案中，成本与覆盖才可以权衡。
+
+## 权重
+
+权重可能表示偏好、交换比例、可靠性或统计差异，这些含义不能混用。安全权重 0.4 应被解释为价值判断或协商结果，而不是客观真理。
+
+简单加权分数为
+
+$$S_i=\sum_{j=1}^{m}w_jr_{ij},\qquad w_j\ge0,\quad\sum_jw_j=1.$$
+
+它允许一个指标的低分被其他指标补偿。经过硬门槛筛选后这种逻辑可能合理；若低分代表不可妥协的要求，就不合理。
+
+熵权法根据当前矩阵的离散程度给权重。差异大只意味着在这批候选中区分信息多，不等于社会重要性更高。机器学习的重要度描述预测能力，也不等同于价值偏好。
+
+## AHP
+
+AHP 用成对比较获得判断矩阵 $A=(a_{ij})$：
+
+$$a_{ji}=\frac1{a_{ij}},\qquad a_{ii}=1.$$
+
+权重可由列归一化后行均值近似，也可由主特征向量 $Aw=\lambda_{\max}w$ 获得。完全一致时 $a_{ik}=a_{ij}a_{jk}$ 且 $\lambda_{\max}=m$。一致性指标为
+
+$$CI=\frac{\lambda_{\max}-m}{m-1},\qquad CR=\frac{CI}{RI_m}.$$
+
+较大的 $CR$ 不是要求人们把真实偏好改到软件变绿，而是提醒我们重新检查矛盾比较与概念定义。
+
+若安全比可达性重要 2 倍，可达性比成本重要 3 倍，一致判断会推得安全比成本重要 6 倍。若直接判断却只有 2 倍，矛盾具有实际含义，应被讨论。
+
+<Callout type="tip">
+
+**成对问题要具体。** 不要问“安全和便利谁更重要”，而应问“在给定预算下，降低洪涝暴露与降低居民中位出行时间相比，后果差异多大”。
+
+</Callout>
+
+## TOPSIS
+
+TOPSIS 根据方案到正理想点和负理想点的距离排名。向量归一化与加权为
+
+$$r_{ij}=\frac{x_{ij}}{\sqrt{\sum_i x_{ij}^2}},\qquad v_{ij}=w_jr_{ij}.$$
+
+统一方向后定义理想点，再计算
+
+$$D_i^+=\sqrt{\sum_j(v_{ij}-v_j^+)^2},\quad
+D_i^-=\sqrt{\sum_j(v_{ij}-v_j^-)^2},$$
+
+$$C_i=\frac{D_i^-}{D_i^++D_i^-}.$$
+
+$C_i$ 越大，说明越接近正理想、越远离负理想。
+
+![TOPSIS 的几何含义：好方案靠近正理想点并远离负理想点。](/mathematical-modeling/evaluation-topsis.svg)
+
+这一距离逻辑很清楚，但并不能证明欧氏距离和既定权重一定代表公共偏好。候选方案增加或删除时，归一化与理想点可能变化，导致名次反转。因此必须报告候选集，并测试无关或被支配方案是否改变结论。
+
+## 方法选择
+
+加权和容易解释；TOPSIS 强调与理想状态的距离；AHP 适合组织偏好；Pareto 分析保留非支配方案；超越关系允许不可比较和否决门槛；DEA 评价多投入多产出的相对效率；模糊评价表示语言判断的不精确。
+
+方法必须服从决策逻辑。若某指标具有一票否决作用，完全补偿的加权和结构上就错了。若利益相关者不愿给出精确交换比例，应展示 Pareto 集或情景，而不是制造虚假的精确权重。
+
+## 敏感性
+
+排名只是偏好空间中的一个点。应改变权重、归一化方式、测量误差和门槛。对两个指标，方案分差为
+
+$$S_A-S_B=w(r_{A1}-r_{B1})+(1-w)(r_{A2}-r_{B2}).$$
+
+令分差为零，就能找到名次翻转的权重。如果实际权重靠近边界，应说两方案在合理偏好下近似并列，而不是宣称决定性胜利。
+
+蒙特卡洛敏感性可以采样不确定权重和数据，统计每个候选成为第一名的比例，并找出驱动变化的输入。这比保留六位小数的唯一排名更诚实。
+
+![名次敏感性告诉读者推荐在什么条件下会改变。](/mathematical-modeling/evaluation-rank-sensitivity.svg)
+
+## 验证
+
+评价模型不预测未来，也需要验证：指标是否覆盖真实决策；测量是否对应概念；单位、时期和人群是否可比；权重是否来自相关决策者；排名是否支持可行且公平的行动。
+
+用历史决策回测可以提供信息，但与历史一致不一定是好事，历史选择也可能有偏差。差异应被解释，而不是自动纠正。
+
+## 案例
+
+对韧性中心，先排除不满足洪涝和应急时间门槛的地点；再对统一参考集归一化；从利益相关者获得少量可解释权重；同时展示 Pareto 图、加权分数与 TOPSIS；若使用成对判断，则检查一致性。
+
+最后扰动权重、人口估计、灾害概率和归一化边界。若某地点在大多数合理条件下获胜，建议较稳健；若两个地点互换名次，就应说明各自获胜的条件，让决策者面对真正的权衡。
+
+评价模型不是用算术隐藏判断，而是让判断结构化、可检查，并能随证据变化。
+
+</LanguagePanel>
+
+</LanguageTabs>

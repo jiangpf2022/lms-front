@@ -106,6 +106,9 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                             <Link href="/#quizzes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 Quizzes
                             </Link>
+                            <Link href="/learning-center" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Learning Center
+                            </Link>
                         </>
                     ) : isMainPlatform ? (
                         <>
@@ -144,9 +147,16 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                     {(headerSettings?.showLanguageSwitcher !== false) && <LanguageSwitcher />}
 
                     {userId ? (
-                        <Button variant="outline" render={<Link href="/dashboard/student" />}>
-                            {t('dashboard')}
-                        </Button>
+                        <div className="flex items-center gap-2">
+                            {isModelingAcademy && (
+                                <Button variant="ghost" className="hidden sm:inline-flex" render={<Link href="/learning-center" />}>
+                                    My Learning
+                                </Button>
+                            )}
+                            <Button variant="outline" render={<Link href="/dashboard/student" />}>
+                                {t('dashboard')}
+                            </Button>
+                        </div>
                     ) : (
                         <>
                             {(headerSettings?.showLoginButton !== false) && (

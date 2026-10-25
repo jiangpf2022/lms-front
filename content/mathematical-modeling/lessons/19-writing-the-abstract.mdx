@@ -1,11 +1,252 @@
-## Lesson awaiting review
+<LanguageTabs>
 
+<LanguagePanel language="en" label="English">
 
-  
+Welcome—today we write the page that many judges read first and some read twice. The abstract is not a ceremonial introduction and not a compressed table of contents. It is a compact evidence chain: problem, interpretation, model, result, validation, and decision.
 
+In a modeling competition, the abstract must let a technically literate reader answer six questions quickly: What was the real decision? What did the team model? Why was that structure appropriate? What quantitative result was obtained? How was it checked? What should be done, and under what limitation?
 
-  AUTHOR REVIEW IN PROGRESS
+<Callout type="tip">
 
+**The abstract is a miniature argument.** Every important claim should point to a method, a number, a comparison, or a stated boundary in the paper.
 
-  This lesson is locked for now
-  The author is reviewing this lesson before publication. Please wait for it to unlock.
+</Callout>
+
+## Purpose
+
+Begin from the decision, not from “With the rapid development of society.” Generic background consumes attention without identifying the problem. Compare:
+
+> Urban heat has attracted increasing attention worldwide.
+
+with:
+
+> We design a next-day deployment plan for six mobile cooling units across 24 districts, minimizing expected uncovered high-risk population under travel-time and staffing constraints.
+
+The second sentence identifies decision, horizon, resources, scale, objective, and constraints. It tells the reader what success means.
+
+If the prompt asks several tasks, do not repeat each question mechanically. Find the logical spine. For example: estimate risk, explain its drivers, optimize deployment, then test robustness. That sequence becomes the abstract's structure.
+
+Define specialized terms only when necessary. A reader should not need to decode ten acronyms before discovering the purpose. Introduce one useful name for the complete framework if it helps reference later stages, but avoid branding ordinary steps as a grand algorithm.
+
+## Architecture
+
+A strong abstract usually has four moves:
+
+1. **Problem and interpretation:** convert the prompt into a precise decision or inference.
+2. **Method and mechanism:** name the model and the reason it matches the system.
+3. **Results and evidence:** report numbers, baselines, uncertainty, and validation.
+4. **Recommendation and boundary:** state the action, robustness, and principal limitation.
+
+The order may vary, but causality should not. If the recommendation appears before the reader knows the objective and evidence, it sounds arbitrary.
+
+![An abstract should preserve the complete path from question through evidence to recommendation.](/mathematical-modeling/abstract-evidence-chain.svg)
+
+Write the abstract after the core analysis, not by copying the opening paragraphs. Keep a claim ledger during the project: each row contains a candidate claim, supporting figure or table, metric, comparison, and caveat. The ledger prevents the final abstract from inventing a result that the body never demonstrates.
+
+For a compact competition summary sheet, a useful visual discipline is to keep the opening problem-method-result block to roughly five or six lines in the final template, then reserve a short closing block for validation, sensitivity, and limitations. This is not a universal law of typography, but it forces priorities. Use bold labels such as **Problem 1** only when they help the judge map the answer to a multi-part prompt. Every important numerical or qualitative result should appear somewhere in the summary; do not leave the abstract as a list of methods whose consequences are hidden in later pages.
+
+## Methods
+
+Method sentences should reveal structure without reproducing derivations. “We used machine learning” says almost nothing. A useful sentence names input, target, mechanism, and role:
+
+> We estimate district-day heat risk with a regularized count model using lagged temperature, humidity, population vulnerability, and building exposure, then pass the predictive distribution into a capacity-constrained location model.
+
+This sentence makes the two-stage pipeline visible. The abstract may mention why the method is appropriate: Poisson or negative-binomial counts for overdispersed events, network flow for conserved movement, robust optimization for uncertain coefficients, or rolling-origin validation for forecasts.
+
+Do not list every preprocessing tool, solver, and library. Mention a technical detail only if it changes interpretation, credibility, or reproducibility. “We standardized variables in Python” rarely deserves abstract space. “We preserve temporal order and validate on 12 rolling weekly origins” does.
+
+### Equations in an abstract
+
+Most abstracts do not need equations. A short mathematical definition is justified when the contribution is a new metric or when ordinary language would be more ambiguous. Even then, the equation should save words rather than interrupt the argument. Put full formulation and notation in the body.
+
+## Results
+
+Replace adjectives with comparisons. “The model performs well” is untestable. “Rolling-origin MAE falls from 8.4 to 6.1 calls per district-day, a 27.4% reduction over the seasonal naïve baseline” names design, metric, values, and reference.
+
+Relative improvement is
+
+$$\Delta_{\%}=100\frac{E_{\text{base}}-E_{\text{new}}}{E_{\text{base}}}.$$
+
+Check the arithmetic and direction. A decrease from 8.4 to 6.1 is $100(8.4-6.1)/8.4\approx27.4\%$, not 2.3% and not 37.7%.
+
+Report the quantity closest to the decision. Prediction accuracy may matter, but the more important result could be 18% fewer uncovered residents, a $42{,}000$ cost reduction, or feasibility across 94% of stress scenarios. Include uncertainty when it changes confidence: an interval, variability across folds, or scenario range.
+
+Avoid false precision. Inputs known to two significant digits do not justify a recommendation of 17.483726 vehicles. Rounding should match operational resolution and uncertainty.
+
+<Callout type="tip">
+
+**Result test.** A reader should be able to underline the baseline, the proposed value, the metric, the evaluation set, and the practical meaning. If one is missing, the sentence is probably promotional rather than evidential.
+
+</Callout>
+
+## Validation
+
+An abstract earns trust by naming at least one serious check. Depending on the model, that may be held-out data, residual diagnostics, cross-validation, conservation checks, hand calculations, comparison with a baseline, sensitivity analysis, or stress scenarios.
+
+Weak:
+
+> Sensitivity analysis demonstrates the model is robust.
+
+Stronger:
+
+> Across ±20% demand and travel-time perturbations, the recommended sites remain unchanged in 87% of scenarios; the two unstable districts are driven by one capacity threshold.
+
+The stronger version says what changed, how much, what remained, and where fragility lies. Robustness is not a ceremonial word—it is a measurable region in assumption space.
+
+If validation reveals failure, include it when material. “Coverage falls below 80% during unprecedented heat waves” defines the recommendation's boundary and can strengthen credibility.
+
+## Traceability
+
+Every abstract number must be recoverable from the body. Build a traceability table before submission:
+
+| Abstract claim | Source | Recalculation | Boundary |
+|---|---|---|---|
+| MAE 6.1 | Table 4 | notebook cell / script | 12 held-out weeks |
+| 18% coverage gain | Figure 7 | scenario output | fixed fleet of six |
+| 87% stable | Appendix B | 1,000 perturbations | specified ranges |
+
+![Traceability connects each claim to evidence, calculation, and scope.](/mathematical-modeling/abstract-traceability.svg)
+
+Check denominators. “Risk fell 20%” is incomplete until the population, time period, baseline, and definition of risk are known. Check whether a percentage means relative percent or percentage points. A success rate moving from 40% to 52% rises 12 percentage points and 30% relatively.
+
+Check tense and agency. Data do not “prove” a policy works unless the design supports causal inference. A simulation “estimates,” “suggests,” or “projects” outcomes under assumptions. A forecast model does not automatically explain why the outcome changes.
+
+## Editing
+
+First draft long, then cut by function. Label each sentence P (problem), M (method), R (result), V (validation), D (decision), or B (boundary). A sentence with no label probably does not belong. Too many M sentences indicate a method list; too many P sentences indicate delayed analysis; no V or B means overclaiming.
+
+Prefer verbs that expose work: estimate, formulate, optimize, compare, validate, perturb, and recommend. Remove phrases such as “it is worth mentioning,” “in order to,” and “the results show that” when the result can speak directly.
+
+Use consistent nouns. If the body says “uncovered high-risk residents,” do not switch to “service deficit population” in the abstract. Use the same metric name, unit, and sign convention everywhere.
+
+Read the abstract aloud. Long noun chains and ambiguous pronouns become obvious. Then ask a teammate who did not write the paragraph to state the decision, method, best number, and limitation. If they cannot, revision is not cosmetic; the logic is not visible.
+
+## Example
+
+Here is a deliberately compact model abstract for the running case:
+
+> We develop a next-day plan for assigning six mobile cooling units to 24 districts while minimizing uncovered heat-vulnerable population under staffing, capacity, and 25-minute travel constraints. A regularized negative-binomial model estimates district-day emergency-call risk from lagged weather, demographic vulnerability, and building exposure; its predictive scenarios feed a capacitated location model. On 12 rolling weekly origins, the risk model reduces MAE from 8.4 to 6.1 calls relative to a seasonal naïve baseline. Compared with the current deployment rule, the optimized plan reduces expected uncovered high-risk population by 18% and worst-decile shortfall by 11%. The selected sites remain unchanged in 87% of ±20% demand and travel-time perturbations; instability is concentrated in two districts near a capacity threshold. We therefore recommend the robust plan with a reserve unit trigger when forecast heat index exceeds the validated range. Results apply to the available summer data and do not estimate causal effects of cooling access on health outcomes.
+
+Notice what is absent: software names, decorative adjectives, literature history, and unsupported promises. Notice what remains: the decision, pipeline, baseline, numbers, robustness, operational trigger, and limitation.
+
+## Audit
+
+Before submission, verify:
+
+- the first two sentences identify a real decision or question;
+- the method description explains structure, not a shopping list;
+- every major result includes a unit or scale and a comparison;
+- percentages have checked denominators;
+- validation matches the deployment setting;
+- recommendation follows from the reported evidence;
+- the most important limitation is explicit;
+- all numbers, names, and symbols match the body;
+- the abstract satisfies the competition's current formatting rules.
+
+COMAP describes the summary sheet as an essential first page and emphasizes thought process, analysis, modeling approaches, and mathematics. Treat that page as the front door to the complete argument, not as advertising copy.
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。今天要写的是很多评委最先看、也可能反复看的那一页。摘要不是礼节性的开场，也不是把目录压缩成一段话。它是一条紧凑的证据链：问题、解释、模型、结果、验证、建议。
+
+一篇建模摘要应让读者迅速回答六个问题：真正要做什么决策？团队究竟建了什么模型？为什么这个结构适合问题？得到什么量化结果？怎样验证？最终建议是什么，边界又在哪里？
+
+<Callout type="tip">
+
+**摘要是一篇缩小后的论证。** 每个重要结论都应能指向正文中的方法、数值、比较或边界。
+
+</Callout>
+
+## 目的
+
+从决策开始，不要从“随着社会快速发展”开始。比较下面两句：
+
+> 城市高温问题受到越来越多关注。
+
+> 我们为 24 个街区制定六台移动降温设备的次日部署方案，在出行时间和人员限制下最小化未覆盖的高风险人口。
+
+第二句交代了决策、时间跨度、资源、规模、目标和约束。读者立即知道成功意味着什么。
+
+如果题目包含多个小问，不必逐条复述。寻找逻辑主线，例如先估计风险，再解释驱动因素，随后优化部署，最后检验稳健性。术语只在必要时定义，不要让读者先解码十个缩写才知道文章想做什么。
+
+## 结构
+
+强摘要通常有四步：明确问题与解释；说明方法与机制；报告结果与证据；给出建议与边界。顺序可调整，但因果不能乱。读者还不知道目标和证据时就看到建议，会觉得结论凭空出现。
+
+![摘要必须保留从问题到证据再到建议的完整路径。](/mathematical-modeling/abstract-evidence-chain.svg)
+
+摘要应在核心分析完成后写，而不是复制引言。项目进行中可维护“结论账本”：候选结论、支持它的图表、指标、比较对象和限制。这样最后不会在摘要里发明正文从未证明的数字。
+
+对于竞赛 summary sheet，一个实用的版面约束是：最终模板中的开头“问题—方法—结论”块控制在大约五到六行，再用一个很短的结尾交代检验、敏感性和局限。这不是普遍的排版定律，却能迫使作者决定什么最重要。只有在帮助评委对应多问任务时，才使用 **Problem 1** 之类的粗体标签。重要的数字结果和文字结论都要在摘要中留下位置，不要让摘要只剩方法清单。
+
+## 方法
+
+方法句要显露结构，而不是只写“我们使用机器学习”。例如：
+
+> 我们用滞后温度、湿度、人口脆弱性和建筑暴露建立街区-日计数模型，再把预测分布传入容量受限的选址模型。
+
+这句话让两阶段管道清楚可见。只有影响解释、可信度或复现的技术细节才值得进入摘要。“用 Python 标准化数据”通常不重要；“保留时间顺序并在 12 个滚动周起点上验证”很重要。
+
+大多数摘要不需要公式。只有当新指标必须被精确定义，且公式能真正节省文字时才考虑放入；完整推导应留在正文。
+
+## 结果
+
+用比较替代形容词。“模型效果很好”无法检查；“在 12 个滚动周起点上，MAE 从季节朴素基线的 8.4 降至 6.1，下降 27.4%”则给出设计、指标、数值和参照。
+
+相对改善为
+
+$$\Delta_{\%}=100\frac{E_{\text{base}}-E_{\text{new}}}{E_{\text{base}}}.$$
+
+从 8.4 降到 6.1 的降幅约为 27.4%。摘要中的算术、方向和分母必须逐项检查。
+
+尽量报告离决策更近的结果：未覆盖人口降低 18%、成本减少多少、多少压力情景仍可行。必要时写区间、折间波动或情景范围。不要提供超过数据精度的假精确数字。
+
+<Callout type="tip">
+
+**结果检验。** 一句话里最好能找到基线、改进值、指标、评估集合和实际含义。缺少其中一项，就可能更像宣传而不是证据。
+
+</Callout>
+
+## 验证
+
+摘要应点出至少一项严肃检查，例如留出数据、残差诊断、交叉验证、守恒检验、手算、基线对照、敏感性或压力情景。
+
+“敏感性分析证明模型稳健”很弱。更好的写法是：“需求与出行时间在 ±20% 内扰动时，推荐地点在 87% 情景中不变；不稳定只集中于两个接近容量门槛的街区。”后一句说明改了什么、改多少、什么稳定、哪里脆弱。
+
+如果验证暴露失败边界，也应在重要时写出。“前所未有的热浪中覆盖率降到 80% 以下”能够界定建议的适用范围，反而增强可信度。
+
+## 追溯
+
+摘要中的每个数字都必须能回到正文。可建立表格记录结论、来源图表、重算位置和适用范围。
+
+![追溯关系把摘要结论连接到证据、计算与边界。](/mathematical-modeling/abstract-traceability.svg)
+
+检查分母。“风险下降 20%”必须说明人群、时期、基线和风险定义。成功率从 40% 到 52%，是增加 12 个百分点，也是相对增长 30%，两者不能混写。
+
+注意因果措辞。除非研究设计支持因果推断，否则数据只能表明关联；模拟是在假设下估计或预测结果，而不是自动证明政策产生因果效果。
+
+## 编辑
+
+第一稿可以长，然后按功能删。给句子标 P（问题）、M（方法）、R（结果）、V（验证）、D（决策）或 B（边界）。没有标签的句子通常应离开摘要；M 太多说明成了工具列表；P 太多说明迟迟没有进入分析；缺少 V 或 B 表示过度承诺。
+
+使用能显露工作的动词：估计、构造、优化、比较、验证、扰动、建议。删掉“值得一提的是”“为了能够”“结果表明”等空架子。指标名称、单位与符号应与正文保持一致。
+
+把摘要读出声，再请没有写这段文字的队友说出决策、方法、最重要的数字和局限。如果说不出来，问题不是修辞，而是逻辑还没被看见。
+
+## 示例
+
+一个紧凑的案例摘要可以这样组织：我们为 24 个街区安排六台移动降温设备；计数模型预测次日风险，预测情景进入容量受限选址；滚动验证中 MAE 从 8.4 降到 6.1；与当前规则相比，未覆盖高风险人口降低 18%，尾部缺口降低 11%；在 ±20% 扰动下 87% 的推荐保持不变；最后说明超出历史热指数时启用备用设备，并承认模型不估计降温服务对健康的因果影响。
+
+这里没有软件清单和装饰性形容词，却保留了决策、管道、基线、数字、稳健性、操作触发条件和局限。
+
+## 审计
+
+提交前检查：开头是否明确真实问题；方法是否解释结构；结果是否有单位和比较；百分比的分母是否正确；验证是否匹配部署环境；建议是否来自证据；最重要限制是否写明；摘要数字与正文是否完全一致；格式是否符合当年比赛规则。
+
+COMAP 将 summary sheet 视为解答的必要第一页，并重视思考过程、问题分析、建模方法与数学。把它当作完整论证的正门，而不是广告文案。
+
+</LanguagePanel>
+
+</LanguageTabs>

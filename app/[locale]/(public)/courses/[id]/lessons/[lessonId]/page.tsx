@@ -1,16 +1,14 @@
 import { cache } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFreePreviewEnabled } from '@/lib/settings/free-preview'
-import { getCurrentTenantId, getCurrentUserId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId } from '@/lib/supabase/tenant'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
-import { ArrowLeft, ArrowRight, Sparkles } from 'lucide-react'
-import { Button } from '@/components/ui/button'
-import { LessonContent } from '@/app/[locale]/dashboard/student/courses/[courseId]/lessons/[lessonId]/lesson-content'
 import { serializeLessonMdx } from '@/app/[locale]/dashboard/student/courses/[courseId]/lessons/[lessonId]/serialize-lesson'
 import type { Metadata } from 'next'
 import { buildPageMetadata } from '@/lib/seo'
+import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
+import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
 
 export const dynamic = 'force-dynamic'
 
@@ -106,111 +104,32 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function PublicLessonPreviewPage(props: PageProps) {
     const { id, lessonId } = await props.params
-    const [t, tenantId, userId] = await Promise.all([
-        getTranslations('coursePublicDetails'),
-        getCurrentTenantId(),
-        getCurrentUserId(),
-    ])
+    const tenantId = await getCurrentTenantId()
 
     const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId)
     if (!data) notFound()
-    const { course, lesson, nextPreview, isFree } = data
-
-    // Where the CTA sends someone who just finished reading. A visitor with no
-    // account goes to sign-up carrying the course as `next` — and `enroll=1`
-    // when the course is free, which is the hop that turns signing up into
-    // being enrolled without a second decision (#684). Someone already logged
-    // in has no sign-up step to take, so they go to the course page itself.
-    const courseNext = isFree ? `/courses/${id}?enroll=1` : `/courses/${id}`
-    const ctaHref = userId ? courseNext : `/auth/sign-up?next=${encodeURIComponent(courseNext)}`
+    const { course, lesson, nextPreview } = data
+    const sourceChapters = extractLessonChapters(lesson.content, lesson.title)
+    const serialize = async (chapter: (typeof sourceChapters.en)[number]) => ({
+        id: chapter.id,
+        title: chapter.title,
+        mdx: await serializeLessonMdx(chapter.source),
+    })
+    const [english, chinese] = await Promise.all([
+        Promise.all(sourceChapters.en.map(serialize)),
+        Promise.all(sourceChapters.zh.map(serialize)),
+    ])
 
     return (
-        // pt-16 clears the public layout's fixed navbar
-        <div className="min-h-screen bg-background pt-16">
-            {/* Preview notice banner */}
-            <div className="border-b bg-primary/5">
-                <div className="container mx-auto px-4 py-3 flex flex-wrap items-center justify-between gap-3">
-                    <div className="flex items-center gap-2 min-w-0 text-sm">
-                        <Sparkles className="w-4 h-4 text-primary flex-shrink-0" aria-hidden="true" />
-                        <span className="font-semibold text-primary flex-shrink-0">{t('preview.badge')}</span>
-                        <span className="text-muted-foreground truncate">{t('preview.notice')}</span>
-                    </div>
-                    <Link href={`/courses/${id}`} className="flex-shrink-0">
-                        <Button variant="outline" size="sm" className="gap-1.5">
-                            <ArrowLeft className="w-4 h-4" aria-hidden="true" />
-                            {t('preview.backToCourse')}
-                        </Button>
-                    </Link>
-                </div>
-            </div>
-
-            <div className="mx-auto max-w-4xl px-4 py-8 md:px-6 md:py-10 space-y-10">
-                {/* Lesson header */}
-                <header>
-                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-1">
-                        {course.title}
-                    </p>
-                    <h1 className="text-2xl md:text-3xl font-bold tracking-tight text-balance">
-                        {lesson.title}
-                    </h1>
-                    {lesson.description && (
-                        <p className="mt-2 text-muted-foreground leading-relaxed">{lesson.description}</p>
-                    )}
-                </header>
-
-                {lesson.image && (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={lesson.image} alt="" className="aspect-video w-full rounded-xl object-cover" />
-                )}
-
-                <LessonContent
-                    mdx={await serializeLessonMdx(lesson.content)}
-                    videoUrl={lesson.video_url}
-                    embedCode={lesson.embed_code}
-                    embedMode="sandboxed"
-                />
-
-                {/* Next free lesson — a preview that ends in a single CTA is a
-                    dead end; if there is more to read for free, that is the
-                    cheapest next step there is (#791). */}
-                {nextPreview && (
-                    <Link
-                        href={`/courses/${id}/lessons/${nextPreview.id}`}
-                        className="flex items-center justify-between gap-4 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/30 hover:bg-muted/40"
-                    >
-                        <div className="min-w-0">
-                            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                                {t('preview.nextLessonLabel')}
-                            </p>
-                            <p className="truncate font-medium">{nextPreview.title}</p>
-                        </div>
-                        <ArrowRight className="h-4 w-4 flex-shrink-0 text-brand-text" aria-hidden="true" />
-                    </Link>
-                )}
-
-                {/* Enroll CTA */}
-                <section className="rounded-2xl border-2 border-primary/10 bg-gradient-to-b from-primary/[0.06] to-transparent p-6 md:p-8 text-center space-y-4">
-                    <h2 className="text-xl font-bold">{t('preview.enrollTitle')}</h2>
-                    <p className="text-sm text-muted-foreground">
-                        {userId ? t('preview.enrollBody') : t('preview.signUpBody')}
-                    </p>
-                    <Link href={ctaHref} className="inline-block">
-                        <Button size="lg" className="gap-2" data-testid="preview-enroll-cta">
-                            {userId ? t('preview.enrollCta') : t('preview.signUpCta')}
-                        </Button>
-                    </Link>
-                    {!userId && (
-                        <p className="text-xs text-muted-foreground">
-                            <Link
-                                href={`/auth/login?next=${encodeURIComponent(courseNext)}`}
-                                className="underline underline-offset-4 hover:text-foreground"
-                            >
-                                {t('preview.haveAccount')}
-                            </Link>
-                        </p>
-                    )}
-                </section>
-            </div>
-        </div>
+        <ModelingLessonReader
+            courseId={Number(id)}
+            lessonId={lesson.id}
+            lessonNumber={lesson.sequence}
+            courseTitle={course.title}
+            lessonTitle={lesson.title}
+            lessonDescription={lesson.description}
+            chapters={{ en: english, zh: chinese }}
+            nextLesson={nextPreview}
+        />
     )
 }

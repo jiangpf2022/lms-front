@@ -315,9 +315,17 @@ export default async function CourseDetailsPage(props: {
         hasDuration && { key: 'duration', icon: Clock, label: t('hero.duration', { h: estimatedHours, m: estimatedMinutes }) },
         formattedDate && { key: 'published', icon: Calendar, label: t('hero.published', { date: formattedDate }) },
     ].filter(Boolean) as { key: string; icon: typeof Users; label: string }[];
+    const isModelingCourse = course.title === 'Mathematical Modeling';
 
     return (
-        <div className="min-h-screen bg-background text-foreground font-sans">
+        <div className="relative min-h-screen bg-background text-foreground font-sans">
+            {isModelingCourse && (
+                <>
+                    <div className="pointer-events-none fixed inset-0 z-0 bg-[url('/mathematical-modeling/course-cover.webp')] bg-cover bg-center opacity-[0.08] saturate-75 dark:opacity-[0.06]" />
+                    <div className="pointer-events-none fixed inset-0 z-0 bg-gradient-to-b from-background/90 via-background/94 to-emerald-50/90 dark:to-emerald-950/20" />
+                </>
+            )}
+            <div className="relative z-10">
             <JsonLd data={structuredData} />
             {/* Breadcrumbs */}
             <nav aria-label="Breadcrumb" className="border-b border-border">
@@ -755,6 +763,7 @@ export default async function CourseDetailsPage(props: {
                         </section>
                     )}
                 </div>
+            </div>
             </div>
         </div>
     );

@@ -1,11 +1,311 @@
-## Lesson awaiting review
+<LanguageTabs>
 
+<LanguagePanel language="en" label="English">
 
-  
+Welcome—open a blank document, but do not start with the introduction. A strong modeling paper is not a diary of what the team tried. It is an argument reconstructed in the order a reader needs: question, assumptions, model, solution, evidence, decision, and limits.
 
+The central discipline is traceability. Every symbol should refer to a defined quantity; every equation should implement a stated mechanism; every figure should answer a question; every conclusion should trace to evidence. When this chain is intact, complex mathematics becomes readable. When it is broken, polished prose cannot rescue the paper.
 
-  AUTHOR REVIEW IN PROGRESS
+<Callout type="tip">
 
+**Write for verification.** The reader should be able to reproduce the logic without guessing what a variable means, where data came from, or why a method was selected.
 
-  This lesson is locked for now
-  The author is reviewing this lesson before publication. Please wait for it to unlock.
+</Callout>
+
+## Argument
+
+Before writing paragraphs, build a claim-evidence outline. For each section, write one sentence completing: “After reading this section, the reader should believe that …” Then list the evidence required.
+
+For a flood-evacuation problem, the outline may be:
+
+1. demand and road capacity create a measurable clearance problem;
+2. a time-expanded network represents movement and conservation;
+3. the optimization finds feasible departure and routing decisions;
+4. simulations under uncertain demand test performance;
+5. the recommended policy improves clearance without shifting risk unfairly.
+
+This is different from a chronological diary: downloaded data, tried regression, changed solver, drew plots. Readers need the final logical path, with failed attempts mentioned only when they illuminate a decision or limitation.
+
+Section titles should be short and informative. “Model Development” is acceptable but vague; “Time-Expanded Evacuation Network” tells the reader what mathematical object appears. Avoid sentence-length titles that overload the table of contents.
+
+## Problem
+
+The introduction should establish the decision context, precise objective, scope, and contribution. Restate the problem in your own operational language. Identify decision makers, controllable variables, outcomes, time and spatial boundaries, and evaluation criteria.
+
+Separate facts from interpretation. The prompt may state road capacities and population; your choice to minimize the 95th-percentile clearance time is a modeling decision. Mark it as such.
+
+The problem restatement must not be copied from the prompt. Rewrite it as an operational contract: identify inputs, required outputs, controllable decisions, constraints, and success criteria. This act is part of modeling because it exposes ambiguities before they become equations.
+
+Close the introduction with a roadmap that describes the argument, not headings:
+
+> We first estimate zone-level departures, then formulate a capacitated dynamic network, compare routing policies under matched demand scenarios, and finally identify the conditions under which the recommended schedule loses feasibility.
+
+A literature or background section should support choices. Do not paste summaries of unrelated algorithms. Organize sources by the design questions they answer: evacuation demand, dynamic flow, uncertainty, and validation. State what you adopt and what gap remains.
+
+## Assumptions
+
+Assumptions are controlled approximations, not apologies. Each should include statement, reason, consequence, and test.
+
+Weak:
+
+> We assume traffic is stable.
+
+Stronger:
+
+> Within each five-minute interval, link travel time is treated as constant to keep the time-expanded network linear. We test 10% and 25% congestion multipliers; recommendations that fail those scenarios are not considered robust.
+
+Classify assumptions:
+
+- boundary assumptions define what is outside the system;
+- behavioral assumptions describe agents;
+- distributional assumptions describe randomness;
+- numerical assumptions enable approximation;
+- policy assumptions define admissible decisions.
+
+Do not assume the desired conclusion. “We assume our selected sites are optimal” is circular. Do not call observed facts assumptions. Put parameter estimates and data definitions in their proper sections.
+
+<Callout type="tip">
+
+**Assumption audit.** Ask what result would change if the assumption were false, whether the direction of bias is known, and which stress test can expose the failure.
+
+</Callout>
+
+## Notation
+
+Introduce notation close to first use and provide a compact symbol table. Include symbol, meaning, unit, index set, and type. Distinguish data, decision variables, state variables, and outputs typographically or explicitly.
+
+For example:
+
+| Symbol | Meaning | Unit / type |
+|---|---|---|
+| $x_{ijt}$ | evacuees entering link $(i,j)$ in interval $t$ | people, decision |
+| $u_{it}$ | people waiting in zone $i$ | people, state |
+| $c_{ij}$ | link capacity per interval | people, data |
+| $\tau_{ij}$ | link travel delay | intervals, data |
+
+Then a conservation equation can be read:
+
+$$u_{i,t+1}=u_{it}+a_{it}+\sum_jx_{ji,t-\tau_{ji}}-\sum_jx_{ijt}.$$
+
+Each term has units of people. The equation states that next inventory equals current inventory plus external arrivals and delayed inflow minus departures. Explain this in words immediately after the formula. Equations should compress reasoning, not replace it.
+
+Number equations that will be referenced. Use aligned environments for multi-line formulations, define index ranges, and keep sign conventions consistent. Never use the same symbol for both a set and a scalar.
+
+## Model
+
+Build from a baseline to the final structure. First present the smallest credible model, solve or reason about a tiny example, then add the mechanism that the baseline misses.
+
+For a linear optimization model, present decisions, objective, and constraints as a system:
+
+$$
+\begin{aligned}
+\min_x\quad &\sum_{t,i}u_{it}\\
+\text{s.t.}\quad
+&\text{flow conservation},\\
+&0\le x_{ijt}\le c_{ij},\\
+&u_{it}\ge0.
+\end{aligned}
+$$
+
+Do not write “Constraint (3) ensures feasibility” and move on. Explain which physical rule it encodes, why its direction is correct, and how its units close. Group constraints by mechanism: conservation, capacity, logic, fairness, and boundary conditions.
+
+If the final model is nonlinear or stochastic, identify where nonlinearity or uncertainty enters. State whether the problem is convex, mixed-integer, or heuristic; this determines what an optimizer's result means. A local solution should not be called globally optimal without supporting theory or bounds.
+
+Include an architecture diagram when multiple models pass information. Arrows should label quantities—demand scenarios, coefficients, decisions—not vague verbs such as “process.”
+
+## Solution
+
+The solution section connects mathematics to computation. Name the algorithm and justify it from model structure. For a convex quadratic program, interior-point or first-order methods have relevant guarantees. For a mixed-integer model, report solver, optimality gap, time limit, and hardware. For a stochastic heuristic, report seeds, population or chain settings, stopping rule, and repeated-run variability.
+
+Pseudocode should communicate the procedure rather than copy library calls:
+
+1. construct demand scenarios from the validated forecast;
+2. build time-expanded nodes and feasible arcs;
+3. solve the baseline deterministic model;
+4. evaluate its policy across all scenarios;
+5. update or re-optimize under the chosen risk criterion;
+6. record feasibility, objective, and runtime.
+
+Provide one hand-checkable instance. A network with two zones, one shelter, and three periods can verify conservation and capacity. Record an intermediate flow, not just the final objective. That value becomes a unit test for code.
+
+Reproducibility requires data version, code version, random seeds, environment, and important solver settings. A statement such as “we used Python” is not enough.
+
+During implementation, debug from small blocks outward. In a notebook, make each block expose a meaningful intermediate value: cleaned row count, one transition probability, one conservation residual, one objective component. Verify the block before connecting it to the next. A thousand-line script that prints only the final answer makes a simple indexing error almost impossible to locate.
+
+## Evidence
+
+Results should follow questions, not software output order. Begin with the baseline. Then show the proposed method, uncertainty, and decision effect. A good figure caption states the finding:
+
+> The robust schedule clears all zones within 75 minutes in 92% of scenarios, while the nominal schedule fails when downtown demand exceeds the training maximum.
+
+Tables should have units, sample scope, meaningful precision, and highlighted comparisons without visual clutter. Report denominators. A “92% success rate” means little unless the scenario count and definition of success are known.
+
+Separate fit, prediction, and decision metrics. A model can fit historical flow well but recommend an infeasible route. Validation should include:
+
+- data checks and held-out performance;
+- mathematical invariants such as conservation;
+- numerical convergence or optimality information;
+- comparison with simple baselines;
+- sensitivity to parameters and assumptions;
+- stress tests beyond nominal data;
+- decision-level cost, risk, and fairness.
+
+Do not hide negative results. If a method improves mean clearance but worsens the worst district, show the trade-off. Modeling is not a search for a universally superior curve; it is a structured decision under competing consequences.
+
+## Discussion
+
+Interpret mechanisms, not just rankings. Explain why the model behaves as observed. If one bottleneck road determines clearance, identify its shadow price or saturation pattern. If uncertainty changes the chosen shelter, explain which scenario or threshold drives the switch.
+
+Sensitivity should produce thresholds. “The model is sensitive to capacity” is vague. “The recommendation changes only when bridge capacity falls below 1,200 people per hour” supports action.
+
+Distinguish uncertainty sources: measurement, parameter estimation, future randomness, structural omission, and stakeholder preference. A confidence interval addresses only some of them. Discuss transferability: what would need recalibration in another city, season, or population?
+
+Limitations should be specific and connected to consequence. “More data would improve the model” is universal and weak. “Mobile-phone departure estimates underrepresent older residents, which may bias zone demand downward; we therefore retain a 15% reserve in districts with the largest coverage gap” is useful.
+
+## Conclusion
+
+The conclusion closes the argument. Restate the decision, most important quantitative evidence, robustness boundary, and recommendation. Do not introduce a new method or result. Do not simply repeat the abstract word for word.
+
+A useful structure is:
+
+1. one sentence answering the decision;
+2. one or two numbers supporting it;
+3. the condition under which it changes;
+4. the next operational action.
+
+Appendices hold derivations, extended diagnostics, data dictionaries, and supplemental figures that support verification but would interrupt the main argument. The main text must remain understandable without forcing the judge to reconstruct essential logic from an appendix.
+
+## Review
+
+Run four passes:
+
+- **logic pass:** every claim has evidence and every section advances the argument;
+- **mathematics pass:** symbols, units, indices, constraints, and calculations are correct;
+- **evidence pass:** baselines, uncertainty, sensitivity, and limitations are visible;
+- **design pass:** figures, tables, captions, typography, and references are consistent.
+
+Finally perform a cold read. Can someone identify the decision from page one? Can they trace the headline result to a figure and then to a model equation? Can they tell when the recommendation fails? If yes, the paper is not merely complete; it is verifiable.
+
+The main text is successful when the reader never has to trust a mysterious leap. They may disagree with an assumption or preference, but they can locate it, change it, and understand the consequence. That is what scientific modeling writing is for.
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。请打开一个空白文档，但先不要写引言。好的建模论文不是团队试错过程的日记，而是按照读者需要重新组织的论证：问题、假设、模型、求解、证据、决策和边界。
+
+核心纪律是可追溯。每个符号对应明确定义的量；每个方程实现一条已陈述机制；每张图回答一个问题；每个结论都能回到证据。链条完整时，复杂数学也能读懂；链条断裂时，漂亮文字无法补救。
+
+<Callout type="tip">
+
+**为验证而写。** 读者不应猜变量含义、数据来源或方法选择理由，就能够复现你的逻辑。
+
+</Callout>
+
+## 论证
+
+写段落前先做结论-证据提纲。对每节完成一句话：“读完本节，读者应当相信……”，再列出需要的证据。
+
+例如洪水疏散问题可以依次证明：需求和道路容量构成可测的清空问题；时间扩展网络能够表示移动与守恒；优化得到可行的出发与路径决策；不确定需求下的仿真检验表现；建议在改善清空时间的同时没有不公平地转移风险。
+
+这和按时间写“下载数据、试回归、换求解器、画图”完全不同。论文呈现最终逻辑路径，失败尝试只有在解释选择或局限时才值得保留。
+
+章节标题应短而明确。“模型构建”可以使用，但“时间扩展疏散网络”更能说明本节数学对象。不要让标题变成一整句话。
+
+## 问题
+
+引言需要说明决策场景、精确目标、范围和贡献。用操作性语言重述题目，明确决策者、可控变量、结果、时空边界和评价标准。
+
+把事实和解释分开。题目给出的道路容量和人口是事实；你选择最小化 95% 分位清空时间，是建模决定，应明确标注。
+
+问题重述不能复制题面，而应改写成操作性契约：输入是什么、必须输出什么、哪些量可控、约束是什么、成功标准是什么。重述本身就是建模，因为它会在方程出现前暴露含糊之处。
+
+引言结尾用一段逻辑路线：先估计分区出发量，再建立容量受限动态网络，在相同需求情景下比较路径策略，最后找出推荐失去可行性的条件。背景与文献也应服务这些设计问题，而不是粘贴不相干算法简介。
+
+## 假设
+
+假设是受控近似，不是道歉。每条假设都应有陈述、理由、影响和检验。
+
+“假设交通稳定”很弱。更好的写法是：“每个五分钟区间内链路时间视为常数，以保持时间扩展网络线性；随后测试 10% 和 25% 的拥堵倍率，无法通过者不视为稳健方案。”
+
+假设可分为边界、行为、分布、数值和政策假设。不要把希望得到的结论写成假设，也不要把已经观测的事实叫作假设。
+
+<Callout type="tip">
+
+**假设审计。** 问：假设错误时什么结果会变？偏差方向是否可知？什么压力测试能够暴露失败？
+
+</Callout>
+
+## 符号
+
+符号在第一次使用附近定义，并给出紧凑符号表，包括含义、单位、索引集合和类型。明确区分数据、决策变量、状态与输出。
+
+例如 $x_{ijt}$ 表示时段 $t$ 进入道路 $(i,j)$ 的人数，$u_{it}$ 表示分区等待人数，$c_{ij}$ 表示区间容量，$\tau_{ij}$ 表示出行延迟。守恒式可以写成
+
+$$u_{i,t+1}=u_{it}+a_{it}+\sum_jx_{ji,t-\tau_{ji}}-\sum_jx_{ijt}.$$
+
+每一项单位都是人数。公式后应立刻用文字说明：下一期库存等于当前库存，加外部到达和延迟流入，减去离开流量。公式负责压缩推理，不负责替代解释。
+
+## 模型
+
+从最小可信基线逐层构建。先给出简化模型和可手算例子，再加入基线遗漏的重要机制。
+
+线性优化可以按决策、目标、约束整体呈现：
+
+$$
+\begin{aligned}
+\min_x\quad &\sum_{t,i}u_{it}\\
+\text{s.t.}\quad
+&\text{流量守恒},\\
+&0\le x_{ijt}\le c_{ij},\\
+&u_{it}\ge0.
+\end{aligned}
+$$
+
+不要只写“约束三保证可行性”。要解释它编码什么物理规则、方向为何正确、单位怎样闭合。按守恒、容量、逻辑、公平和边界条件对约束分组。
+
+若模型非线性或随机，要指出非线性和不确定性从哪里进入，并说明是凸问题、混合整数问题还是启发式求解。没有理论或界限支持时，局部解不能被称为全局最优。
+
+## 求解
+
+求解部分连接数学与计算。根据模型结构选择并说明算法。混合整数模型应报告求解器、最优间隙、时间限制和硬件；随机启发式应报告随机种子、种群或链参数、停止规则和多次运行波动。
+
+伪代码应表达过程，而不是复制库函数：生成经验证预测的需求情景；构造时间扩展节点与可行弧；求解名义基线；在全部情景评估；按风险指标重新优化；记录可行性、目标值和时间。
+
+一定保留一个可手算小实例。两个分区、一个避难所和三个时段足以检验守恒与容量。记录一个中间流量，而不仅是最终目标，它会成为代码单元测试。
+
+代码调试要从小块向整体扩展。Notebook 中每个代码块都应输出一个有意义的中间量：清洗后行数、一个转移概率、一项守恒残差或目标函数分量。确认这一块正确后再连接下一块。只在最后打印答案的上千行脚本，会让一个简单索引错误也难以定位。
+
+## 证据
+
+结果按问题组织，而不是按软件输出顺序。先给基线，再给改进方法、不确定性和决策影响。图题应直接写发现，例如“稳健计划在 92% 情景中于 75 分钟内完成清空，而名义计划在市中心需求超过训练最大值时失败”。
+
+表格应标单位、样本范围、合理精度和比较对象。区分拟合指标、预测指标和决策指标。模型可能很好地拟合历史流量，却推荐不可行路径。
+
+验证应包含数据检查、留出表现、守恒等数学不变量、数值收敛或最优性信息、简单基线、参数与假设敏感性、超出名义范围的压力测试，以及成本、风险和公平等决策结果。
+
+不要隐藏负面结果。如果平均清空时间改善但最差街区变坏，应展示这一权衡。建模不是寻找一条在所有意义上都更好的曲线，而是在竞争后果下做结构化决策。
+
+## 讨论
+
+解释机制，不只报告排名。若一条瓶颈道路决定结果，就用影子价格或饱和情况说明；若不确定性改变避难所选择，就指出是哪一个情景或门槛驱动转换。
+
+敏感性最好产生阈值。“模型对容量敏感”太模糊；“桥梁容量低于每小时 1,200 人时建议才改变”可以支持行动。
+
+区分测量误差、参数估计、未来随机性、结构遗漏和利益相关者偏好。置信区间只能覆盖其中一部分。局限应具体并连接后果，例如手机数据低估老年人出发量，因此在覆盖差距最大的街区保留 15% 备用容量。
+
+## 结论
+
+结论要闭合论证：重述决策、最重要量化证据、稳健边界和行动建议，不要引入新方法或新结果，也不要逐字复制摘要。
+
+附录用于推导、扩展诊断、数据字典和补充图，但正文必须在不强迫读者翻附录重建核心逻辑的情况下独立可读。
+
+最后做四遍检查：逻辑检查每个结论有证据；数学检查符号、单位、索引、约束和计算；证据检查基线、不确定性、敏感性与局限；设计检查图表、标题、排版和引用一致。
+
+再做一次陌生读者视角的冷读：第一页能否找到决策？核心结果能否追到图表与方程？推荐何时失效是否清楚？如果都能回答，这篇论文才不仅是完成了，而是能够验证。
+
+主文真正成功时，读者不需要相信任何神秘跳跃。他可以不同意某个假设或偏好，但能准确找到它、改变它，并理解后果。这正是科学建模写作的意义。
+
+</LanguagePanel>
+
+</LanguageTabs>

@@ -1,11 +1,280 @@
-## Lesson awaiting review
+<LanguageTabs>
 
+<LanguagePanel language="en" label="English">
 
-  
+Welcome—put the model aside for a moment. Today we work on the part that determines whether every later equation refers to the system we think it does.
 
+Data preparation is often described as cleaning. That word is too weak. We are not polishing a spreadsheet until it looks tidy; we are deciding what one row means, which observations are comparable, how uncertainty enters, and which transformations are legal before a prediction or decision is made. A perfect solver applied to the wrong unit of analysis gives a perfectly optimized mistake.
 
-  AUTHOR REVIEW IN PROGRESS
+Our running case is an emergency cooling-center study. A city wants to predict neighborhood heat risk and place mobile cooling units. Files arrive from temperature sensors, census tables, ambulance calls, building records, and weather forecasts. Each source is useful, but they disagree in time, location, unit, and population. The first model is the data table itself.
 
+<Callout type="tip">
 
-  This lesson is locked for now
-  The author is reviewing this lesson before publication. Please wait for it to unlock.
+**Data contract.** Before editing values, define the entity, time grain, spatial grain, target, unique key, units, allowed ranges, availability time, and provenance of every field.
+
+</Callout>
+
+## Grain
+
+Ask: what does one row represent? “A neighborhood” is incomplete. Is it one neighborhood-hour, neighborhood-day, sensor reading, patient visit, or household? Mixing grains creates silent duplication. If a daily neighborhood table is joined to hourly weather by date, each daily outcome may be repeated 24 times. A regression then acts as though it has 24 times more independent evidence.
+
+A table's candidate key should identify one row. For the sensor table it might be $(\text{sensor\_id},\text{timestamp})$; for daily risk it might be $(\text{district\_id},\text{date})$. Test uniqueness:
+
+$$N_{\text{duplicates}}=N_{\text{rows}}-N_{\text{distinct keys}}.$$
+
+Do not immediately delete duplicates. Two identical rows may be accidental copies, but two records with the same key and different values may indicate revisions, parallel instruments, or a broken definition. Resolve them using provenance and time of availability.
+
+The target must also match the decision. If units are deployed every morning, a target aggregated by week cannot express the operational timing. If the target is “ambulance calls per 10,000 residents,” both numerator and population denominator need aligned geography and date.
+
+![A leakage-resistant preparation pipeline: the split precedes fitted transformations.](/mathematical-modeling/data-leakage-pipeline.svg)
+
+### A join audit
+
+Before and after every join, record row count and key uniqueness. Suppose table A has one row per district-day and table B has multiple sensors per district-hour. Joining directly on district and date creates a many-to-many expansion. Aggregate B to the target grain first, or explicitly model the sensor level.
+
+For a left join, calculate match rate and multiplicity. If $m_i$ is the number of matches for row $i$, inspect the distribution of $m_i$. Values $m_i=0$ reveal missing linkage; $m_i>1$ may be valid or may duplicate outcomes.
+
+## Types
+
+Data types encode admissible operations. A postal code written as an integer loses leading zeros and does not become a quantity. An ordinal heat-warning level has order but not necessarily equal spacing. A timestamp without a time zone becomes ambiguous at daylight-saving transitions.
+
+Units deserve their own columns in the data dictionary. Temperature may be Celsius or Fahrenheit; energy may be kWh or joules; rainfall may be a rate or an interval total. A conversion must be applied once and tested. For Fahrenheit $F$ and Celsius $C$,
+
+$$C=\frac{5}{9}(F-32).$$
+
+If 86°F is converted, the result should be 30°C. This one known-answer test catches reversed formulas and double conversion.
+
+Categorical values need a controlled vocabulary. “NYC,” “New York City,” and “new-york” may denote one entity. Do not merge labels solely by fuzzy similarity: “Washington” can mean a state, a city, or a person. Keep the raw field, create a standardized field, and maintain a mapping table so the decision can be audited.
+
+<Callout type="tip">
+
+**Stop and inspect.** A column named `rate` contains values 0.08, 8, and 8%. Are these three observations comparable? Do not impute or normalize until the representation is resolved.
+
+</Callout>
+
+## Missingness
+
+A missing value can mean “not measured,” “not applicable,” “below detection,” “temporarily unavailable,” or a true zero that was encoded as blank. These meanings imply different models.
+
+Let $M_j=1$ indicate that variable $X_j$ is missing. The classic mechanisms are:
+
+- **MCAR:** missingness is independent of observed and unobserved data;
+- **MAR:** conditional on observed variables, missingness does not depend on the missing value;
+- **MNAR:** missingness still depends on the unobserved value.
+
+They are assumptions, not labels a software package can prove. A heat sensor may fail more often at very high temperatures, making missingness informative. Mean imputation would then pull extreme days toward normal and understate risk.
+
+Begin with a missingness map by variable, time, and group. Compare outcome distributions for missing and observed groups when possible. Add an indicator when the fact of missingness may carry information, but do not treat the indicator as a magical repair.
+
+Simple numerical options include median imputation, groupwise imputation, interpolation for short time gaps, and model-based multiple imputation. A linear interpolation between $(t_0,y_0)$ and $(t_1,y_1)$ is
+
+$$\widehat y(t)=y_0+\frac{t-t_0}{t_1-t_0}(y_1-y_0).$$
+
+It assumes a straight path and should not bridge a structural break or a long unobserved interval. Always mark imputed values and compare conclusions with and without them.
+
+![Interpolation is a model, not a neutral fill operation; the figure makes its local assumption visible.](/mathematical-modeling/data-interpolation.svg)
+
+## Outliers
+
+An outlier is not automatically an error. It can be a typo, unit mismatch, sensor failure, rare valid event, or evidence that one model is covering several regimes. Deleting it because it worsens a fit reverses the logic of validation.
+
+The Tukey rule flags values outside
+
+$$[Q_1-1.5\operatorname{IQR},\;Q_3+1.5\operatorname{IQR}],
+\qquad \operatorname{IQR}=Q_3-Q_1.$$
+
+A robust standardized score uses median and median absolute deviation:
+
+$$z_i^{\text{rob}}=\frac{0.6745(x_i-\operatorname{median}x)}{\operatorname{MAD}(x)}.$$
+
+These rules identify unusual values; they do not decide their truth. Diagnose them against units, nearby timestamps, other sensors, source notes, and physical constraints. A 48°C surface temperature may be plausible during a heat wave while a 48°C air temperature in New York likely demands investigation.
+
+A defensible action log uses categories such as retained, corrected from source, set missing, winsorized for a specific estimator, or excluded under a predeclared rule. Report how many rows each rule affects and whether the final decision changes.
+
+![Outlier diagnosis separates detection from the decision to retain, correct, or exclude.](/mathematical-modeling/data-outlier-diagnosis.svg)
+
+## Transformation
+
+Scaling changes geometry. Min-max scaling maps a training value to
+
+$$x_i'=\frac{x_i-x_{\min}}{x_{\max}-x_{\min}},$$
+
+while standardization gives
+
+$$z_i=\frac{x_i-\mu}{\sigma}.$$
+
+Distance-based methods, regularized regression, neural optimization, PCA, and clustering are sensitive to scale. Tree splits usually are not, though preprocessing still matters for missing values and categories.
+
+Fit all transformation parameters on the training set only. Validation and test sets use the training $mu$, $sigma$, minima, maxima, category vocabulary, and imputation model. If a validation value lies outside the training range, its min-max value may be below zero or above one; clipping it automatically may hide distribution shift.
+
+Skewed positive data may benefit from $\log(x+c)$, but the constant $c$, zeros, and inverse transformation need explanation. Polynomial and interaction features encode specific mechanisms. If a cooling effect depends on both humidity $H$ and temperature $T$, an interaction $HT$ can represent that dependence, but it should be motivated and validated.
+
+For categories, one-hot encoding avoids false numerical distance, while target encoding risks leakage and must be estimated within training folds. High-cardinality identifiers often memorize entities rather than generalize.
+
+## Split
+
+The data split is part of the scientific design. Independent rows may use random train-validation-test splitting. Grouped data should keep a person, building, or district in one side if deployment targets unseen groups. Time-indexed data should preserve chronology. Spatial prediction may require holding out entire regions.
+
+Suppose multiple sensor readings come from each building. Randomly splitting readings lets the model see the same building in training and test, producing an optimistic score if building identity dominates. Grouped cross-validation asks the harder and usually relevant question: can the model generalize to a new building?
+
+Preprocessing belongs inside cross-validation. For fold $k$:
+
+1. learn imputation and scaling from the fold's training subset;
+2. transform its validation subset using those fitted objects;
+3. train and evaluate;
+4. discard fold-specific fitted objects.
+
+Only after choosing the full pipeline should it be refit on the available development data and evaluated once on the untouched test set.
+
+<Callout type="tip">
+
+**Leakage is temporal or relational access to information that the deployed model would not possess.** It can enter through preprocessing, duplicates, target-derived features, post-outcome fields, repeated entities, or future revisions.
+
+</Callout>
+
+## Pipeline
+
+A reproducible pipeline treats raw data as immutable. Keep layers such as raw, validated, analytical, and model-ready. Every derived column should have code, a definition, units, and source columns. Record dataset versions and hashes where possible.
+
+Add data tests before model tests:
+
+- keys are unique at the declared grain;
+- ranges and units are valid;
+- category levels obey the dictionary;
+- timestamps are ordered and time zones known;
+- join row counts remain within expected bounds;
+- missingness does not suddenly jump without explanation;
+- target and post-target columns are separated.
+
+Then create a compact data-quality report: row counts, coverage, missingness, duplicate keys, corrected values, exclusions, and train/test boundaries. A reader should be able to trace one model input back to its raw source.
+
+## Case
+
+For the cooling-center decision, define one row as district-day. Aggregate sensors using robust summaries and coverage counts, align weather forecasts by availability time, convert population data to rates, and preserve heat-wave flags. Predict next-day emergency call rate and its uncertainty, then optimize mobile-unit placement under capacity and travel constraints.
+
+Now run sensitivity analyses: remove imputed days, vary the outlier rule, hold out a borough, use unrevised weather forecasts, and compare raw-count versus population-adjusted targets. If the recommended placement changes, report which preparation assumption caused it. Data preparation has now become part of the model's uncertainty, where it belongs.
+
+The durable sequence is: define grain; audit keys and joins; standardize meaning and units; diagnose missingness and outliers; split according to deployment; fit transformations only on training data; version the pipeline; and carry preparation uncertainty into validation and decisions.
+
+Further reading: the [scikit-learn guidance on common pitfalls](https://scikit-learn.org/stable/common_pitfalls.html) and the [NIST Engineering Statistics Handbook](https://www.itl.nist.gov/div898/handbook/).
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。今天先把模型放到一边，因为我们要处理的是决定后面每个公式究竟有没有意义的部分。
+
+数据预处理常被叫作“清洗”，但这个词太轻了。我们不是把表格擦得整齐，而是在决定一行数据代表什么、哪些观测能够比较、不确定性从哪里进入，以及哪些变换在决策发生前是合法的。再完美的求解器，用错了分析单位，也只会得到一个被精确优化的错误。
+
+贯穿本文的案例是一项城市降温中心研究。管理者希望预测街区热风险并布置移动降温设备。温度传感器、人口普查、急救电话、建筑记录和天气预报来自不同文件，在时间、空间、单位和覆盖人群上都不一致。此时第一份模型其实就是数据表本身。
+
+<Callout type="tip">
+
+**数据契约。** 修改任何数值前，先定义实体、时间粒度、空间粒度、预测目标、唯一键、单位、允许范围、数据可用时间和每个字段的来源。
+
+</Callout>
+
+## 粒度
+
+先问：一行究竟表示什么？“一个街区”不够完整，它是街区-小时、街区-日、一次传感器读数，还是一次急救事件？混合粒度会造成静默重复。把街区-日结果与小时天气直接按日期连接，可能把每天的结果复制 24 次，让回归误以为证据多了 24 倍。
+
+候选键应唯一标识一行。传感器表可以使用 $(\text{sensor\_id},\text{timestamp})$，街区日表可以使用 $(\text{district\_id},\text{date})$。重复行数为
+
+$$N_{\text{duplicates}}=N_{\text{rows}}-N_{\text{distinct keys}}.$$
+
+不要看到重复键就立刻删除。完全相同的行可能是复制错误，同键不同值也可能是修订、平行仪器或定义失效。必须结合来源和可用时间判断。
+
+连接表格前后都记录行数和唯一性。如果表 A 是街区-日，表 B 是每个街区多个传感器的小时记录，应先把 B 聚合到目标粒度，或明确建立传感器层级模型。
+
+![防止泄漏的数据管道：先划分，再拟合变换。](/mathematical-modeling/data-leakage-pipeline.svg)
+
+## 类型
+
+数据类型决定允许做什么运算。邮编写成整数会丢掉前导零，也不代表数量；有序预警等级具有顺序，却未必等距；缺少时区的时间戳会在夏令时切换时变得含糊。
+
+数据字典必须写单位。摄氏和华氏、千瓦时和焦耳、降雨速率和区间累计量都不能混在一起。华氏转摄氏为
+
+$$C=\frac{5}{9}(F-32).$$
+
+用 86°F 应得到 30°C 作为已知答案测试，能立即发现公式写反或重复换算。
+
+类别需要受控词表。“NYC”“New York City”“new-york”可能是同一实体，但不能只靠字符串相似就合并，“Washington”可能表示州、城市或人名。保留原始字段，另建标准字段和映射表。
+
+<Callout type="tip">
+
+**停下来检查。** 名为 `rate` 的一列同时出现 0.08、8 和 8%。它们能直接比较吗？在含义和表示法解决前，不要插补，也不要归一化。
+
+</Callout>
+
+## 缺失
+
+空值可能表示未测量、不适用、低于检测限、暂时不可用，或者本来为零却被写成空白。不同含义对应不同模型。
+
+MCAR 表示缺失与数据无关；MAR 表示在已观测变量给定后，缺失不再依赖缺失值；MNAR 表示缺失仍依赖那个看不见的值。这些是需要论证的假设，不是软件能够自动证明的标签。高温时传感器更容易失效，就会让缺失本身带有风险信息；均值填补会把极端天气拉回正常。
+
+先按变量、时间和群体画缺失图。比较有记录与无记录群体的分布。简单方法包括中位数填补、分组填补、短缺口插值和多重插补。线性插值为
+
+$$\widehat y(t)=y_0+\frac{t-t_0}{t_1-t_0}(y_1-y_0).$$
+
+它假设两点间走直线，因此不应跨越结构突变或很长缺口。插补值必须被标记，并比较使用与不使用插补时结论是否变化。
+
+![插值本身就是模型，而不是中性的填空操作。](/mathematical-modeling/data-interpolation.svg)
+
+## 异常值
+
+异常值不等于错误。它可能是输入错误、单位混乱、传感器故障，也可能是真实罕见事件，甚至说明原本的单一模型覆盖了多个机制。
+
+Tukey 规则标记区间
+
+$$[Q_1-1.5\operatorname{IQR},\;Q_3+1.5\operatorname{IQR}]$$
+
+之外的值。稳健标准分数可以用中位数和 MAD。但这些规则只负责发现不寻常之处，不负责裁决真假。需要继续检查单位、相邻时间点、其他传感器、源文件说明和物理边界。
+
+处理日志应区分：保留、按来源纠正、改为空值、为特定估计器截尾，或依据预先声明的规则排除。报告每条规则影响多少行，以及最终决策是否改变。
+
+![异常检测与异常处置是两个不同步骤。](/mathematical-modeling/data-outlier-diagnosis.svg)
+
+## 变换
+
+极差归一化与标准化分别为
+
+$$x_i'=\frac{x_i-x_{\min}}{x_{\max}-x_{\min}},
+\qquad z_i=\frac{x_i-\mu}{\sigma}.$$
+
+距离方法、正则回归、神经网络优化、PCA 和聚类都对尺度敏感。所有参数必须只在训练集拟合，验证集和测试集沿用训练集的均值、标准差、极值、类别词表和插补模型。验证值超出训练范围时，极差归一化结果可能小于 0 或大于 1；自动截断会掩盖分布漂移。
+
+偏斜的正数可以考虑 $\log(x+c)$，但常数 $c$、零值和逆变换都必须解释。交互项与多项式特征应对应机制，而不是无边界地扩张变量。
+
+## 划分
+
+数据划分是科学设计的一部分。独立样本可以随机划分；同一人、建筑或街区反复观测时，应按组划分；时间序列要保持先后；空间预测可能要留出整片区域。
+
+若每座建筑有很多传感器读数，随机拆分读数会让训练集和测试集看到同一栋楼，从而得到过分乐观的分数。按建筑分组交叉验证才回答“能否泛化到新建筑”。
+
+预处理必须放在交叉验证内部：每一折只在训练子集拟合插补与缩放，再应用于该折验证子集。选定完整管道后，才能在开发数据上重拟合，并只在未触碰测试集上评估一次。
+
+<Callout type="tip">
+
+**泄漏是模型在训练或验证中获得了部署时不可能拥有的信息。** 它可能来自全数据预处理、重复实体、目标衍生变量、结果发生后的字段或未来修订。
+
+</Callout>
+
+## 管道
+
+原始数据应当不可变。可以保留 raw、validated、analytical、model-ready 等层。每个派生字段都应有代码、定义、单位和来源列。模型测试前先做数据测试：键唯一、范围与单位合法、类别符合字典、时间戳有序、连接后行数合理、缺失率没有突然跳变、目标之后才产生的字段被隔离。
+
+最终生成一份紧凑的数据质量报告：行数、覆盖率、缺失、重复键、纠正项、排除项和训练/测试边界。读者应能够把任一模型输入追溯回原始来源。
+
+## 案例
+
+回到降温中心。定义一行为街区-日；把传感器用稳健统计聚合并同时保留覆盖数量；按可用时间连接天气预报；用人口调整急救电话数量；保留热浪标志。预测次日急救率与区间后，再在容量和路程限制下优化设备位置。
+
+随后改变插补方案、异常规则，留出整个行政区，使用当时版本的天气预报，并比较原始数量与人口调整率。如果位置建议改变，就要报告是哪一个数据准备假设造成的。到这里，预处理不确定性才被放回模型的不确定性中。
+
+稳健顺序是：定义粒度；审计键与连接；统一含义和单位；诊断缺失与异常；按照部署方式划分；只在训练数据拟合变换；版本化完整管道；最后把预处理不确定性带入验证和决策。
+
+延伸阅读：[scikit-learn 常见陷阱](https://scikit-learn.org/stable/common_pitfalls.html) 与 [NIST Engineering Statistics Handbook](https://www.itl.nist.gov/div898/handbook/)。
+
+</LanguagePanel>
+
+</LanguageTabs>

@@ -250,20 +250,20 @@
     {
       "number": 13,
       "title": "Time Series 101",
-      "titleZh": null,
+      "titleZh": "时间序列入门",
       "level": 1,
-      "studyTimeMinutes": 10,
+      "studyTimeMinutes": 70,
       "excerpt": "Audit the time index, isolate patterns, and forecast without information leakage.",
       "tags": [
         "Mathematical Modeling"
       ],
-      "status": "draft",
+      "status": "published",
       "contentFile": "lessons/13-time-series-101.mdx",
       "sourceFile": "Mathematical-Modeling-12-Time-Series-101.md",
       "translationFile": null,
-      "wordCount": 27,
-      "hasChinese": false,
-      "quizCount": 0,
+      "wordCount": 2122,
+      "hasChinese": true,
+      "quizCount": 15,
       "cover": "/mathematical-modeling/course-cover.webp"
     },
     {
@@ -288,20 +288,20 @@
     {
       "number": 15,
       "title": "Data Preparation 101",
-      "titleZh": null,
+      "titleZh": "数据预处理入门",
       "level": 1,
-      "studyTimeMinutes": 10,
+      "studyTimeMinutes": 65,
       "excerpt": "Define what one row means before cleaning, transforming, or plotting it.",
       "tags": [
         "Mathematical Modeling"
       ],
-      "status": "draft",
+      "status": "published",
       "contentFile": "lessons/15-data-preparation-101.mdx",
       "sourceFile": "Mathematical-Modeling-14-Data-Preparation-101.md",
       "translationFile": null,
-      "wordCount": 27,
-      "hasChinese": false,
-      "quizCount": 0,
+      "wordCount": 1763,
+      "hasChinese": true,
+      "quizCount": 15,
       "cover": "/mathematical-modeling/course-cover.webp"
     },
     {
@@ -326,20 +326,20 @@
     {
       "number": 17,
       "title": "Evaluation Models 101",
-      "titleZh": null,
+      "titleZh": "综合评价模型入门",
       "level": 1,
-      "studyTimeMinutes": 10,
+      "studyTimeMinutes": 60,
       "excerpt": "Make ranking criteria, weights, admissibility, and rank sensitivity explicit.",
       "tags": [
         "Mathematical Modeling"
       ],
-      "status": "draft",
+      "status": "published",
       "contentFile": "lessons/17-evaluation-models-101.mdx",
       "sourceFile": "Mathematical-Modeling-16-Evaluation-Models-101.md",
       "translationFile": null,
-      "wordCount": 27,
-      "hasChinese": false,
-      "quizCount": 0,
+      "wordCount": 1487,
+      "hasChinese": true,
+      "quizCount": 15,
       "cover": "/mathematical-modeling/course-cover.webp"
     },
     {
@@ -364,39 +364,39 @@
     {
       "number": 19,
       "title": "Writing the Abstract",
-      "titleZh": null,
+      "titleZh": "摘要写作",
       "level": 1,
-      "studyTimeMinutes": 10,
+      "studyTimeMinutes": 60,
       "excerpt": "Write concise claims that trace to methods, results, evidence, and limitations.",
       "tags": [
         "Mathematical Modeling"
       ],
-      "status": "draft",
+      "status": "published",
       "contentFile": "lessons/19-writing-the-abstract.mdx",
       "sourceFile": "Mathematical-Modeling-18-Writing-the-Abstract.md",
       "translationFile": null,
-      "wordCount": 27,
-      "hasChinese": false,
-      "quizCount": 0,
+      "wordCount": 1520,
+      "hasChinese": true,
+      "quizCount": 15,
       "cover": "/mathematical-modeling/course-cover.webp"
     },
     {
       "number": 20,
       "title": "Writing the Main Text",
-      "titleZh": null,
+      "titleZh": "正文写作",
       "level": 1,
-      "studyTimeMinutes": 10,
+      "studyTimeMinutes": 65,
       "excerpt": "Write a modeling paper whose assumptions, equations, results, and checks form one argument.",
       "tags": [
         "Mathematical Modeling"
       ],
-      "status": "draft",
+      "status": "published",
       "contentFile": "lessons/20-writing-the-main-text.mdx",
       "sourceFile": "Mathematical-Modeling-19-Writing-the-Main-Text.md",
       "translationFile": null,
-      "wordCount": 27,
-      "hasChinese": false,
-      "quizCount": 0,
+      "wordCount": 1627,
+      "hasChinese": true,
+      "quizCount": 15,
       "cover": "/mathematical-modeling/course-cover.webp"
     },
     {
