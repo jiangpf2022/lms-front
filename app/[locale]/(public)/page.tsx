@@ -47,7 +47,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
   })
 }
 
-export default async function LandingPage() {
+export default async function LandingPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params
   // Branch to school landing page on subdomains
   const tenantId = await getCurrentTenantId()
   if (tenantId !== DEFAULT_TENANT_ID) {
@@ -104,7 +105,7 @@ export default async function LandingPage() {
     .eq('status', 'published')
     .maybeSingle()
 
-  if (!course) return <ModelingAcademyLanding courseId={1} lessons={[]} />
+  if (!course) return <ModelingAcademyLanding locale={locale} courseId={1} lessons={[]} />
 
   const [{ data: lessonRows }, { data: exerciseRows }] = await Promise.all([
     admin
@@ -130,5 +131,5 @@ export default async function LandingPage() {
     exerciseCount: exerciseCounts.get(lesson.id) ?? 0,
   }))
 
-  return <ModelingAcademyLanding courseId={course.course_id} lessons={lessons} />
+  return <ModelingAcademyLanding locale={locale} courseId={course.course_id} lessons={lessons} />
 }

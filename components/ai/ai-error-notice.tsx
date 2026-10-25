@@ -21,7 +21,7 @@ export type AiErrorAudience = 'student' | 'teacher'
 
 /** Prefix an in-app path with the active locale, leaving already-prefixed paths alone. */
 function localized(path: string, locale: string): string {
-    return /^\/(en|es)(\/|$)/.test(path) ? path : `/${locale}${path}`
+    return /^\/(en|es|zh)(\/|$)/.test(path) ? path : `/${locale}${path}`
 }
 
 interface AiErrorNoticeProps {

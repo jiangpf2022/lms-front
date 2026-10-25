@@ -33,7 +33,7 @@
     {
       "number": 2,
       "title": "Competition Techniques",
-      "titleZh": null,
+      "titleZh": "竞赛技巧",
       "level": 1,
       "studyTimeMinutes": 55,
       "excerpt": "A practical competition guide to selecting problems, building a reliable toolchain, learning from strong papers, reproducing visual evidence, extending algorithms, and using AI without surrendering judgment.",
@@ -54,7 +54,7 @@
     {
       "number": 3,
       "title": "Visual Evidence",
-      "titleZh": null,
+      "titleZh": "视觉证据",
       "level": 1,
       "studyTimeMinutes": 80,
       "excerpt": "A 100-figure field guide to charts, maps, diagrams, scientific graphics, visual diagnostics, and award-level evidence in mathematical modeling papers.",

@@ -23,7 +23,7 @@ const SECTION_KEYS: Record<string, string> = {
 export function PlatformHeaderTitle() {
   const t = useTranslations('platform.sidebar')
   const pathname = usePathname()
-  const afterPlatform = pathname.replace(/^\/(en|es)/, '').replace(/^\/platform\/?/, '')
+  const afterPlatform = pathname.replace(/^\/(en|es|zh)/, '').replace(/^\/platform\/?/, '')
   const section = afterPlatform.split('/')[0] ?? ''
   const label = t(SECTION_KEYS[section] ?? 'brand')
   return (

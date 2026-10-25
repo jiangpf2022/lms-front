@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Globe } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { APP_NAME } from '@/lib/app-name';
 
 export function LanguageSwitcher() {
   const pathname = usePathname();
@@ -23,7 +24,7 @@ export function LanguageSwitcher() {
     // Parts: ["", "en", "dashboard"]
 
     // Check if parts[1] is a locale
-    if (['en', 'es'].includes(parts[1])) {
+    if (['en', 'es', 'zh'].includes(parts[1])) {
       parts[1] = newLocale;
     } else {
       // Should not happen with 'always' prefix providing middleware works.
@@ -43,12 +44,15 @@ export function LanguageSwitcher() {
         <span className="sr-only">{t('toggleLanguage')}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
-        <DropdownMenuItem onClick={() => switchLocale('en')}>
-          English
-        </DropdownMenuItem>
-        <DropdownMenuItem onClick={() => switchLocale('es')}>
-          Español
-        </DropdownMenuItem>
+        <DropdownMenuItem onClick={() => switchLocale('en')}>English</DropdownMenuItem>
+        {APP_NAME.toLowerCase().includes('modeling academy') ? (
+          <DropdownMenuItem onClick={() => switchLocale('zh')}>中文</DropdownMenuItem>
+        ) : (
+          <>
+            <DropdownMenuItem onClick={() => switchLocale('es')}>Español</DropdownMenuItem>
+            <DropdownMenuItem onClick={() => switchLocale('zh')}>中文</DropdownMenuItem>
+          </>
+        )}
       </DropdownMenuContent>
     </DropdownMenu>
   );

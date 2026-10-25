@@ -29,7 +29,7 @@ type SerializedChapter = {
   mdx: SerializeResult | null
 }
 
-type ReaderLanguage = 'en' | 'zh'
+export type ReaderLanguage = 'en' | 'zh'
 
 type StoredProgress = {
   completed: string[]
@@ -55,13 +55,14 @@ const cloudStateKey = 'modeling-learning-center-v1'
 type CloudLearningState = {
   progress: Record<string, StoredProgress>
   bookmarks: SavedChapter[]
+  practiceHistory?: unknown[]
 }
 
 function sameAnswers(selected: number[], correct: number[]) {
   return selected.length === correct.length && selected.every((answer) => correct.includes(answer))
 }
 
-function ModelingQuiz({
+export function ModelingQuiz({
   questions,
   language,
   title,
@@ -115,7 +116,7 @@ function ModelingQuiz({
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
             <div className="mb-2 flex items-center gap-2 text-xs font-black uppercase tracking-[0.22em] text-amber-700 dark:text-amber-300">
-              <CircleHelp className="h-4 w-4" /> {questions.length} questions
+              <CircleHelp className="h-4 w-4" /> {questions.length} {language === 'zh' ? '道题' : 'questions'}
             </div>
             <h2 className="text-xl font-black tracking-tight text-[#18231e] dark:text-white sm:text-2xl">{title}</h2>
             <p className="mt-1 max-w-2xl text-sm leading-6 text-[#5c6c63] dark:text-white/60">{description}</p>
@@ -123,7 +124,7 @@ function ModelingQuiz({
           {(submitted || previousScore !== undefined) && (
             <div className="rounded-2xl border border-emerald-200 bg-emerald-50 px-4 py-2 text-center dark:border-emerald-400/20 dark:bg-emerald-400/10">
               <div className="text-2xl font-black text-emerald-700 dark:text-emerald-300">{score}%</div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/70 dark:text-emerald-200/60">score</div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-emerald-700/70 dark:text-emerald-200/60">{language === 'zh' ? '得分' : 'score'}</div>
             </div>
           )}
         </div>
@@ -194,6 +195,7 @@ function ModelingQuiz({
 }
 
 export function ModelingLessonReader({
+  locale,
   courseId,
   lessonId,
   lessonNumber,
@@ -203,6 +205,7 @@ export function ModelingLessonReader({
   chapters,
   nextLesson,
 }: {
+  locale: string
   courseId: number
   lessonId: number
   lessonNumber: number
@@ -212,7 +215,7 @@ export function ModelingLessonReader({
   chapters: { en: SerializedChapter[]; zh: SerializedChapter[] }
   nextLesson: { id: number; title: string } | null
 }) {
-  const [language, setLanguage] = useState<ReaderLanguage>('en')
+  const [language, setLanguage] = useState<ReaderLanguage>(locale.toLowerCase().startsWith('zh') ? 'zh' : 'en')
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState<StoredProgress>(emptyProgress)
   const [saved, setSaved] = useState(false)
@@ -226,8 +229,8 @@ export function ModelingLessonReader({
   const bookmarkKey = 'modeling-learning-bookmarks'
   const itemId = isFinalQuiz ? 'final-quiz' : `chapter-${activeIndex + 1}`
   const questions = useMemo(
-    () => isFinalQuiz ? buildLessonFinalQuiz(lessonNumber) : buildChapterQuiz(lessonNumber, activeIndex),
-    [activeIndex, isFinalQuiz, lessonNumber]
+    () => isFinalQuiz ? buildLessonFinalQuiz(lessonNumber) : buildChapterQuiz(lessonNumber, activeIndex, chapters.en[activeIndex]?.title ?? activeChapter?.title),
+    [activeChapter?.title, activeIndex, chapters.en, isFinalQuiz, lessonNumber]
   )
   const totalUnits = localized.length + 1
   const completedCount = progress.completed.filter((id) => id === 'final-quiz' || /^chapter-\d+$/.test(id)).length
@@ -291,6 +294,7 @@ export function ModelingLessonReader({
     const payload: CloudLearningState = {
       progress: nextProgress ? { ...current.progress, [String(lessonId)]: nextProgress } : current.progress,
       bookmarks: nextBookmarks ?? current.bookmarks,
+      practiceHistory: current.practiceHistory ?? [],
     }
     await supabase.from('user_ui_state').upsert({
       user_id: session.user.id,
@@ -391,7 +395,7 @@ export function ModelingLessonReader({
 
       <main className="relative z-10 mx-auto max-w-5xl px-4 py-8 sm:px-7 sm:py-12">
         <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-          <Link href={`/courses/${courseId}`} className="inline-flex items-center gap-2 text-sm font-bold text-[#315d49] hover:text-[#163f2c] dark:text-emerald-300">
+          <Link href={`/${locale}/courses/${courseId}`} prefetch className="inline-flex items-center gap-2 text-sm font-bold text-[#315d49] hover:text-[#163f2c] dark:text-emerald-300">
             <ArrowLeft className="h-4 w-4" /> {language === 'zh' ? '返回课程大纲' : 'Back to syllabus'}
           </Link>
           <div className="flex items-center gap-2">
@@ -461,13 +465,13 @@ export function ModelingLessonReader({
               {language === 'zh' ? '下一章' : 'Next chapter'} <ChevronRight className="ml-2 h-4 w-4" />
             </Button>
           ) : nextLesson ? (
-            <Link href={`/courses/${courseId}/lessons/${nextLesson.id}`}>
+            <Link href={`/${locale}/courses/${courseId}/lessons/${nextLesson.id}`} prefetch>
               <Button className="rounded-full bg-[#163f2c] px-6 text-white hover:bg-[#0f3021]">
                 {language === 'zh' ? '下一篇 Blog' : 'Next blog'} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             </Link>
           ) : (
-            <Link href="/learning-center">
+            <Link href={`/${locale}/learning-center`} prefetch>
               <Button className="rounded-full bg-[#163f2c] px-6 text-white hover:bg-[#0f3021]">
                 {language === 'zh' ? '打开学习中心' : 'Open Learning Center'} <ArrowRight className="ml-2 h-4 w-4" />
               </Button>

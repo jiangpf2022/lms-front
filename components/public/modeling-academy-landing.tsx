@@ -34,6 +34,7 @@ export interface ModelingLessonSummary {
 }
 
 interface ModelingAcademyLandingProps {
+  locale: string
   courseId: number
   lessons: ModelingLessonSummary[]
 }
@@ -90,7 +91,7 @@ function trackFor(sequence: number) {
   return 'Writing & Competition'
 }
 
-export function ModelingAcademyLanding({ courseId, lessons }: ModelingAcademyLandingProps) {
+export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAcademyLandingProps) {
   const published = lessons.filter((lesson) => lesson.status === 'published')
   const quizCount = lessons.reduce((sum, lesson) => sum + lesson.exerciseCount, 0)
   const firstLesson = published[0]
@@ -126,7 +127,7 @@ export function ModelingAcademyLanding({ courseId, lessons }: ModelingAcademyLan
                 Explore the syllabus <ArrowRight className="h-4 w-4" />
               </Link>
               {firstLesson && (
-                <Link href={`/courses/${courseId}/lessons/${firstLesson.id}`} className="inline-flex h-13 items-center gap-2 rounded-full border border-white/35 bg-white/10 px-6 font-semibold text-white backdrop-blur transition hover:bg-white/20">
+                <Link href={`/${locale}/courses/${courseId}/lessons/${firstLesson.id}`} prefetch className="inline-flex h-13 items-center gap-2 rounded-full border border-white/35 bg-white/10 px-6 font-semibold text-white backdrop-blur transition hover:bg-white/20">
                   Start Chapter 1 <BookOpen className="h-4 w-4" />
                 </Link>
               )}
@@ -204,7 +205,7 @@ export function ModelingAcademyLanding({ courseId, lessons }: ModelingAcademyLan
             <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight sm:text-6xl')}>Syllabus & articles</h2>
             <p className="mt-5 text-lg leading-8 text-[#526158] dark:text-white/60">Published chapters open directly. Draft chapters remain visible so you can see where the full course is going.</p>
           </div>
-          <Link href={`/courses/${courseId}`} className="inline-flex items-center gap-2 font-bold text-emerald-800 hover:underline dark:text-emerald-300">
+          <Link href={`/${locale}/courses/${courseId}`} prefetch className="inline-flex items-center gap-2 font-bold text-emerald-800 hover:underline dark:text-emerald-300">
             Course center <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
@@ -238,7 +239,7 @@ export function ModelingAcademyLanding({ courseId, lessons }: ModelingAcademyLan
             )
 
             return isPublished ? (
-              <Link key={lesson.id} href={`/courses/${courseId}/lessons/${lesson.id}`} className="block border-b border-black/8 transition hover:bg-amber-200/20 last:border-0 dark:border-white/8 dark:hover:bg-white/[.045]">
+              <Link key={lesson.id} href={`/${locale}/courses/${courseId}/lessons/${lesson.id}`} prefetch className="block border-b border-black/8 transition hover:bg-amber-200/20 last:border-0 dark:border-white/8 dark:hover:bg-white/[.045]">
                 {content}
               </Link>
             ) : (
@@ -255,10 +256,10 @@ export function ModelingAcademyLanding({ courseId, lessons }: ModelingAcademyLan
             <h2 className={cn(display.className, 'mt-4 text-4xl font-extrabold tracking-tight sm:text-5xl')}>Reading is only the first pass.</h2>
             <p className="mt-5 max-w-2xl text-base leading-7 text-[#3e4c45]">Each released quiz moves from recognition to mathematical reasoning. Sign in to save attempts, course progress, and first-try results in My Learning.</p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Link href={`/courses/${courseId}`} className="inline-flex h-12 items-center gap-2 rounded-full bg-[#15231d] px-6 font-bold text-white hover:bg-[#244035]">
+              <Link href={`/${locale}/courses/${courseId}`} prefetch className="inline-flex h-12 items-center gap-2 rounded-full bg-[#15231d] px-6 font-bold text-white hover:bg-[#244035]">
                 Open course & quizzes <ArrowRight className="h-4 w-4" />
               </Link>
-              <Link href="/auth/login" className="inline-flex h-12 items-center rounded-full border border-[#15231d]/30 px-6 font-bold hover:bg-white/30">Sign in</Link>
+              <Link href={`/${locale}/auth/login`} prefetch className="inline-flex h-12 items-center rounded-full border border-[#15231d]/30 px-6 font-bold hover:bg-white/30">Sign in</Link>
             </div>
           </div>
           <div className="grid grid-cols-2 gap-px bg-[#15231d]/15 p-px">

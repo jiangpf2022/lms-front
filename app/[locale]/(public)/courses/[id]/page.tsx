@@ -37,6 +37,24 @@ import { StarRating } from '@/components/shared/star-rating';
 import { Users } from 'lucide-react';
 import { isFreePreviewEnabled } from '@/lib/settings/free-preview';
 import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
+import modelingManifest from '@/content/mathematical-modeling/manifest.json';
+
+const MODELING_DESCRIPTIONS_ZH: Record<number, string> = {
+    1: '从模糊的现实问题出发，学习明确目标、系统边界、状态变量、假设、基线模型与验证证据，建立完整的建模契约。',
+    2: '系统比较国赛与美赛的题型和节奏，训练选题、团队协作、工具链、论文复现、可视化积累以及可靠使用 ChatGPT 的方法。',
+    3: '从“图要证明什么”出发，学习比较、时间序列、分布、地图、网络、模型结构和科学图形，并分析优秀竞赛论文的视觉证据。',
+    4: '从决策变量和约束推导线性规划、二次规划与二阶锥规划，理解对偶、KKT 条件、求解诊断与农业规划案例。',
+    5: '深入学习凸性、条件数、次梯度、共轭对偶、近端算法、ADMM、风险度量以及可验证的最优性证书。',
+    6: '面对多个冲突目标与不确定参数，构建 Pareto 前沿、鲁棒对应模型和随机情景，并解释方案为何在扰动下仍然可行。',
+    7: '理解遗传算法、粒子群、模拟退火和约束罚函数的机制，设计公平实验，并判断何时智能优化真正值得使用。',
+    9: '从状态变化和守恒关系建立常微分方程，分析适定性、缩放与数值误差，并通过摆、追踪、人口和治疗案例完成验证。',
+    10: '研究相互作用系统中的守恒、阈值、平衡点与局部稳定性，覆盖扩散、房室、流行病、捕食关系和工业温度过程。',
+    13: '先审计时间轴，再识别趋势、季节性与依赖关系；学习平滑、ARIMA、滚动验证、预测区间和面向决策的误差解释。',
+    15: '从“一行数据代表什么”开始，处理类型、缺失、异常、变换、数据划分与泄漏问题，建立可以复现的数据处理管线。',
+    17: '把评价目标、指标方向、权重、AHP、TOPSIS 和排序敏感性写清楚，使综合评价不再只是一个无法解释的最终名次。',
+    19: '学习把问题、方法、关键数值、验证和局限压缩成可追溯摘要，让每一句结论都能够在正文中找到证据。',
+    20: '把问题重述、假设、符号、模型、算法、结果、验证与讨论组织成一条连续论证，完成可复查、可复现的竞赛论文正文。',
+}
 
 export const dynamic = 'force-dynamic';
 
@@ -316,6 +334,9 @@ export default async function CourseDetailsPage(props: {
         formattedDate && { key: 'published', icon: Calendar, label: t('hero.published', { date: formattedDate }) },
     ].filter(Boolean) as { key: string; icon: typeof Users; label: string }[];
     const isModelingCourse = course.title === 'Mathematical Modeling';
+    const isChinese = params.locale.toLowerCase().startsWith('zh');
+    const modelingMeta = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, lesson]));
+    const localized = (path: string) => `/${params.locale}${path}`;
 
     return (
         <div className="relative min-h-screen bg-background text-foreground font-sans">
@@ -330,9 +351,9 @@ export default async function CourseDetailsPage(props: {
             {/* Breadcrumbs */}
             <nav aria-label="Breadcrumb" className="border-b border-border">
                 <div className="container mx-auto px-4 py-3 flex items-center gap-2 text-sm text-muted-foreground">
-                    <Link href="/" className="hover:text-brand-text transition-colors duration-150">{t('breadcrumbs.home')}</Link>
+                    <Link href={localized('')} prefetch className="hover:text-brand-text transition-colors duration-150">{t('breadcrumbs.home')}</Link>
                     <ChevronRight className="w-3 h-3 shrink-0" aria-hidden="true" />
-                    <Link href="/courses" className="hover:text-brand-text transition-colors duration-150">{t('breadcrumbs.courses')}</Link>
+                    <Link href={localized('/courses')} prefetch className="hover:text-brand-text transition-colors duration-150">{t('breadcrumbs.courses')}</Link>
                     {course.category && (
                         <>
                             <ChevronRight className="w-3 h-3 shrink-0" aria-hidden="true" />
@@ -613,6 +634,53 @@ export default async function CourseDetailsPage(props: {
                                         exercisesByLesson.get(lesson.id) ? t('sections.content.lessonExercises', { count: exercisesByLesson.get(lesson.id)! }) : null,
                                         resourcesByLesson.get(lesson.id) ? t('sections.content.lessonResources', { count: resourcesByLesson.get(lesson.id)! }) : null,
                                     ].filter(Boolean).join(' · ');
+                                    const modeling = modelingMeta.get(lesson.sequence);
+
+                                    if (isModelingCourse && modeling) {
+                                        const title = isChinese ? modeling.titleZh : modeling.title;
+                                        const description = isChinese
+                                            ? MODELING_DESCRIPTIONS_ZH[lesson.sequence]
+                                            : modeling.excerpt;
+                                        const articleHref = localized(`/courses/${params.id}/lessons/${lesson.id}`);
+                                        const quizHref = `${articleHref}?chapter=final`;
+                                        return (
+                                            <li key={lesson.id} className="p-4 sm:p-5">
+                                                <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+                                                    <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-emerald-100 to-amber-50 text-lg font-black text-emerald-900 ring-1 ring-emerald-900/10 dark:from-emerald-400/15 dark:to-amber-300/10 dark:text-emerald-200">
+                                                        {String(lesson.sequence).padStart(2, '0')}
+                                                    </div>
+                                                    <div className="min-w-0 flex-1">
+                                                        <div className="flex flex-wrap items-center gap-2">
+                                                            <h3 className="text-base font-black leading-snug text-foreground sm:text-lg">{title}</h3>
+                                                            <span className="rounded-full border border-amber-300/70 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-800 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-300">
+                                                                Level {modeling.level}
+                                                            </span>
+                                                        </div>
+                                                        <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
+                                                        <p className="mt-2 text-xs font-bold text-emerald-800/75 dark:text-emerald-300/70">
+                                                            {isChinese ? '最多 8 个章节 · 每章 5 题 · 综合测验 15 题' : 'Up to 8 chapters · 5 questions per chapter · 15-question lesson quiz'}
+                                                        </p>
+                                                    </div>
+                                                    <div className="flex shrink-0 flex-wrap gap-2 sm:w-40 sm:flex-col">
+                                                        {isPreview ? (
+                                                            <>
+                                                                <Link href={articleHref} prefetch className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-[#163f2c] px-4 text-sm font-black text-white transition hover:bg-[#0f3021]">
+                                                                    <BookOpen className="mr-2 h-4 w-4" /> {isChinese ? '阅读课程' : 'Read blog'}
+                                                                </Link>
+                                                                <Link href={quizHref} prefetch className="inline-flex h-10 flex-1 items-center justify-center rounded-xl border border-emerald-800/20 bg-background px-4 text-sm font-black text-emerald-900 transition hover:bg-emerald-50 dark:text-emerald-200 dark:hover:bg-emerald-400/10">
+                                                                    <ClipboardCheck className="mr-2 h-4 w-4" /> {isChinese ? '课程测验' : 'Lesson quiz'}
+                                                                </Link>
+                                                            </>
+                                                        ) : (
+                                                            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-muted px-4 text-sm font-bold text-muted-foreground">
+                                                                <Lock className="mr-2 h-4 w-4" /> {isChinese ? '尚未开放' : 'Locked'}
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                            </li>
+                                        );
+                                    }
                                     const row = (
                                         <>
                                             <div className={`relative aspect-video w-24 sm:w-28 shrink-0 overflow-hidden rounded-lg ${thumb ? 'bg-muted' : 'bg-gradient-to-br from-primary/15 to-primary/5'}`}>
@@ -661,7 +729,7 @@ export default async function CourseDetailsPage(props: {
                                         </li>
                                     );
                                 })}
-                                {(exerciseRows ?? []).map((exercise) => (
+                                {!isModelingCourse && (exerciseRows ?? []).map((exercise) => (
                                     <li key={`exercise-${exercise.id}`} className="flex items-start gap-4 px-4 py-3.5">
                                         <div className="relative flex aspect-video w-24 sm:w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-gradient-to-br from-primary/15 to-primary/5 text-brand-text">
                                             <Code2 className="h-6 w-6 opacity-70" aria-hidden="true" />
@@ -679,7 +747,7 @@ export default async function CourseDetailsPage(props: {
                                         </div>
                                     </li>
                                 ))}
-                                {exams.map((exam) => (
+                                {!isModelingCourse && exams.map((exam) => (
                                     <li key={`exam-${exam.exam_id}`} className="flex items-start gap-4 px-4 py-3.5">
                                         <div className="relative flex aspect-video w-24 sm:w-28 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-brand-tint text-brand-text">
                                             {exam.image ? (

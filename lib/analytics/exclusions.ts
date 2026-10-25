@@ -74,7 +74,7 @@ export function isAnalyticsEnvironmentEnabled(): boolean {
 
 /** Strip a leading `/en` or `/es` so path rules work on locale-prefixed routes. */
 function stripLocale(path: string): string {
-  return path.replace(/^\/(?:en|es)(?=\/|$)/, '') || '/'
+  return path.replace(/^\/(?:en|es|zh)(?=\/|$)/, '') || '/'
 }
 
 /**

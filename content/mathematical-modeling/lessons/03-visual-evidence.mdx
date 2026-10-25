@@ -1,3 +1,7 @@
+<LanguageTabs>
+
+<LanguagePanel language="en" label="English">
+
 Welcome back. Find a comfortable seat, open any modeling paper you read recently, and scroll through it without reading the equations. You will probably notice something before you understand a single model: a paper with three or four uninterrupted pages of text is tiring. Even when the derivation is correct, the reader has to work too hard to discover what happened. A good figure gives the eyes somewhere to rest, but that is not its real job. Its real job is to let the reader *see the argument*.
 
 That is what we are going to practise here. We are not trying to decorate a report, and we are not collecting fashionable chart templates. We are learning how to turn a modeling result into evidence that another person can inspect quickly. A judge should be able to see the trend you found, the difference between two plans, the region in which a constraint becomes active, or the way several modules pass information to one another. If the figure cannot help the reader do one of those things, it probably does not deserve space in the paper.
@@ -2151,3 +2155,83 @@ The ten questions below move from basic chart selection to competition-level evi
 - [CUMCM official competition-problem archive](https://www.mcm.edu.cn/html_cn/block/8579f5fce999cdc896f78bca5d4f8237.html)
 - [CUMCM official results and paper-display directory](https://www.mcm.edu.cn/html_cn/block/018500ec1a6bd8c7e9997133def2b590.html)
 - [CUMCM paper-format specification](https://www.mcm.edu.cn/html_cn/node/4cd596519c9eb9fbd866398f6df0caa3.html)
+
+</LanguagePanel>
+
+<LanguagePanel language="zh" label="中文">
+
+欢迎回来。先找个舒服的位置，随手打开一篇数学建模论文，不看公式，只快速翻页。你很快会发现：连续几页密密麻麻的文字会让人疲惫，即使推导完全正确，读者也需要付出很大力气才能找到作者真正发现了什么。
+
+图表当然能让眼睛休息，但这不是它最重要的工作。图表真正的任务，是让读者直接看见论证：哪个方案更好，趋势何时改变，哪些区域违反约束，预测在哪些时刻失败，模型的几个模块怎样传递信息。
+
+在开始画图前，先补完一句话：**“看完这张图，我希望读者注意到____，因为图中在____条件下显示了____。”** 如果这句话写不出来，就先不要选择图表类型。
+
+## 图与命题
+
+一张图只能在它支持某个命题时成为证据。相关系数热图、三维柱状图或漂亮照片不会因为视觉复杂就自动有价值。先确定你希望证明的是趋势、差异、分布、空间结构、网络关系、流程还是稳健性，再选择编码方式。
+
+图题应当包含结论所需的语境，而不只是“结果图”。坐标轴写清变量和单位；图例解释颜色和线型；正文指出读者应观察的区域；图注说明数据范围、情景与不确定性。读者不应为了理解一条线，往返翻找五个段落。
+
+视觉层级也必须与论证层级一致。最重要的比较使用最清晰的位置或线条，不重要的背景信息降低饱和度。若所有元素颜色都很亮、线条都很粗，等于没有重点。
+
+## 比较与时间
+
+比较类别时，位置通常比面积和角度更容易准确判断。若要比较多个方案的一个指标，排序点图往往比饼图清楚；若要比较基线与改进，可使用哑铃图；若同时报告估计与不确定性，可使用点区间图。
+
+例如三个方案的成本分别为 (82,75,73)，但标准误分别为 (2,6,8)。只画柱高会暗示第三个方案必然最好；加入区间后，读者会看到第二、第三方案可能无法可靠区分。视觉设计改变的不是美观，而是结论的诚实程度。
+
+时间序列必须尊重时间顺序。横轴保持等距时间，实际值与预测值使用不同视觉编码，并清楚标出训练期、验证期和预测期。若使用滚动平均，应同时保留原始序列，避免平滑线掩盖峰值。
+
+多条时间线不要无限叠加。先问真正的比较对象是什么。若重点是不同方案相对基线的变化，可以画差值；若重点是各地区模式，可以使用小倍图，但每个面板必须共用尺度，否则视觉差异会被夸大。
+
+## 分布与风险
+
+平均值会隐藏分布。模型涉及等待时间、损失、风险或公平性时，至少检查中位数、尾部和异常区域。箱线图适合紧凑比较，但应解释四分位数；小提琴图能显示密度形状，却可能在小样本时制造虚假平滑；经验分布函数能够直接回答“低于某阈值的比例是多少”。
+
+如果决策关心超过阈值的概率，就把阈值画出来。假设安全容量为 100，方案 A 的均值为 80、标准差为 8，方案 B 的均值为 76、标准差为 18。B 的均值更低，却可能有更大的超限概率。此时尾部阴影或超限概率条形图比只报均值更有意义。
+
+颜色不能替代数值解释。连续变量使用顺序色板，正负偏差使用发散色板，类别使用可区分的定性色板。不要用彩虹色把相邻数值制造成不连续的视觉边界，也不要只依赖红绿区分关键状态。
+
+## 诊断与验证
+
+模型诊断图不是附录装饰，而是回答“我们凭什么相信结果”。回归模型检查残差与拟合值、尺度变化和高影响点；预测模型检查滚动误差、不同预测步长和区间覆盖；优化模型检查约束余量、目标值收敛和不同初值；数值微分方程检查步长收敛、守恒量与参数敏感性。
+
+一张残差图若呈漏斗形，说明误差方差可能随预测量变化；若呈弯曲结构，说明模型遗漏了非线性；若时间上成片同号，说明误差并非独立。图表的价值在于暴露模型没有解释的结构，而不是证明曲线看起来平滑。
+
+对算法比较，不能只展示最好的一次运行。随机算法至少画出多次运行的分布或置信区间，并报告可行率与运行时间。若两种方法目标值差异小于运行间波动，论文就不应宣称一方显著优越。
+
+## 地图、网络与流程
+
+地图适合表达真正的空间关系，而不是给所有地区指标增加地理背景。面积着色图应使用比例或标准化指标，不能直接用总量比较人口规模差异巨大的区域；点图适合事件位置；等值线适合连续场；路线图需要区分起点、终点、方向和不可行区域。
+
+网络图首先要回答节点与边代表什么。节点很多时，不要让力导向布局决定全部解释。可以按照社区、层级或地理位置布局，并用边宽表达流量。若论文关注关键节点，应该用中心性或流量指标解释其重要性，而不是仅凭节点在图中央。
+
+模型流程图要展示信息如何移动：原始数据经过何种处理，哪些参数进入哪个模块，输出怎样进入决策。箭头方向必须一致，反馈回路清楚标注。方框内部使用动词和对象，例如“估计需求分布”，而不是只写“模型一”。
+
+## 科学图形与排版
+
+示意图应保留解决问题所需的结构。力学图标出方向、角度和坐标系；几何图标出关键尺寸；房室模型标出状态和流率；优化可行域标出约束边界和最优点。不要为了画得像照片而引入无关细节。
+
+公式、表格与图形应使用一致符号。如果正文中变量是 (x_t)，图例不应突然写成 Series 1。单位在全篇保持一致；小数位与数据精度相称；字体缩小到论文实际栏宽后仍可阅读。
+
+完成图后进行三个测试：缩放到论文中的真实尺寸；打印或模拟灰度；让不了解该图的队友只看十秒，然后复述它的结论。如果队友只记住颜色而说不出比较关系，说明图还没有完成。
+
+## 获奖论文的阅读方法
+
+学习国赛和美赛论文中的图时，不要复制外观。记录比赛年份、题号、论文与页码，先指出图要支持的结论，再分析位置、颜色、标注和布局怎样共同服务于这个结论。最后说明如果删掉某个元素会失去什么。
+
+同一张图不要在文章多个地方重复出现。若一个案例同时涉及地图和时间序列，应在相应知识点出现一次，并在其他位置通过文字引用。图片质量必须足以看清轴标签和图例；无法识别信息的截图即使来源优秀，也没有教学价值。
+
+优秀页面往往包含一张主图和少量辅助证据，而不是把所有计算输出堆在一起。主图回答最重要的问题，辅助图解释原因或验证稳健性。页面留白不是浪费，它帮助读者区分证据层级。
+
+## 复现与审核
+
+复现图表时保留原始数据、处理脚本、绘图脚本和导出参数。先用极小数据验证坐标、排序、颜色映射和单位，再运行完整数据。导出优先使用矢量格式或足够分辨率的位图，避免截图软件界面。
+
+审核时逐项检查：图是否对应正文中的明确命题；轴和单位是否完整；颜色是否具有语义；不确定性是否被隐藏；尺度是否会误导；图注能否独立解释；数据和代码是否能重新生成；来源是否正确标注。
+
+今天不需要一次掌握所有图形。先养成一个习惯：看到好图时，不只说“真漂亮”，而要问它为什么有效，并亲手复现一次。随着积累增加，你会逐渐形成视觉判断。到了比赛现场，你不再是在最后一小时装饰论文，而是在整个建模过程中持续生产证据。
+
+</LanguagePanel>
+
+</LanguageTabs>

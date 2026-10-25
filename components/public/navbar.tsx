@@ -2,7 +2,7 @@ import Link from "next/link";
 import { createClient } from "@/lib/supabase/server";
 import { Button } from "@/components/ui/button";
 import { LanguageSwitcher } from "@/components/language-switcher";
-import { getTranslations } from 'next-intl/server';
+import { getLocale, getTranslations } from 'next-intl/server';
 import { getCurrentTenant } from "@/lib/supabase/tenant";
 import { APP_NAME } from '@/lib/app-name';
 import { NavbarTenantSwitcher } from "@/components/tenant/navbar-tenant-switcher";
@@ -17,19 +17,25 @@ interface NavbarProps {
 }
 
 export async function Navbar({ headerSettings }: NavbarProps = {}) {
-    const supabase = await createClient();
-    const userId = await getCurrentUserId()
-    const t = await getTranslations('navbar');
-    const tenant = await getCurrentTenant();
+    const configuredModelingAcademy = APP_NAME.toLowerCase().includes('modeling academy')
+    const [supabase, userId, t, locale, tenant] = await Promise.all([
+        createClient(),
+        getCurrentUserId(),
+        getTranslations('navbar'),
+        getLocale(),
+        configuredModelingAcademy ? Promise.resolve(null) : getCurrentTenant(),
+    ])
 
-    const isMainPlatform = !tenant || tenant.id === DEFAULT_TENANT_ID
-    const isModelingAcademy = isMainPlatform && APP_NAME.toLowerCase().includes('modeling academy')
+    const isMainPlatform = configuredModelingAcademy || !tenant || tenant.id === DEFAULT_TENANT_ID
+    const isModelingAcademy = isMainPlatform && configuredModelingAcademy
+    const localized = (path: string) => `/${locale}${path}`
+    const isChinese = locale.toLowerCase().startsWith('zh')
 
     // Load branding overrides from tenant_settings. `setting_value` is jsonb, so
     // the stored shape is only a claim until it is read — anything that is not a
     // string is dropped rather than rendered.
     let brandingOverrides: Record<string, string | undefined> = {};
-    if (tenant) {
+    if (tenant && !isModelingAcademy) {
         const { data: tsData } = await supabase
             .from('tenant_settings')
             .select('setting_key, setting_value')
@@ -46,7 +52,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
 
     // Get user's tenants for the switcher
     let userTenants: TenantOption[] = [];
-    if (userId) {
+    if (userId && !isModelingAcademy) {
         const { data } = await supabase
             .from('tenant_users')
             .select('role, tenant:tenants(id, slug, name)')
@@ -65,11 +71,11 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
 
     return (
         <nav className="fixed top-0 z-50 w-full border-b border-border bg-background/80 backdrop-blur-md">
-            <div className="container mx-auto flex h-16 items-center justify-between px-4 md:px-6">
+            <div className="container mx-auto flex h-16 items-center gap-2 px-3 md:gap-6 md:px-6">
 
                 {/* Logo + Tenant Branding */}
-                <div className="flex items-center gap-3">
-                    <Link href="/" className="flex items-center space-x-2">
+                <div className="flex shrink-0 items-center gap-3">
+                    <Link href={isModelingAcademy ? localized('') : '/'} prefetch className="flex items-center space-x-2">
                         {logoUrl ? (
                             <img src={logoUrl} alt={brandName} className="w-8 h-8 rounded-lg object-cover" />
                         ) : isMainPlatform ? (
@@ -80,7 +86,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                 <span className="font-bold text-primary-foreground">{brandName[0]?.toUpperCase()}</span>
                             </div>
                         )}
-                        <span className="font-bold text-lg text-foreground tracking-tight">
+                        <span className={isModelingAcademy ? "hidden font-bold text-lg text-foreground tracking-tight xl:inline" : "font-bold text-lg text-foreground tracking-tight"}>
                             {brandName}
                         </span>
                     </Link>
@@ -91,23 +97,20 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                 </div>
 
                 {/* Center Links */}
-                <div className="hidden md:flex items-center space-x-8">
+                <div className={isModelingAcademy ? "flex min-w-0 flex-1 items-center justify-center gap-1 sm:gap-2 lg:gap-6" : "hidden md:flex items-center space-x-8"}>
                     {isModelingAcademy ? (
                         <>
-                            <Link href="/#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Concepts
+                            <Link href={localized('')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
+                                {isChinese ? '首页' : 'Home'}
                             </Link>
-                            <Link href="/#levels" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Learning Path
+                            <Link href={localized('/courses/1')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
+                                {isChinese ? '数学建模课程' : 'Mathematical Modeling Course'}
                             </Link>
-                            <Link href="/#syllabus" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Syllabus
+                            <Link href={localized('/practice-center')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
+                                {isChinese ? '练习中心' : 'Practice Center'}
                             </Link>
-                            <Link href="/#quizzes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Quizzes
-                            </Link>
-                            <Link href="/learning-center" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
-                                Learning Center
+                            <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-2 py-2 text-[11px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-3 sm:text-xs lg:text-sm">
+                                {isChinese ? '学习中心' : 'Learning Center'}
                             </Link>
                         </>
                     ) : isMainPlatform ? (
@@ -143,19 +146,14 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                 </div>
 
                 {/* Right Actions */}
-                <div className="flex items-center space-x-4">
+                <div className="flex shrink-0 items-center space-x-2 md:space-x-4">
                     {(headerSettings?.showLanguageSwitcher !== false) && <LanguageSwitcher />}
 
                     {userId ? (
                         <div className="flex items-center gap-2">
-                            {isModelingAcademy && (
-                                <Button variant="ghost" className="hidden sm:inline-flex" render={<Link href="/learning-center" />}>
-                                    My Learning
-                                </Button>
-                            )}
-                            <Button variant="outline" render={<Link href="/dashboard/student" />}>
+                            {!isModelingAcademy && <Button variant="outline" render={<Link href={localized('/dashboard/student')} />}>
                                 {t('dashboard')}
-                            </Button>
+                            </Button>}
                         </div>
                     ) : (
                         <>
@@ -163,7 +161,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                 <Button
                                     variant="ghost"
                                     className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
-                                    render={<Link href="/auth/login" />}
+                                    render={<Link href={localized('/auth/login')} />}
                                 >
                                     {t('login')}
                                 </Button>
@@ -173,7 +171,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                     {headerSettings.ctaText}
                                 </Button>
                             ) : isModelingAcademy ? (
-                                <Button className="font-medium" render={<Link href="/courses/1" />}>
+                                <Button className="hidden font-medium xl:inline-flex" render={<Link href={localized('/courses/1')} prefetch />}>
                                     Start learning →
                                 </Button>
                             ) : isMainPlatform ? (

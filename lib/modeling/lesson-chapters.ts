@@ -11,6 +11,25 @@ export type LessonChapterLanguages = {
 
 const FINAL_QUIZ_TITLES = /^(knowledge check|lesson quiz|final quiz|quiz|课后测验|知识检验|知识检查|综合测验)$/i
 
+// Each entry groups the source article's existing units (overview is index 0)
+// into a course-friendly sequence of no more than eight chapters.  The body is
+// never shortened: merged H2 sections are retained as H3 subsections.
+const CHAPTER_PLANS: Record<string, number[][]> = {
+  'From Reality to a Model': [[0], [1, 2], [3], [4], [5], [6], [7, 8], [9]],
+  'Competition Techniques': [[0, 1], [2], [3], [4], [5], [6, 7], [8, 9], [10, 11]],
+  'Visual Evidence': [[0, 1], [2], [3], [4], [5], [6, 7], [8, 9], [10, 11]],
+  'Linear, Quadratic & Conic Optimization': [[0], [1], [2, 3], [4], [5], [6], [7], [8, 9]],
+  'Advanced Convex Optimization': [[0], [1, 2], [3], [4], [5, 6], [7], [8, 9], [10]],
+  'Intelligent Optimization': [[0, 1], [2], [3], [4], [5], [6], [7], [8, 9]],
+  'Differential Equations 101': [[0, 1], [2], [3, 4], [5, 6], [7], [8], [9], [10]],
+  'Coupled Differential-Equation Models': [[0, 1], [2], [3, 4], [5], [6], [7], [8], [9]],
+  'Time Series 101': [[0, 1], [2], [3], [4], [5], [6], [7], [8]],
+  'Data Preparation 101': [[0, 1], [2], [3], [4], [5], [6], [7], [8]],
+  'Evaluation Models 101': [[0, 1], [2], [3], [4], [5], [6], [7], [8]],
+  'Writing the Abstract': [[0, 1], [2], [3], [4], [5, 6], [7], [8], [9]],
+  'Writing the Main Text': [[0, 1], [2], [3, 4], [5, 6], [7], [8], [9], [10]],
+}
+
 function panelSource(content: string, language: 'en' | 'zh') {
   const expression = new RegExp(
     `<LanguagePanel\\s+language=["']${language}["'][^>]*>([\\s\\S]*?)<\\/LanguagePanel>`,
@@ -71,7 +90,38 @@ function splitSource(source: string, language: 'en' | 'zh', lessonTitle: string)
     })
   }
 
-  return chapters
+  if (chapters.length <= 8) return chapters
+
+  const configuredPlan = CHAPTER_PLANS[lessonTitle]
+  const covered = configuredPlan?.flat() ?? []
+  const isCompletePlan = configuredPlan
+    && covered.length === chapters.length
+    && new Set(covered).size === chapters.length
+    && covered.every((index) => index >= 0 && index < chapters.length)
+
+  // Unknown future articles still obey the eight-chapter contract. Adjacent
+  // units are balanced into buckets so the original reading order is stable.
+  const plan = isCompletePlan
+    ? configuredPlan
+    : Array.from({ length: 8 }, (_, groupIndex) => {
+        const start = Math.floor((groupIndex * chapters.length) / 8)
+        const end = Math.floor(((groupIndex + 1) * chapters.length) / 8)
+        return Array.from({ length: end - start }, (__, offset) => start + offset)
+      }).filter((group) => group.length > 0)
+
+  return plan.map((group, groupIndex) => {
+    const [leadIndex, ...following] = group
+    const lead = chapters[leadIndex]
+    const source = [
+      lead.source,
+      ...following.map((index) => `### ${chapters[index].title}\n\n${chapters[index].source}`),
+    ].filter(Boolean).join('\n\n')
+    return {
+      id: `${language}-${slug(lead.title || lessonTitle, groupIndex)}`,
+      title: lead.title,
+      source,
+    }
+  })
 }
 
 /**

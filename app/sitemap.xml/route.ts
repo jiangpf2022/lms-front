@@ -5,7 +5,7 @@ import { isFreePreviewEnabled } from '@/lib/settings/free-preview'
 export const dynamic = 'force-dynamic'
 
 const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
-const LOCALES = ['en', 'es'] as const
+const LOCALES = ['en', 'es', 'zh'] as const
 
 // Locale-less public paths; each is emitted once per locale with hreflang alternates.
 const STATIC_PATHS = [

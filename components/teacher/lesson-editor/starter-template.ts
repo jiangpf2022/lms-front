@@ -31,6 +31,15 @@ export const LESSON_STARTER_TEMPLATE: Record<Locale, string> = {
     'Añade los objetivos de aprendizaje aquí',
     '</Callout>',
   ].join('\n'),
+  zh: [
+    '# 新主题',
+    '',
+    '在这里编写课程内容……',
+    '',
+    '<Callout type="info">',
+    '在这里添加学习目标',
+    '</Callout>',
+  ].join('\n'),
 }
 
 /** The starter template for `locale`, falling back to English. */

@@ -105,7 +105,7 @@ export function PlatformSidebar({ pendingBillingCount = 0, atRiskCount = 0, ...p
   ]
 
   // Determine locale prefix from pathname
-  const localeMatch = pathname.match(/^\/(en|es)/)
+  const localeMatch = pathname.match(/^\/(en|es|zh)/)
   const localePrefix = localeMatch ? localeMatch[0] : '/en'
 
   return (

@@ -103,7 +103,7 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 }
 
 export default async function PublicLessonPreviewPage(props: PageProps) {
-    const { id, lessonId } = await props.params
+    const { id, lessonId, locale } = await props.params
     const tenantId = await getCurrentTenantId()
 
     const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId)
@@ -122,6 +122,7 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
 
     return (
         <ModelingLessonReader
+            locale={locale}
             courseId={Number(id)}
             lessonId={lesson.id}
             lessonNumber={lesson.sequence}

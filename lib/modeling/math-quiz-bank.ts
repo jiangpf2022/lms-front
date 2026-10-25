@@ -240,9 +240,28 @@ const builders: Record<number, (seed: number, id: string) => ModelingQuizQuestio
   20: writing,
 }
 
-export function buildChapterQuiz(lessonNumber: number, chapterIndex: number) {
-  const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}`
-  return (builders[lessonNumber] ?? generalQuestions)(chapterIndex + 1, id)
+function chapterFocus(title?: string) {
+  const value = title?.toLowerCase() ?? ''
+  if (!value || /overview|导读/.test(value)) return null
+  if (/linear|geometry|comparison|criteria|weight|timeline|grain|purpose|competition format|cumcm/.test(value)) return 0
+  if (/dual|kkt|ahp|arima|swarm|dependence|type|architecture|toolchain|well-posed/.test(value)) return 1
+  if (/quadratic|distribution|topsis|anneal|missing|pendulum|compartment|method|genetic|pareto/.test(value)) return 2
+  if (/cone|uncertainty|outlier|validation|stability|result|assumption|robust|diagnostic/.test(value)) return 3
+  if (/solver|case|decision|pipeline|review|audit|claim|evidence|writing|routine|implementation/.test(value)) return 4
+  return null
+}
+
+export function buildChapterQuiz(lessonNumber: number, chapterIndex: number, chapterTitle?: string) {
+  const builder = builders[lessonNumber] ?? generalQuestions
+  const focus = chapterFocus(chapterTitle)
+  const questionOrder = focus === null
+    ? [0, 1, 2, 3, 4]
+    : [focus, focus, (focus + 1) % 5, focus, (focus + 4) % 5]
+
+  return questionOrder.map((questionIndex, variant) => {
+    const id = `lesson-${lessonNumber}-chapter-${chapterIndex + 1}-variant-${variant + 1}`
+    return builder(chapterIndex + variant + 1, id)[questionIndex]
+  })
 }
 
 export function buildLessonFinalQuiz(lessonNumber: number) {

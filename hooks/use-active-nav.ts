@@ -4,7 +4,7 @@ import { usePathname, useSearchParams } from "next/navigation"
 // hrefs are locale-less; client-side navigations are already locale-less.
 // (i18n.ts can't be imported here — it pulls in next-intl/server.)
 function stripLocale(pathname: string): string {
-    return pathname.replace(/^\/(en|es)(?=\/|$)/, '') || '/'
+    return pathname.replace(/^\/(en|es|zh)(?=\/|$)/, '') || '/'
 }
 
 const ROOT_HREFS = ['/dashboard/admin', '/dashboard/teacher', '/dashboard/student']
