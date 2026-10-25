@@ -148,7 +148,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
                     {([
                       ['sequence', t('No.', '编号')],
                       ['title', t('Course', '课程名称')],
-                      ['level', 'Level'],
+                      ['level', t('Level', '级别')],
                       ['visibility', t('Visibility', '公开状态')],
                     ] as const).map(([key, label]) => <th key={key} className="px-4 py-3"><button onClick={() => changeSort(key)} className="inline-flex items-center gap-1.5 hover:text-foreground">{label}<ArrowUpDown className={cn('h-3 w-3', sortKey === key ? 'opacity-100' : 'opacity-35')} /></button></th>)}
                     <th className="px-4 py-3 text-right">{t('Actions', '操作')}</th>
@@ -162,7 +162,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
                     return <tr key={lesson.sequence} className="transition hover:bg-[#f5f8f5] dark:hover:bg-white/[0.025]">
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-black text-muted-foreground">{String(lesson.sequence).padStart(2, '0')}</td>
                       <td className="px-4 py-3"><div className="max-w-xl font-bold">{isChinese ? lesson.titleZh : lesson.title}</div></td>
-                      <td className="whitespace-nowrap px-4 py-3"><span className={cn('rounded-full px-2.5 py-1 text-[10px] font-black', lesson.level === 1 ? 'bg-emerald-100 text-emerald-800' : lesson.level === 2 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>Level {lesson.level}</span></td>
+                      <td className="whitespace-nowrap px-4 py-3"><span className={cn('rounded-full px-2.5 py-1 text-[10px] font-black', lesson.level === 1 ? 'bg-emerald-100 text-emerald-800' : lesson.level === 2 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>{isChinese ? `级别 ${lesson.level}` : `Level ${lesson.level}`}</span></td>
                       <td className="px-4 py-3"><label className={cn('inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5', selectedOption.classes)}><SelectedIcon className="h-3.5 w-3.5" /><select aria-label={t(`Visibility for ${lesson.title}`, `${lesson.titleZh} 的公开状态`)} value={selected} onChange={(event) => { setStates((current) => ({ ...current, [String(lesson.sequence)]: event.target.value as ModelingVisibility })); setSaved(false) }} className="bg-transparent text-xs font-black outline-none"><option value="public">{t('Public', '完全公开')}</option><option value="coming-soon">{t('Coming soon', '准备公开')}</option><option value="hidden">{t('Hidden', '完全隐藏')}</option></select></label></td>
                       <td className="whitespace-nowrap px-4 py-3 text-right"><Link href={`/${locale}/courses/1/lessons/${lesson.id}`} className="rounded-full border border-border px-3 py-1.5 text-xs font-black hover:bg-muted">{t('Preview', '预览')}</Link></td>
                     </tr>

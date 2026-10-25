@@ -153,7 +153,7 @@ export function PracticeCenter({ locale, lessons }: { locale: string; lessons: P
                 <label className="grid gap-2 text-sm font-bold">
                   {language === 'zh' ? '选择 Blog' : 'Choose blog'}
                   <select value={lessonNumber} onChange={(event) => { setLessonNumber(Number(event.target.value)); setChapterIndex(0); refresh() }} className="h-11 rounded-xl border border-border bg-background px-3 font-medium">
-                    {lessons.map((item) => <option key={item.number} value={item.number}>{String(item.number).padStart(2, '0')} · {language === 'zh' ? item.titleZh : item.title} · Level {item.level}</option>)}
+                    {lessons.map((item) => <option key={item.number} value={item.number}>{String(item.number).padStart(2, '0')} · {language === 'zh' ? item.titleZh : item.title} · {language === 'zh' ? `级别 ${item.level}` : `Level ${item.level}`}</option>)}
                   </select>
                 </label>
                 <label className="grid gap-2 text-sm font-bold">

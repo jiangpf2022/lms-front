@@ -12,6 +12,7 @@ import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
 import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
 import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy'
 import { getModelingDeveloperSettings, isModelingDeveloper, modelingVisibility } from '@/lib/modeling/developer-settings'
 
 export const dynamic = 'force-dynamic'
@@ -131,7 +132,8 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
     if (!data) notFound()
     const { course, lesson, nextPreview } = data
     const sourceChapters = extractLessonChapters(lesson.content, lesson.title)
-    const lessonLevel = modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.level ?? 1
+    const modelingLesson = modelingManifest.lessons.find((item) => item.number === lesson.sequence)
+    const lessonLevel = modelingLesson?.level ?? 1
     const serialize = async (
         chapter: (typeof sourceChapters.en)[number],
         chapterIndex: number,
@@ -154,8 +156,11 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
             lessonNumber={lesson.sequence}
             lessonLevel={lessonLevel}
             courseTitle={course.title}
+            courseTitleZh="数学建模"
             lessonTitle={lesson.title}
+            lessonTitleZh={modelingLesson?.titleZh}
             lessonDescription={lesson.description}
+            lessonDescriptionZh={MODELING_DESCRIPTIONS_ZH[lesson.sequence]}
             chapters={{ en: english, zh: chinese }}
             nextLesson={nextPreview}
         />

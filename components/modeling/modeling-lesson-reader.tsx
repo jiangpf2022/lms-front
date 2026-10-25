@@ -225,8 +225,11 @@ export function ModelingLessonReader({
   lessonNumber,
   lessonLevel,
   courseTitle,
+  courseTitleZh,
   lessonTitle,
+  lessonTitleZh,
   lessonDescription,
+  lessonDescriptionZh,
   chapters,
   nextLesson,
 }: {
@@ -236,8 +239,11 @@ export function ModelingLessonReader({
   lessonNumber: number
   lessonLevel: number
   courseTitle: string
+  courseTitleZh?: string
   lessonTitle: string
+  lessonTitleZh?: string
   lessonDescription: string | null
+  lessonDescriptionZh?: string
   chapters: { en: SerializedChapter[]; zh: SerializedChapter[] }
   nextLesson: { id: number; title: string } | null
 }) {
@@ -252,6 +258,9 @@ export function ModelingLessonReader({
   const supabase = useMemo(() => createClient(), [])
 
   const localized = language === 'zh' && chapters.zh.length > 0 ? chapters.zh : chapters.en
+  const localizedCourseTitle = language === 'zh' ? (courseTitleZh ?? courseTitle) : courseTitle
+  const localizedLessonTitle = language === 'zh' ? (lessonTitleZh ?? lessonTitle) : lessonTitle
+  const localizedLessonDescription = language === 'zh' ? (lessonDescriptionZh ?? lessonDescription) : lessonDescription
   const finalIndex = localized.length
   const isFinalQuiz = activeIndex >= finalIndex
   const activeChapter = localized[Math.min(activeIndex, Math.max(0, localized.length - 1))]
@@ -370,10 +379,10 @@ export function ModelingLessonReader({
       : [{
           id,
           lessonId,
-          lessonTitle,
+          lessonTitle: localizedLessonTitle,
           chapterId: itemId,
           chapterTitle: activeChapter.title,
-          courseTitle,
+          courseTitle: localizedCourseTitle,
           href: `${window.location.pathname}?chapter=${activeIndex + 1}`,
           savedAt: new Date().toISOString(),
         }, ...current]
@@ -431,13 +440,13 @@ export function ModelingLessonReader({
                 <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-black shadow-lg', modelingLevelIconClasses(lessonLevel))}>{String(lessonNumber).padStart(2, '0')}</span>
                 <div className="min-w-0">
                   <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.15em]', modelingLevelBadgeClasses(lessonLevel))}>{language === 'zh' ? `级别 ${lessonLevel}` : `Level ${lessonLevel}`}</span>
-                  <h1 className={cn('truncate text-base font-black sm:text-xl', modelingLevelTitleClasses(lessonLevel))}>{lessonTitle}</h1>
+                  <h1 className={cn('truncate text-base font-black sm:text-xl', modelingLevelTitleClasses(lessonLevel))}>{localizedLessonTitle}</h1>
                 </div>
               </div>
-              <p className="mt-1 text-xs text-white/45">{courseTitle}</p>
+              <p className="mt-1 text-xs text-white/45">{localizedCourseTitle}</p>
             </div>
             <div className="flex items-center gap-3">
-              <span className="text-sm font-bold text-white/65">{completedCount}/{totalUnits} done</span>
+              <span className="text-sm font-bold text-white/65">{completedCount}/{totalUnits} {language === 'zh' ? '已完成' : 'done'}</span>
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-amber-300">{percent}%</span>
             </div>
           </div>
@@ -517,9 +526,9 @@ export function ModelingLessonReader({
               </div>
               <h2 className="text-3xl font-black tracking-[-0.035em] text-[#17231d] dark:text-white sm:text-4xl">{activeChapter.title}</h2>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium text-muted-foreground">
-                <Clock3 className="h-4 w-4" /> {Math.max(8, Math.round(45 / Math.max(1, localized.length)) + 8)} min
+                <Clock3 className="h-4 w-4" /> {Math.max(8, Math.round(45 / Math.max(1, localized.length)) + 8)} {language === 'zh' ? '分钟' : 'min'}
               </div>
-              {activeIndex === 0 && lessonDescription && <p className="mt-6 max-w-3xl text-base leading-7 text-[#526259] dark:text-white/60">{lessonDescription}</p>}
+              {activeIndex === 0 && localizedLessonDescription && <p className="mt-6 max-w-3xl text-base leading-7 text-[#526259] dark:text-white/60">{localizedLessonDescription}</p>}
               <div className="mt-6 rounded-2xl border border-[#d8e7dc] bg-white/55 px-4 py-3 text-sm leading-6 text-[#4d6257] shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.035] dark:text-white/65">
                 {language === 'zh'
                   ? '你不需要预先认识本章的算法或符号。先跟着问题与直觉走；每个新概念都会先说明“它在解决什么”，再给定义、推导、算例与验证方法。'
