@@ -8,7 +8,9 @@ import { APP_NAME } from '@/lib/app-name';
 import { NavbarTenantSwitcher } from "@/components/tenant/navbar-tenant-switcher";
 import type { HeaderSettings } from "@/lib/landing-pages/types";
 import type { TenantOption } from "@/components/tenant/navbar-tenant-switcher";
-import { getCurrentUserId } from '@/lib/supabase/tenant'
+import { getSessionUser } from '@/lib/supabase/tenant'
+import { isModelingDeveloper } from '@/lib/modeling/developer-settings'
+import { cn } from '@/lib/utils'
 
 const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -18,9 +20,9 @@ interface NavbarProps {
 
 export async function Navbar({ headerSettings }: NavbarProps = {}) {
     const configuredModelingAcademy = APP_NAME.toLowerCase().includes('modeling academy')
-    const [supabase, userId, t, locale, tenant] = await Promise.all([
+    const [supabase, user, t, locale, tenant] = await Promise.all([
         createClient(),
-        getCurrentUserId(),
+        getSessionUser(),
         getTranslations('navbar'),
         getLocale(),
         configuredModelingAcademy ? Promise.resolve(null) : getCurrentTenant(),
@@ -28,6 +30,8 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
 
     const isMainPlatform = configuredModelingAcademy || !tenant || tenant.id === DEFAULT_TENANT_ID
     const isModelingAcademy = isMainPlatform && configuredModelingAcademy
+    const userId = user?.id ?? null
+    const isDeveloper = isModelingAcademy && isModelingDeveloper(user)
     const localized = (path: string) => `/${locale}${path}`
     const isChinese = locale.toLowerCase().startsWith('zh')
 
@@ -106,12 +110,16 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                             <Link href={localized('/courses/1')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '课程' : 'Course'}</span><span className="hidden lg:inline">{isChinese ? '数学建模课程' : 'Mathematical Modeling Course'}</span>
                             </Link>
+                            {[1, 2, 3].map((level) => <Link key={level} href={localized(`/courses/1/levels/${level}`)} prefetch className={cn('inline-flex whitespace-nowrap rounded-full border px-1.5 py-1.5 text-[9px] font-black sm:px-2 lg:px-2.5 lg:text-[10px]', level === 1 && 'border-emerald-300 bg-emerald-50 text-emerald-800 dark:bg-emerald-400/10 dark:text-emerald-200', level === 2 && 'border-amber-300 bg-amber-50 text-amber-800 dark:bg-amber-300/10 dark:text-amber-200', level === 3 && 'border-rose-300 bg-rose-50 text-rose-800 dark:bg-rose-400/10 dark:text-rose-200')}><span className="lg:hidden">L{level}</span><span className="hidden lg:inline">{isChinese ? `级别 ${level}` : `Level ${level}`}</span></Link>)}
                             <Link href={localized('/practice-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '练习' : 'Practice'}</span><span className="hidden lg:inline">{isChinese ? '练习中心' : 'Practice Center'}</span>
                             </Link>
                             <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '学习' : 'Learning'}</span><span className="hidden lg:inline">{isChinese ? '学习中心' : 'Learning Center'}</span>
                             </Link>
+                            {isDeveloper && <Link href={localized('/developer-center')} prefetch className="whitespace-nowrap rounded-full bg-rose-100 px-2 py-2 text-[10px] font-black text-rose-800 transition-colors hover:bg-rose-200 dark:bg-rose-400/10 dark:text-rose-200 sm:text-xs lg:text-sm">
+                                <span className="lg:hidden">{isChinese ? '开发' : 'Dev'}</span><span className="hidden lg:inline">{isChinese ? '开发者中心' : 'Developer Center'}</span>
+                            </Link>}
                         </>
                     ) : isMainPlatform ? (
                         <>

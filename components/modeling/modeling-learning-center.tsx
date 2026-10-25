@@ -7,10 +7,12 @@ import {
   BookOpenCheck,
   Bookmark,
   CalendarClock,
+  CheckCircle2,
   ChevronRight,
   Flame,
   GraduationCap,
   LibraryBig,
+  MessageSquareText,
   LockKeyhole,
   Sparkles,
   Star,
@@ -38,6 +40,7 @@ type BookmarkItem = {
 type LearningRecord = LessonSummary & Progress & { completion: number; mastery: number; retainedMastery: number }
 type PracticeHistory = { id: string; mode: 'chapter' | 'random'; lessonNumber?: number; chapterIndex?: number; score: number; questionCount: number; completedAt: string }
 type CloudLearningState = { progress: Record<string, Progress>; bookmarks: BookmarkItem[]; practiceHistory?: PracticeHistory[] }
+type FeedbackSummary = { items: Array<{ status: 'pending' | 'adopted' | 'reviewed' }> }
 const cloudStateKey = 'modeling-learning-center-v1'
 
 function daysSince(date: string) {
@@ -90,6 +93,7 @@ export function ModelingLearningCenter({ courseId, lessons, signedIn, locale }: 
   const [progress, setProgress] = useState<Record<number, Progress>>({})
   const [bookmarks, setBookmarks] = useState<BookmarkItem[]>([])
   const [practiceHistory, setPracticeHistory] = useState<PracticeHistory[]>([])
+  const [feedbackSummary, setFeedbackSummary] = useState<FeedbackSummary>({ items: [] })
   const [curveLesson, setCurveLesson] = useState<number | 'all'>('all')
   const supabase = useMemo(() => createClient(), [])
   const isChinese = locale.toLowerCase().startsWith('zh')
@@ -142,6 +146,8 @@ export function ModelingLearningCenter({ courseId, lessons, signedIn, locale }: 
             }
           }
         }
+        const feedbackResponse = await fetch('/api/modeling/feedback', { cache: 'no-store' })
+        if (feedbackResponse.ok) setFeedbackSummary(await feedbackResponse.json() as FeedbackSummary)
       }
     }
     queueMicrotask(() => { void load() })
@@ -209,12 +215,14 @@ export function ModelingLearningCenter({ courseId, lessons, signedIn, locale }: 
           {signedIn ? <GamificationHeaderCard /> : <Link prefetch href={localized(`/auth/login?next=${encodeURIComponent(localized('/learning-center'))}`)} className="rounded-full bg-[#163f2c] px-5 py-2.5 text-sm font-black text-white shadow-lg">{t('Sign in to sync across devices', '登录后跨设备同步')}</Link>}
         </header>
 
-        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        <section className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6">
           {[
             [GraduationCap, `${t('Level', '等级')} ${level.level}`, `${level.current} / ${level.required} ${t('XP to next level', '经验可升级')}`],
             [BookOpenCheck, `${averageCompletion}%`, t('average completion', '平均完成度')],
             [Target, `${averageMastery}%`, t('retained mastery', '当前记忆保持度')],
             [Bookmark, String(bookmarks.length), t('saved chapters', '收藏章节')],
+            [MessageSquareText, String(feedbackSummary.items.length), t('suggestions sent', '已提交建议')],
+            [CheckCircle2, String(feedbackSummary.items.filter((item) => item.status === 'adopted').length), t('suggestions adopted', '建议被采纳')],
           ].map(([Icon, value, label]) => {
             const MetricIcon = Icon as typeof GraduationCap
             return <div key={String(label)} className="rounded-[26px] border border-white/80 bg-white/80 p-5 shadow-[0_24px_70px_-48px_rgba(20,50,35,0.7)] backdrop-blur-xl dark:border-white/10 dark:bg-white/[0.05]"><MetricIcon className="h-6 w-6 text-emerald-700 dark:text-emerald-300" /><div className="mt-4 text-3xl font-black">{String(value)}</div><p className="mt-1 text-xs font-bold uppercase tracking-widest text-muted-foreground">{String(label)}</p></div>

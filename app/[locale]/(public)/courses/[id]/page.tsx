@@ -40,23 +40,8 @@ import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
 import { cn } from '@/lib/utils';
 import { modelingLevelBadgeClasses, modelingLevelDotClasses, modelingLevelIconClasses, modelingLevelRowClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles';
-
-const MODELING_DESCRIPTIONS_ZH: Record<number, string> = {
-    1: '从模糊的现实问题出发，学习明确目标、系统边界、状态变量、假设、基线模型与验证证据，建立完整的建模契约。',
-    2: '系统比较国赛与美赛的题型和节奏，训练选题、团队协作、工具链、论文复现、可视化积累以及可靠使用 ChatGPT 的方法。',
-    3: '从“图要证明什么”出发，学习比较、时间序列、分布、地图、网络、模型结构和科学图形，并分析优秀竞赛论文的视觉证据。',
-    4: '从决策变量和约束推导线性规划、二次规划与二阶锥规划，理解对偶、KKT 条件、求解诊断与农业规划案例。',
-    5: '深入学习凸性、条件数、次梯度、共轭对偶、近端算法、ADMM、风险度量以及可验证的最优性证书。',
-    6: '面对多个冲突目标与不确定参数，构建 Pareto 前沿、鲁棒对应模型和随机情景，并解释方案为何在扰动下仍然可行。',
-    7: '理解遗传算法、粒子群、模拟退火和约束罚函数的机制，设计公平实验，并判断何时智能优化真正值得使用。',
-    9: '从状态变化和守恒关系建立常微分方程，分析适定性、缩放与数值误差，并通过摆、追踪、人口和治疗案例完成验证。',
-    10: '研究相互作用系统中的守恒、阈值、平衡点与局部稳定性，覆盖扩散、房室、流行病、捕食关系和工业温度过程。',
-    13: '先审计时间轴，再识别趋势、季节性与依赖关系；学习平滑、ARIMA、滚动验证、预测区间和面向决策的误差解释。',
-    15: '从“一行数据代表什么”开始，处理类型、缺失、异常、变换、数据划分与泄漏问题，建立可以复现的数据处理管线。',
-    17: '把评价目标、指标方向、权重、AHP、TOPSIS 和排序敏感性写清楚，使综合评价不再只是一个无法解释的最终名次。',
-    19: '学习把问题、方法、关键数值、验证和局限压缩成可追溯摘要，让每一句结论都能够在正文中找到证据。',
-    20: '把问题重述、假设、符号、模型、算法、结果、验证与讨论组织成一条连续论证，完成可复查、可复现的竞赛论文正文。',
-}
+import { getModelingDeveloperSettings, modelingVisibility, type ModelingVisibility } from '@/lib/modeling/developer-settings';
+import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy';
 
 export const dynamic = 'force-dynamic';
 
@@ -111,6 +96,8 @@ interface Lesson {
     image: string | null;
     video_url: string | null;
     is_preview: boolean;
+    status: string;
+    visibility?: ModelingVisibility;
 }
 
 export default async function CourseDetailsPage(props: {
@@ -148,13 +135,13 @@ export default async function CourseDetailsPage(props: {
     // Curriculum via admin client: the anon role can only read preview lessons
     // (RLS), but the public page lists every published lesson's title. Metadata
     // only — never select content here.
-    const lessonsPromise = Promise.resolve(createAdminClient()
+    let lessonsQuery = createAdminClient()
         .from('lessons')
-        .select('id, title, sequence, description, summary, image, video_url, is_preview')
+        .select('id, title, sequence, description, summary, image, video_url, is_preview, status')
         .eq('course_id', courseId)
-        .eq('tenant_id', tenantId)
-        .eq('status', 'published')
-        .order('sequence', { ascending: true }));
+        .eq('tenant_id', tenantId);
+    if (course.title !== 'Mathematical Modeling') lessonsQuery = lessonsQuery.eq('status', 'published');
+    const lessonsPromise = Promise.resolve(lessonsQuery.order('sequence', { ascending: true }));
 
     // Per-lesson exercises / resources and the course's exams, only to count and
     // label them on the curriculum. Same admin-client rationale as the lessons.
@@ -225,7 +212,7 @@ export default async function CourseDetailsPage(props: {
         })()
         : Promise.resolve(false);
 
-    const [{ data: author }, hasAccess, { data: productCourses }, planCoversCourse, socialProof, { data: lessonRows }, seo, freePreviewEnabled, { data: exerciseRows }, { data: examRows }, { data: resourceRows }] = await Promise.all([
+    const [{ data: author }, hasAccess, { data: productCourses }, planCoversCourse, socialProof, { data: lessonRows }, seo, freePreviewEnabled, { data: exerciseRows }, { data: examRows }, { data: resourceRows }, developerSettings] = await Promise.all([
         authorPromise,
         accessPromise,
         productCoursesPromise,
@@ -237,11 +224,14 @@ export default async function CourseDetailsPage(props: {
         exercisesPromise,
         examsPromise,
         resourcesPromise,
+        getModelingDeveloperSettings(),
     ]);
 
     const { averageRating, reviewCount, studentCount, recentReviews } = socialProof;
 
-    const lessons: Lesson[] = lessonRows ?? [];
+    const lessons: Lesson[] = (lessonRows ?? [])
+        .map((lesson) => ({ ...lesson, visibility: course.title === 'Mathematical Modeling' ? modelingVisibility(lesson.sequence, lesson.status, developerSettings) : 'public' as const }))
+        .filter((lesson) => lesson.visibility !== 'hidden');
     const totalLessons = lessons.length;
     const lessonTitleById = new Map<number, string>(lessons.map((l) => [l.id, l.title]));
 
@@ -627,7 +617,7 @@ export default async function CourseDetailsPage(props: {
                                     // flag: this page is read via the admin client (bypasses
                                     // RLS), so it must not keep badging/linking to a preview
                                     // lesson the school just turned off tenant-wide.
-                                    const isPreview = lesson.is_preview && freePreviewEnabled;
+                                    const isPreview = lesson.is_preview && freePreviewEnabled && lesson.visibility === 'public';
                                     const isVideo = !!lesson.video_url;
                                     const thumb = lessonThumbnail(lesson);
                                     const blurb = lesson.summary?.trim() || lesson.description?.trim() || null;
@@ -653,13 +643,13 @@ export default async function CourseDetailsPage(props: {
                                                     </div>
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
-                                                            <h3 className={cn('text-base font-black leading-snug sm:text-lg', modelingLevelTitleClasses(modeling.level))}>{title}</h3>
+                                                            <h3 className={cn('text-base font-black leading-snug sm:text-lg', modelingLevelTitleClasses(modeling.level), lesson.visibility === 'coming-soon' && 'grayscale opacity-65')}>{title}</h3>
                                                             <span className={cn(
                                                                 'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
                                                                 modelingLevelBadgeClasses(modeling.level),
                                                             )}>
                                                                 <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]', modelingLevelDotClasses(modeling.level))} />
-                                                                Level {modeling.level}
+                                                                {isChinese ? `级别 ${modeling.level}` : `Level ${modeling.level}`}
                                                             </span>
                                                         </div>
                                                         <p className="mt-2 max-w-3xl text-sm leading-6 text-muted-foreground">{description}</p>
@@ -677,6 +667,10 @@ export default async function CourseDetailsPage(props: {
                                                                     <ClipboardCheck className="mr-2 h-4 w-4" /> {isChinese ? '课程测验' : 'Lesson quiz'}
                                                                 </Link>
                                                             </>
+                                                        ) : lesson.visibility === 'coming-soon' ? (
+                                                            <span className="inline-flex h-10 items-center justify-center rounded-xl border border-amber-300 bg-amber-50 px-4 text-sm font-bold text-amber-800 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-200">
+                                                                <Clock className="mr-2 h-4 w-4" /> {isChinese ? '即将发布' : 'Coming soon'}
+                                                            </span>
                                                         ) : (
                                                             <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-muted px-4 text-sm font-bold text-muted-foreground">
                                                                 <Lock className="mr-2 h-4 w-4" /> {isChinese ? '尚未开放' : 'Locked'}

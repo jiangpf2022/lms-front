@@ -5,8 +5,9 @@ import manifest from '@/content/mathematical-modeling/manifest.json'
 import { PracticeCenter } from '@/components/modeling/practice-center'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
+import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
 
-export const dynamic = 'force-static'
+export const dynamic = 'force-dynamic'
 
 export async function generateMetadata({ params }: { params: Promise<{ locale: string }> }): Promise<Metadata> {
   const { locale } = await params
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function PracticeCenterPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const published = manifest.lessons.filter((lesson) => lesson.status === 'published')
+  const settings = await getModelingDeveloperSettings()
+  const published = manifest.lessons.filter((lesson) => modelingVisibility(lesson.number, lesson.status, settings) === 'public')
   const lessons = await Promise.all(published.map(async (lesson) => {
     const filePath = path.join(process.cwd(), 'content', 'mathematical-modeling', lesson.contentFile)
     const content = await fs.readFile(filePath, 'utf8')

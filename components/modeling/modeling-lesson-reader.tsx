@@ -12,7 +12,9 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
+  MessageSquareText,
   RotateCcw,
+  Send,
   Sparkles,
   Trophy,
 } from 'lucide-react'
@@ -224,6 +226,9 @@ export function ModelingLessonReader({
   const [activeIndex, setActiveIndex] = useState(0)
   const [progress, setProgress] = useState<StoredProgress>(emptyProgress)
   const [saved, setSaved] = useState(false)
+  const [feedbackOpen, setFeedbackOpen] = useState(false)
+  const [feedbackMessage, setFeedbackMessage] = useState('')
+  const [feedbackState, setFeedbackState] = useState<'idle' | 'sending' | 'sent' | 'login' | 'error'>('idle')
   const supabase = useMemo(() => createClient(), [])
 
   const localized = language === 'zh' && chapters.zh.length > 0 ? chapters.zh : chapters.en
@@ -365,6 +370,33 @@ export function ModelingLessonReader({
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
+  async function submitFeedback() {
+    if (!activeChapter || !feedbackMessage.trim()) return
+    setFeedbackState('sending')
+    const { data: { session } } = await supabase.auth.getSession()
+    if (!session?.user) {
+      setFeedbackState('login')
+      return
+    }
+    const response = await fetch('/api/modeling/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        lessonId,
+        lessonTitle,
+        chapterId: itemId,
+        chapterTitle: activeChapter.title,
+        message: feedbackMessage.trim(),
+      }),
+    })
+    if (!response.ok) {
+      setFeedbackState('error')
+      return
+    }
+    setFeedbackMessage('')
+    setFeedbackState('sent')
+  }
+
   return (
     <div className="relative min-h-screen overflow-x-hidden bg-[#f4f1e8] pt-16 text-[#18231e] dark:bg-[#08110e] dark:text-white">
       <div className="pointer-events-none fixed inset-0 z-0 bg-[url('/mathematical-modeling/course-cover.webp')] bg-cover bg-center opacity-[0.09] saturate-75 dark:opacity-[0.07]" />
@@ -377,7 +409,7 @@ export function ModelingLessonReader({
               <div className="flex items-center gap-3">
                 <span className={cn('flex h-9 w-9 shrink-0 items-center justify-center rounded-xl border text-xs font-black shadow-lg', modelingLevelIconClasses(lessonLevel))}>{String(lessonNumber).padStart(2, '0')}</span>
                 <div className="min-w-0">
-                  <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.15em]', modelingLevelBadgeClasses(lessonLevel))}>Level {lessonLevel}</span>
+                  <span className={cn('inline-flex rounded-full border px-2 py-0.5 text-[9px] font-black uppercase tracking-[0.15em]', modelingLevelBadgeClasses(lessonLevel))}>{language === 'zh' ? `级别 ${lessonLevel}` : `Level ${lessonLevel}`}</span>
                   <h1 className={cn('truncate text-base font-black sm:text-xl', modelingLevelTitleClasses(lessonLevel))}>{lessonTitle}</h1>
                 </div>
               </div>
@@ -439,8 +471,17 @@ export function ModelingLessonReader({
                 {saved ? (language === 'zh' ? '已收藏' : 'Saved') : (language === 'zh' ? '收藏本章' : 'Save chapter')}
               </Button>
             )}
+            {!isFinalQuiz && <Button variant="outline" size="sm" onClick={() => { setFeedbackOpen((value) => !value); setFeedbackState('idle') }} className="rounded-full border-[#cbd8cf] bg-white/75 backdrop-blur dark:border-white/10 dark:bg-white/5">
+              <MessageSquareText className="mr-2 h-4 w-4" /> {language === 'zh' ? '提出建议' : 'Suggest an improvement'}
+            </Button>}
           </div>
         </div>
+
+        {feedbackOpen && !isFinalQuiz && <section className="mb-6 rounded-2xl border border-indigo-200/80 bg-white/85 p-4 shadow-lg backdrop-blur dark:border-indigo-300/15 dark:bg-white/[0.05]">
+          <div className="flex items-start justify-between gap-3"><div><h2 className="font-black">{language === 'zh' ? '向作者提出建议' : 'Suggest an improvement'}</h2><p className="mt-1 text-xs leading-5 text-muted-foreground">{language === 'zh' ? `建议会关联到“${activeChapter?.title}”，开发者可以在开发者中心查看并标记是否采纳。` : `Your suggestion will be attached to “${activeChapter?.title}”. The developer can review it and mark it as adopted.`}</p></div></div>
+          <textarea value={feedbackMessage} onChange={(event) => setFeedbackMessage(event.target.value)} maxLength={4000} placeholder={language === 'zh' ? '请说明哪里不清楚、哪里可能有错误，或你希望补充什么内容……' : 'Tell me what is unclear, possibly incorrect, or worth adding…'} className="mt-3 min-h-28 w-full resize-y rounded-xl border border-indigo-200 bg-white/80 px-4 py-3 text-sm outline-none focus:border-indigo-500 dark:border-white/10 dark:bg-black/20" />
+          <div className="mt-3 flex flex-wrap items-center justify-between gap-3"><p className="text-xs text-muted-foreground">{feedbackState === 'sent' ? (language === 'zh' ? '建议已提交，谢谢。' : 'Suggestion sent—thank you.') : feedbackState === 'login' ? (language === 'zh' ? '请先登录后再提交建议。' : 'Please sign in before sending feedback.') : feedbackState === 'error' ? (language === 'zh' ? '提交失败，请稍后再试。' : 'Could not send the suggestion. Please try again.') : `${feedbackMessage.length}/4000`}</p><Button onClick={() => { void submitFeedback() }} disabled={!feedbackMessage.trim() || feedbackState === 'sending'} className="rounded-full bg-indigo-700 px-5 text-white hover:bg-indigo-600"><Send className="mr-2 h-4 w-4" /> {feedbackState === 'sending' ? (language === 'zh' ? '提交中…' : 'Sending…') : (language === 'zh' ? '提交建议' : 'Send suggestion')}</Button></div>
+        </section>}
 
         {!isFinalQuiz && activeChapter ? (
           <article className="modeling-article-surface relative overflow-hidden rounded-[34px] border border-white/90 bg-[linear-gradient(150deg,rgba(255,255,255,.91),rgba(247,250,245,.86),rgba(239,247,242,.82))] p-5 shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(150deg,rgba(13,23,19,.92),rgba(12,29,23,.88),rgba(15,25,31,.86))] sm:p-9 lg:p-12">
@@ -450,8 +491,8 @@ export function ModelingLessonReader({
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#dbe8df] px-3 py-1 text-xs font-black uppercase tracking-widest text-[#315d49] dark:bg-emerald-400/10 dark:text-emerald-300">{language === 'zh' ? '核心概念' : 'Core concept'}</span>
                 <span className="rounded-full border border-sky-200/70 bg-sky-50/80 px-3 py-1 text-xs font-bold text-sky-800 dark:border-sky-300/15 dark:bg-sky-300/10 dark:text-sky-200">{language === 'zh' ? '零基础友好' : 'No prerequisites assumed'}</span>
-                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-300/10 dark:text-amber-300">Unit {activeIndex + 1} of {localized.length}</span>
-                {progress.completed.includes(itemId) && <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">Completed</span>}
+                <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-300/10 dark:text-amber-300">{language === 'zh' ? `第 ${activeIndex + 1} 章，共 ${localized.length} 章` : `Unit ${activeIndex + 1} of ${localized.length}`}</span>
+                {progress.completed.includes(itemId) && <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">{language === 'zh' ? '已完成' : 'Completed'}</span>}
               </div>
               <h2 className="text-3xl font-black tracking-[-0.035em] text-[#17231d] dark:text-white sm:text-4xl">{activeChapter.title}</h2>
               <div className="mt-4 flex items-center gap-2 text-sm font-medium text-muted-foreground">
@@ -470,7 +511,7 @@ export function ModelingLessonReader({
         ) : (
           <section className="rounded-[32px] border border-white/80 bg-white/88 p-6 text-center shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1713]/88 sm:p-10">
             <Trophy className="mx-auto h-12 w-12 text-amber-500" />
-            <p className="mt-5 text-xs font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">Lesson assessment</p>
+            <p className="mt-5 text-xs font-black uppercase tracking-[0.25em] text-amber-700 dark:text-amber-300">{language === 'zh' ? '本篇测验' : 'Blog assessment'}</p>
             <h2 className="mt-2 text-3xl font-black tracking-tight sm:text-4xl">{language === 'zh' ? '综合检查' : 'Checkpoint Quiz'}</h2>
             <p className="mx-auto mt-3 max-w-2xl leading-7 text-muted-foreground">{language === 'zh' ? '15 道题覆盖整篇 Blog 的核心概念、计算与模型判断。题目由易到难，后续可以继续由作者审核和迭代。' : 'Fifteen questions connect the whole blog: concepts, calculations, and modeling judgment. They progress from foundations to deeper transfer.'}</p>
           </section>
@@ -492,7 +533,7 @@ export function ModelingLessonReader({
             <ChevronLeft className="mr-2 h-4 w-4" /> {language === 'zh' ? '上一章' : 'Previous'}
           </Button>
           <div className="flex items-center gap-2 text-xs font-bold text-muted-foreground">
-            <Sparkles className="h-4 w-4 text-amber-500" /> {progress.xp} XP earned in this blog
+            <Sparkles className="h-4 w-4 text-amber-500" /> {language === 'zh' ? `本篇已获得 ${progress.xp} 点经验` : `${progress.xp} XP earned in this blog`}
           </div>
           {activeIndex < finalIndex ? (
             <Button onClick={() => navigate(activeIndex + 1)} className="rounded-full bg-[#163f2c] px-6 text-white hover:bg-[#0f3021]">

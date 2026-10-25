@@ -4,6 +4,7 @@ import { ModelingLearningCenter } from '@/components/modeling/modeling-learning-
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 import type { Metadata } from 'next'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -30,18 +31,17 @@ export default async function LearningCenterPage({ params }: { params: Promise<{
     .eq('status', 'published')
     .single()
 
-  const { data: lessons } = course
+  const [{ data: lessons }, developerSettings] = await Promise.all([course
     ? await admin
         .from('lessons')
-        .select('id, sequence, title, content')
+        .select('id, sequence, title, content, status')
         .eq('tenant_id', tenantId)
         .eq('course_id', course.course_id)
-        .eq('status', 'published')
         .order('sequence', { ascending: true })
-    : { data: [] }
+    : { data: [] }, getModelingDeveloperSettings()])
 
   const titleZh = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, lesson.titleZh]))
-  const lessonSummaries = (lessons ?? []).map((lesson) => ({
+  const lessonSummaries = (lessons ?? []).filter((lesson) => modelingVisibility(lesson.sequence, lesson.status, developerSettings) === 'public').map((lesson) => ({
     id: lesson.id,
     sequence: lesson.sequence,
     title: lesson.title,

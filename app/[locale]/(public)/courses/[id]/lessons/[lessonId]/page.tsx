@@ -1,7 +1,7 @@
 import { cache } from 'react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { isFreePreviewEnabled } from '@/lib/settings/free-preview'
-import { getCurrentTenantId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { getTranslations } from 'next-intl/server'
 import { notFound } from 'next/navigation'
 import { serializeLessonMdx } from '@/app/[locale]/dashboard/student/courses/[courseId]/lessons/[lessonId]/serialize-lesson'
@@ -12,6 +12,7 @@ import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
 import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
 import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingVisibility } from '@/lib/modeling/developer-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -25,7 +26,7 @@ interface PageProps {
 // published preview lesson, published course, current tenant. Read-only:
 // no completion tracking, no checkpoints, no comments, no AI task.
 // cache() dedupes the generateMetadata + page calls within a request.
-const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenantId: string) => {
+const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenantId: string, developer: boolean) => {
     if (!Number.isInteger(courseId) || !Number.isInteger(lessonId)) return null
     // A school can switch public previews off for the whole tenant (#799).
     // The anon RLS policy enforces the same rule, but this page reads through
@@ -43,22 +44,18 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
             .single(),
         admin
             .from('lessons')
-            .select('id, title, sequence, description, image, content, video_url, embed_code')
+            .select('id, title, sequence, description, image, content, video_url, embed_code, status, is_preview')
             .eq('id', lessonId)
             .eq('course_id', courseId)
             .eq('tenant_id', tenantId)
-            .eq('status', 'published')
-            .eq('is_preview', true)
             .single(),
         // The rest of the free preview, so this page is not a dead end (#791).
         // Same three guards as the lesson above — anything else is not public.
         admin
             .from('lessons')
-            .select('id, title, sequence')
+            .select('id, title, sequence, status, is_preview')
             .eq('course_id', courseId)
             .eq('tenant_id', tenantId)
-            .eq('status', 'published')
-            .eq('is_preview', true)
             .order('sequence', { ascending: true }),
         // `product_courses` is never `.single()`: a course can belong to
         // several products. Free means none of them costs anything, which is
@@ -71,7 +68,20 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
     ])
     if (!course || !lesson) return null
 
-    const previews = siblings ?? []
+    const isModelingCourse = course.title === modelingManifest.course.title
+    const developerSettings = isModelingCourse ? await getModelingDeveloperSettings() : null
+    if (isModelingCourse) {
+        const visibility = modelingVisibility(lesson.sequence, lesson.status, developerSettings!)
+        if (!developer && visibility !== 'public') return null
+    } else if (lesson.status !== 'published' || !lesson.is_preview) {
+        return null
+    }
+
+    const previews = (siblings ?? []).filter((row) => {
+        if (!isModelingCourse) return row.status === 'published' && row.is_preview
+        const visibility = modelingVisibility(row.sequence, row.status, developerSettings!)
+        return developer ? visibility !== 'hidden' : visibility === 'public'
+    })
     const position = previews.findIndex((row) => row.id === lesson.id)
     const nextPreview = position >= 0 ? previews[position + 1] ?? null : null
 
@@ -93,8 +103,9 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
     const { id, lessonId, locale } = await props.params
     const tenantId = await getCurrentTenantId()
+    const user = await getSessionUser()
     const [data, t] = await Promise.all([
-        getPreviewLesson(Number(id), Number(lessonId), tenantId),
+        getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user)),
         getTranslations('coursePublicDetails'),
     ])
     if (!data) notFound()
@@ -114,9 +125,9 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 
 export default async function PublicLessonPreviewPage(props: PageProps) {
     const { id, lessonId, locale } = await props.params
-    const tenantId = await getCurrentTenantId()
+    const [tenantId, user] = await Promise.all([getCurrentTenantId(), getSessionUser()])
 
-    const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId)
+    const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user))
     if (!data) notFound()
     const { course, lesson, nextPreview } = data
     const sourceChapters = extractLessonChapters(lesson.content, lesson.title)

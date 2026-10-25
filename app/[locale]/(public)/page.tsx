@@ -12,6 +12,8 @@ import type { Data } from "@measured/puck";
 import { getLandingData } from "@/lib/puck/utils/landing-data";
 import { readRootMeta } from "@/lib/puck/utils/root-meta";
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
+import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings';
+import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy';
 
 const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
 
@@ -108,7 +110,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   if (!course) return <ModelingAcademyLanding locale={locale} courseId={1} lessons={[]} />
 
-  const [{ data: lessonRows }, { data: exerciseRows }] = await Promise.all([
+  const [{ data: lessonRows }, { data: exerciseRows }, developerSettings] = await Promise.all([
     admin
       .from('lessons')
       .select('id, sequence, title, description, summary, status, is_preview')
@@ -120,6 +122,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
       .select('lesson_id')
       .eq('tenant_id', DEFAULT_TENANT_ID)
       .eq('course_id', course.course_id),
+    getModelingDeveloperSettings(),
   ])
 
   const exerciseCounts = new Map<number, number>()
@@ -130,7 +133,10 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
   const lessons: ModelingLessonSummary[] = (lessonRows ?? []).map((lesson) => ({
     ...lesson,
     level: modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.level ?? 1,
+    titleZh: modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.titleZh,
+    descriptionZh: MODELING_DESCRIPTIONS_ZH[lesson.sequence],
     exerciseCount: exerciseCounts.get(lesson.id) ?? 0,
+    visibility: modelingVisibility(lesson.sequence, lesson.status, developerSettings),
   }))
 
   return <ModelingAcademyLanding locale={locale} courseId={course.course_id} lessons={lessons} />
