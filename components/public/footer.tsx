@@ -28,6 +28,7 @@ export async function Footer({ footerSettings }: FooterProps = {}) {
     // (the platform's own marketing pages).
     const platformName = APP_NAME;
     const brandName = tenant && tenant.id !== DEFAULT_TENANT_ID ? tenant.name : platformName;
+    const isModelingAcademy = (!tenant || tenant.id === DEFAULT_TENANT_ID) && APP_NAME.toLowerCase().includes('modeling academy')
 
     // If footerSettings is provided, render custom footer
     if (footerSettings) {
@@ -82,6 +83,32 @@ export async function Footer({ footerSettings }: FooterProps = {}) {
 
                     <div className="mt-12 pt-8 border-t border-border text-center text-sm text-muted-foreground">
                         {footerSettings.copyrightText || `\u00A9 ${new Date().getFullYear()} ${brandName}. ${t('allRightsReserved')}`}
+                    </div>
+                </div>
+            </footer>
+        )
+    }
+
+    if (isModelingAcademy) {
+        return (
+            <footer className="border-t border-white/10 bg-[#0d1713] py-12 text-white">
+                <div className="container mx-auto px-4">
+                    <div className="flex flex-wrap items-start justify-between gap-8">
+                        <div className="max-w-xl">
+                            <h3 className="text-lg font-bold">{brandName}</h3>
+                            <p className="mt-3 text-sm leading-6 text-white/55">
+                                A bilingual, competition-oriented mathematical modeling tutorial built around defensible assumptions, derivations, evidence, and decisions.
+                            </p>
+                        </div>
+                        <div className="flex flex-wrap gap-x-7 gap-y-3 text-sm text-white/65">
+                            <Link href="/#syllabus" className="hover:text-amber-300">Syllabus</Link>
+                            <Link href="/#quizzes" className="hover:text-amber-300">Quizzes</Link>
+                            <Link href="/courses/1" className="hover:text-amber-300">Course center</Link>
+                            <Link href="/auth/login" className="hover:text-amber-300">My Learning</Link>
+                        </div>
+                    </div>
+                    <div className="mt-10 border-t border-white/10 pt-6 text-xs text-white/35">
+                        &copy; {new Date().getFullYear()} {brandName}. Built for careful modeling, not black-box answers.
                     </div>
                 </div>
             </footer>

@@ -65,8 +65,31 @@ export function parseLessonMdx(source: string): MdNode | null {
  * hold the same implementation for the two renderers (widget / web app);
  * `tests/unit/mcp-lesson-mdx.test.ts` asserts they stay identical.
  */
+function normalizeDisplayMath(source: string): string {
+  let inDisplayMath = false;
+  const normalized: string[] = [];
+
+  for (let line of source.split("\n")) {
+    if (!inDisplayMath && line.startsWith("$$") && !line.slice(2).includes("$$") && line.length > 2) {
+      normalized.push("$$");
+      line = line.slice(2);
+      inDisplayMath = true;
+    }
+
+    if (inDisplayMath && line.endsWith("$$") && line.length > 2) {
+      normalized.push(line.slice(0, -2), "$$");
+      inDisplayMath = false;
+      continue;
+    }
+
+    normalized.push(line);
+  }
+
+  return normalized.join("\n").replace(/\x0c(?=rac)/g, "\\f");
+}
+
 export function inlineCodeBlockBodies(source: string): string {
-  return source.replace(
+  return normalizeDisplayMath(source).replace(
     /<CodeBlock(\s[^>]*?)?>([\s\S]*?)<\/CodeBlock>/g,
     (whole, rawAttributes: string | undefined, body: string) => {
       const attributes = rawAttributes ?? "";

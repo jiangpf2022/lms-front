@@ -168,7 +168,9 @@ async function ensureLesson(courseId: number, lesson: ManifestLesson) {
     content,
     image: lesson.cover,
     status: lesson.status,
-    is_preview: lesson.number === 1,
+    // The original GitHub Pages course was public. Keep every released chapter
+    // readable without enrollment; drafts remain locked by their status.
+    is_preview: lesson.status === 'published',
     publish_at: lesson.status === 'published' ? new Date().toISOString() : null,
   }
   if (found.data?.[0]) {

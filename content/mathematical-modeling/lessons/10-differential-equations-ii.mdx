@@ -707,7 +707,12 @@ Suppose a $45\%$ reduction is feasible. Then $\mathcal R_c=0.88$ initially, so i
 
 Now include observation. The university does not see $I(t)$ directly. It sees positive tests after delays, with incomplete testing. Let the estimated prevalence be $\hat I(t)$ from a reporting model. A trigger based on reported cases can activate several days late. Simulate the decision with that delayed estimate, not with perfect state knowledge. A policy that works only when the controller sees the invisible true state is not deployable.
 
-Parameter uncertainty must also reach the policy. Let infectious duration vary from three to six days and the uncontrolled reproduction number from $1.3$ to $2.0$, with credible correlation rather than all arbitrary combinations. A policy that keeps $I\frac{1-1/1.6}{0.8}\approx0.469.
+Parameter uncertainty must also reach the policy. Let infectious duration vary from three to six days and the uncontrolled reproduction number from $1.3$ to $2.0$, with credible correlation rather than all arbitrary combinations. A policy that keeps peak infection below capacity only at the nominal point is fragile; report the fraction of credible scenarios in which the capacity constraint is violated.
+
+For a benchmark vaccination calculation, suppose protection has efficacy $e=0.8$ and the uncontrolled reproduction number is $\mathcal R_0=1.6$. Under homogeneous mixing, the critical protected fraction is
+
+$$
+p_c=\frac{1-1/\mathcal R_0}{e}=\frac{1-1/1.6}{0.8}\approx0.469.
 $$
 
 This number is not a promise that vaccinating $46.9\%$ of students ends every outbreak. It assumes homogeneous mixing, immediate and stable protection, and accurate $\mathcal R_0$. Clustering of unvaccinated students, waning, variants, and delayed uptake change the result. The calculation is a benchmark around which scenarios should be organized.
@@ -841,7 +846,7 @@ For logistic growth $f(N)=rN(1-N/K)$, equilibria are $0$ and $K$. Since
 
 $$f'(N)=r(1-2N/K),$$
 
-$f'(0)=r>0$ makes extinction unstable for $r>0$, while $f'(K)=-r0$ and $\tau0$ and $\tau>0$, it is unstable. The discriminant $\tau^2-4\Delta$ separates real nodes from complex spirals. The borderline cases $\Delta=0$ or $\tau=0$ need nonlinear or bifurcation analysis because linearization may be inconclusive.
+$f'(0)=r>0$ makes extinction unstable for $r>0$, while $f'(K)=-r<0$ makes the carrying-capacity equilibrium stable. For a two-dimensional system, let $\tau=\operatorname{tr}(J)$ and $\Delta=\det(J)$. If $\Delta>0$ and $\tau<0$, the equilibrium is locally stable; if $\Delta<0$, it is a saddle; and if $\Delta>0$ and $\tau>0$, it is unstable. The discriminant $\tau^2-4\Delta$ separates real nodes from complex spirals. The borderline cases $\Delta=0$ or $\tau=0$ need nonlinear or bifurcation analysis because linearization may be inconclusive.
 
 Now put these symbols into a system that has a decision behind it. Consider two reservoirs of online attention: engagement with reliable information $x(t)$ and engagement with a rumor $y(t)$. Around a proposed moderation equilibrium, suppose the local Jacobian is
 

@@ -2,7 +2,7 @@ import { getTranslations } from "next-intl/server";
 import { getCurrentTenantId, getCurrentTenant } from "@/lib/supabase/tenant";
 import { createClient } from "@/lib/supabase/server";
 import { createAdminClient } from "@/lib/supabase/admin";
-import { PlatformLanding } from "@/components/public/platform-landing";
+import { ModelingAcademyLanding, type ModelingLessonSummary } from "@/components/public/modeling-academy-landing";
 import { SchoolLandingPage } from "@/components/public/school-landing-page";
 import type { Metadata } from "next";
 import { buildPageMetadata, getRequestBaseUrl } from "@/lib/seo";
@@ -39,7 +39,12 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
       })
     }
   }
-  return buildPageMetadata({ title: t('home.title'), description: t('defaultDescription'), path: '/', locale })
+  return buildPageMetadata({
+    title: 'Mathematical Modeling Tutorial',
+    description: 'A bilingual, competition-oriented course from real problems to defensible models, algorithms, evidence, quizzes, and technical writing.',
+    path: '/',
+    locale,
+  })
 }
 
 export default async function LandingPage() {
@@ -90,5 +95,40 @@ export default async function LandingPage() {
     }
   }
 
-  return <PlatformLanding />
+  const admin = createAdminClient()
+  const { data: course } = await admin
+    .from('courses')
+    .select('course_id')
+    .eq('tenant_id', DEFAULT_TENANT_ID)
+    .eq('title', 'Mathematical Modeling')
+    .eq('status', 'published')
+    .maybeSingle()
+
+  if (!course) return <ModelingAcademyLanding courseId={1} lessons={[]} />
+
+  const [{ data: lessonRows }, { data: exerciseRows }] = await Promise.all([
+    admin
+      .from('lessons')
+      .select('id, sequence, title, description, summary, status, is_preview')
+      .eq('tenant_id', DEFAULT_TENANT_ID)
+      .eq('course_id', course.course_id)
+      .order('sequence', { ascending: true }),
+    admin
+      .from('exercises')
+      .select('lesson_id')
+      .eq('tenant_id', DEFAULT_TENANT_ID)
+      .eq('course_id', course.course_id),
+  ])
+
+  const exerciseCounts = new Map<number, number>()
+  for (const row of exerciseRows ?? []) {
+    if (row.lesson_id != null) exerciseCounts.set(row.lesson_id, (exerciseCounts.get(row.lesson_id) ?? 0) + 1)
+  }
+
+  const lessons: ModelingLessonSummary[] = (lessonRows ?? []).map((lesson) => ({
+    ...lesson,
+    exerciseCount: exerciseCounts.get(lesson.id) ?? 0,
+  }))
+
+  return <ModelingAcademyLanding courseId={course.course_id} lessons={lessons} />
 }

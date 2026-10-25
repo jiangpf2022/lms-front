@@ -25,8 +25,34 @@
  * children, `**bold**` inside a snippet was parsed as markdown and the
  * asterisks were lost on the way to the `<pre>`.
  */
+function normalizeDisplayMath(source: string): string {
+  let inDisplayMath = false
+  const normalized: string[] = []
+
+  for (let line of source.split('\n')) {
+    // Some imported Hexo posts use `$$formula` and close with `formula$$`.
+    // remark-math only treats the delimiter reliably when it owns the line.
+    if (!inDisplayMath && line.startsWith('$$') && !line.slice(2).includes('$$') && line.length > 2) {
+      normalized.push('$$')
+      line = line.slice(2)
+      inDisplayMath = true
+    }
+
+    if (inDisplayMath && line.endsWith('$$') && line.length > 2) {
+      normalized.push(line.slice(0, -2), '$$')
+      inDisplayMath = false
+      continue
+    }
+
+    normalized.push(line)
+  }
+
+  // A legacy export interpreted `\f` in three `\frac` commands as a form-feed.
+  return normalized.join('\n').replace(/\x0c(?=rac)/g, '\\f')
+}
+
 export function inlineCodeBlockBodies(source: string): string {
-  return source.replace(
+  return normalizeDisplayMath(source).replace(
     /<CodeBlock(\s[^>]*?)?>([\s\S]*?)<\/CodeBlock>/g,
     (whole, rawAttributes: string | undefined, body: string) => {
       const attributes = rawAttributes ?? ''

@@ -23,6 +23,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
     const tenant = await getCurrentTenant();
 
     const isMainPlatform = !tenant || tenant.id === DEFAULT_TENANT_ID
+    const isModelingAcademy = isMainPlatform && APP_NAME.toLowerCase().includes('modeling academy')
 
     // Load branding overrides from tenant_settings. `setting_value` is jsonb, so
     // the stored shape is only a claim until it is read — anything that is not a
@@ -91,7 +92,22 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
 
                 {/* Center Links */}
                 <div className="hidden md:flex items-center space-x-8">
-                    {isMainPlatform ? (
+                    {isModelingAcademy ? (
+                        <>
+                            <Link href="/#about" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Concepts
+                            </Link>
+                            <Link href="/#levels" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Learning Path
+                            </Link>
+                            <Link href="/#syllabus" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Syllabus
+                            </Link>
+                            <Link href="/#quizzes" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Quizzes
+                            </Link>
+                        </>
+                    ) : isMainPlatform ? (
                         <>
                             <Link href="/#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 {t('features')}
@@ -145,6 +161,10 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                             {headerSettings?.ctaText && headerSettings?.ctaLink ? (
                                 <Button className="font-medium" render={<Link href={headerSettings.ctaLink} />}>
                                     {headerSettings.ctaText}
+                                </Button>
+                            ) : isModelingAcademy ? (
+                                <Button className="font-medium" render={<Link href="/courses/1" />}>
+                                    Start learning →
                                 </Button>
                             ) : isMainPlatform ? (
                                 <Button className="font-medium" render={<Link href="/create-school" />}>
