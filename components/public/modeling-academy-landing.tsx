@@ -35,6 +35,7 @@ export interface ModelingLessonSummary {
   summary: string | null
   status: string
   is_preview: boolean
+  level: number
   exerciseCount: number
 }
 
@@ -235,10 +236,13 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                   {String(lesson.sequence).padStart(2, '0')}
                 </span>
                 <div className="min-w-0">
-                  <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                    <span>{trackFor(lesson.sequence)}</span>
+                  <div className="mb-1 flex flex-wrap items-center gap-2 text-[11px] font-bold uppercase tracking-wider">
+                    <span className="text-emerald-700 dark:text-emerald-300">{trackFor(lesson.sequence)}</span>
                     <span className="text-black/25 dark:text-white/25">·</span>
-                    <span>{lesson.summary?.split('·')[0]?.trim() || 'Course topic'}</span>
+                    <span className={cn('inline-flex items-center gap-1.5', modelingLevelTextClasses(lesson.level), lesson.level === 1 && 'text-emerald-700 dark:text-emerald-300', lesson.level === 2 && 'text-amber-700 dark:text-amber-300', lesson.level === 3 && 'text-rose-700 dark:text-rose-300')}>
+                      <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full', modelingLevelDotClasses(lesson.level))} />
+                      {lesson.summary?.split('·')[0]?.trim() || `Level ${lesson.level}`}
+                    </span>
                   </div>
                   <h3 className={cn(display.className, 'text-lg font-bold sm:text-xl')}>{lesson.title}</h3>
                   {lesson.description && <p className="mt-1 line-clamp-2 text-sm leading-6 text-[#657168] dark:text-white/50">{lesson.description}</p>}
