@@ -111,7 +111,8 @@ export function ModelingQuiz({
   const allAnswered = questions.every((item) => (answers[item.id] ?? []).length > 0)
 
   return (
-    <section className="not-prose mt-12 overflow-hidden rounded-[28px] border border-amber-200/70 bg-white/90 shadow-[0_24px_80px_-40px_rgba(41,63,50,0.45)] backdrop-blur-xl dark:border-amber-300/15 dark:bg-[#101a17]/92">
+    <section className="not-prose relative mt-12 overflow-hidden rounded-[30px] border border-amber-200/70 bg-[linear-gradient(145deg,rgba(255,255,255,.96),rgba(255,251,235,.93),rgba(236,253,245,.9))] shadow-[0_28px_90px_-48px_rgba(41,63,50,0.55)] backdrop-blur-xl dark:border-amber-300/15 dark:bg-[linear-gradient(145deg,rgba(16,26,23,.96),rgba(31,27,17,.92),rgba(11,35,28,.9))]">
+      <div className="pointer-events-none absolute inset-0 opacity-35 [background-image:radial-gradient(circle_at_15%_12%,rgba(245,158,11,.16),transparent_24%),radial-gradient(circle_at_88%_86%,rgba(16,185,129,.14),transparent_28%)]" />
       <div className="border-b border-amber-200/70 bg-gradient-to-r from-amber-100/85 via-white to-emerald-50/80 px-5 py-5 dark:border-amber-300/15 dark:from-amber-300/10 dark:via-white/[0.03] dark:to-emerald-300/10 sm:px-7">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
@@ -130,7 +131,7 @@ export function ModelingQuiz({
         </div>
       </div>
 
-      <div className="space-y-7 p-5 sm:p-7">
+      <div className="relative space-y-7 p-5 sm:p-7">
         {questions.map((item, questionIndex) => {
           const selected = answers[item.id] ?? []
           const isCorrect = submitted && sameAnswers(selected, item.correct)
@@ -418,10 +419,13 @@ export function ModelingLessonReader({
         </div>
 
         {!isFinalQuiz && activeChapter ? (
-          <article className="rounded-[32px] border border-white/80 bg-white/88 p-5 shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1713]/88 sm:p-9 lg:p-12">
+          <article className="modeling-article-surface relative overflow-hidden rounded-[34px] border border-white/90 bg-[linear-gradient(150deg,rgba(255,255,255,.91),rgba(247,250,245,.86),rgba(239,247,242,.82))] p-5 shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[linear-gradient(150deg,rgba(13,23,19,.92),rgba(12,29,23,.88),rgba(15,25,31,.86))] sm:p-9 lg:p-12">
+            <div className="pointer-events-none absolute inset-0 opacity-50 [background-image:radial-gradient(circle_at_8%_0%,rgba(251,191,36,.12),transparent_24%),radial-gradient(circle_at_96%_12%,rgba(52,211,153,.12),transparent_25%),linear-gradient(rgba(28,89,63,.035)_1px,transparent_1px),linear-gradient(90deg,rgba(28,89,63,.035)_1px,transparent_1px)] [background-size:auto,auto,32px_32px,32px_32px] dark:opacity-35" />
+            <div className="relative z-10">
             <header className="mb-10 border-b border-[#dfe8e1] pb-8 dark:border-white/10">
               <div className="mb-4 flex flex-wrap items-center gap-2">
                 <span className="rounded-full bg-[#dbe8df] px-3 py-1 text-xs font-black uppercase tracking-widest text-[#315d49] dark:bg-emerald-400/10 dark:text-emerald-300">{language === 'zh' ? '核心概念' : 'Core concept'}</span>
+                <span className="rounded-full border border-sky-200/70 bg-sky-50/80 px-3 py-1 text-xs font-bold text-sky-800 dark:border-sky-300/15 dark:bg-sky-300/10 dark:text-sky-200">{language === 'zh' ? '零基础友好' : 'No prerequisites assumed'}</span>
                 <span className="rounded-full bg-amber-100 px-3 py-1 text-xs font-bold text-amber-800 dark:bg-amber-300/10 dark:text-amber-300">Unit {activeIndex + 1} of {localized.length}</span>
                 {progress.completed.includes(itemId) && <span className="rounded-full bg-emerald-100 px-3 py-1 text-xs font-black text-emerald-700 dark:bg-emerald-400/10 dark:text-emerald-300">Completed</span>}
               </div>
@@ -430,8 +434,14 @@ export function ModelingLessonReader({
                 <Clock3 className="h-4 w-4" /> {Math.max(8, Math.round(45 / Math.max(1, localized.length)) + 8)} min
               </div>
               {activeIndex === 0 && lessonDescription && <p className="mt-6 max-w-3xl text-base leading-7 text-[#526259] dark:text-white/60">{lessonDescription}</p>}
+              <div className="mt-6 rounded-2xl border border-[#d8e7dc] bg-white/55 px-4 py-3 text-sm leading-6 text-[#4d6257] shadow-sm backdrop-blur dark:border-white/10 dark:bg-white/[0.035] dark:text-white/65">
+                {language === 'zh'
+                  ? '你不需要预先认识本章的算法或符号。先跟着问题与直觉走；每个新概念都会先说明“它在解决什么”，再给定义、推导、算例与验证方法。'
+                  : 'You are not expected to know this chapter’s algorithm or notation in advance. We begin with the problem and intuition, then introduce each definition, derivation, worked calculation, and validation step.'}
+              </div>
             </header>
             <LessonContent mdx={activeChapter.mdx} videoUrl={null} embedCode={null} embedMode="sandboxed" />
+            </div>
           </article>
         ) : (
           <section className="rounded-[32px] border border-white/80 bg-white/88 p-6 text-center shadow-[0_35px_100px_-55px_rgba(30,55,42,0.6)] backdrop-blur-xl dark:border-white/10 dark:bg-[#0d1713]/88 sm:p-10">

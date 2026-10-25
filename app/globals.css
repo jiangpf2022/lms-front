@@ -325,3 +325,102 @@
   height: auto;
   border-radius: var(--radius);
 }
+
+/* Mathematical Modeling reading surface: a quiet paper-like layer with
+   hierarchy strong enough for long, equation-heavy beginner chapters. */
+.modeling-article-surface .prose {
+  color: color-mix(in oklab, var(--foreground) 90%, #315d49 10%);
+  font-size: 1.035rem;
+  line-height: 1.85;
+}
+.modeling-article-surface .prose h2 {
+  position: relative;
+  margin-top: 3.25rem;
+  padding: 1rem 1.15rem 1rem 1.35rem;
+  border: 1px solid color-mix(in oklab, #3b8a68 24%, transparent);
+  border-radius: 1.1rem;
+  background: linear-gradient(100deg, color-mix(in oklab, #dff4e8 72%, transparent), color-mix(in oklab, #fff8df 54%, transparent));
+  box-shadow: 0 18px 45px -38px rgba(20, 72, 49, 0.7);
+  color: #173e2d;
+  font-weight: 850;
+  letter-spacing: -0.025em;
+}
+.modeling-article-surface .prose h2::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0.35rem;
+  border-radius: 1rem 0 0 1rem;
+  background: linear-gradient(#f0b429, #24835e);
+}
+.modeling-article-surface .prose h3 {
+  margin-top: 2.35rem;
+  color: #245a43;
+  font-weight: 800;
+}
+.modeling-article-surface .prose h3::before {
+  content: "◆";
+  margin-right: 0.55rem;
+  color: #d49b22;
+  font-size: 0.62em;
+  vertical-align: 0.18em;
+}
+.modeling-article-surface .prose blockquote {
+  position: relative;
+  margin: 1.8rem 0;
+  border: 1px solid rgba(49, 93, 73, 0.18);
+  border-left: 0.38rem solid #2d7b5b;
+  border-radius: 0 1.15rem 1.15rem 0;
+  background: linear-gradient(110deg, rgba(235, 247, 240, 0.9), rgba(255, 249, 229, 0.72));
+  padding: 1.15rem 1.35rem;
+  color: #294e3c;
+  font-style: normal;
+  box-shadow: 0 16px 40px -36px rgba(20, 72, 49, 0.75);
+}
+.modeling-article-surface .prose .katex-display {
+  margin: 1.65rem 0;
+  overflow-x: auto;
+  border: 1px solid rgba(49, 93, 73, 0.13);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.72);
+  padding: 1rem 1.2rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8);
+}
+.modeling-article-surface .prose table {
+  overflow: hidden;
+  border: 1px solid rgba(49, 93, 73, 0.18);
+  border-radius: 1rem;
+  background: rgba(255, 255, 255, 0.7);
+  box-shadow: 0 18px 48px -42px rgba(20, 72, 49, 0.8);
+}
+.modeling-article-surface .prose th {
+  background: rgba(221, 240, 229, 0.8);
+  color: #234f3b;
+}
+.modeling-article-surface .prose img {
+  margin: 1.8rem auto;
+  border: 1px solid rgba(255, 255, 255, 0.9);
+  border-radius: 1.25rem;
+  box-shadow: 0 24px 65px -40px rgba(18, 54, 39, 0.75);
+}
+.dark .modeling-article-surface .prose h2 {
+    border-color: rgba(110, 231, 183, 0.16);
+    background: linear-gradient(100deg, rgba(16, 93, 65, 0.28), rgba(120, 88, 20, 0.18));
+    color: #e6fff4;
+}
+.dark .modeling-article-surface .prose h3 { color: #a7f3d0; }
+.dark .modeling-article-surface .prose blockquote {
+    border-color: rgba(110, 231, 183, 0.14);
+    border-left-color: #55c99a;
+    background: linear-gradient(110deg, rgba(21, 75, 55, 0.3), rgba(105, 76, 17, 0.16));
+    color: #d9f7e9;
+}
+.dark .modeling-article-surface .prose .katex-display,
+.dark .modeling-article-surface .prose table {
+    border-color: rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.035);
+}
+.dark .modeling-article-surface .prose th {
+    background: rgba(52, 211, 153, 0.1);
+    color: #d8fbea;
+}

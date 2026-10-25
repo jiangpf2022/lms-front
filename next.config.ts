@@ -23,6 +23,9 @@ function supabaseImagePatterns(): NonNullable<NonNullable<NextConfig['images']>[
 
 const nextConfig: NextConfig = {
   output: 'standalone',
+  outputFileTracingIncludes: {
+    '/*': ['./content/mathematical-modeling/**/*'],
+  },
   // Version-skew protection (#679). Rolling deploys leave browsers holding the
   // previous build's JS; without an id they keep talking to the new server and
   // a Server Action id that no longer exists 500s (LMS-FRONT-82). With one, the

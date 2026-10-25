@@ -1,5 +1,7 @@
 # Mathematical Modeling course migration
 
+All new or revised course articles must follow the beginner-first teaching and assessment contract in [`content/mathematical-modeling/AUTHORING_STANDARD.md`](../content/mathematical-modeling/AUTHORING_STANDARD.md).
+
 This fork carries the Mathematical Modeling course from the existing Hexo blog into the LMS without changing the original blog deployment.
 
 ## What is migrated

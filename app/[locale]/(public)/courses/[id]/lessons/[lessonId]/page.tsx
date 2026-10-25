@@ -9,6 +9,7 @@ import type { Metadata } from 'next'
 import { buildPageMetadata } from '@/lib/seo'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-reader'
+import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 
 export const dynamic = 'force-dynamic'
 
@@ -77,7 +78,14 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
         return linked !== null && Number(linked.price) !== 0
     })
 
-    return { course, lesson, nextPreview, isFree }
+    const localContent = await readLocalModelingLesson(lesson.sequence, course.title)
+
+    return {
+        course,
+        lesson: localContent ? { ...lesson, content: localContent } : lesson,
+        nextPreview,
+        isFree,
+    }
 })
 
 export async function generateMetadata(props: PageProps): Promise<Metadata> {
