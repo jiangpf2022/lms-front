@@ -38,6 +38,8 @@ import { Users } from 'lucide-react';
 import { isFreePreviewEnabled } from '@/lib/settings/free-preview';
 import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
+import { cn } from '@/lib/utils';
+import { modelingLevelBadgeClasses, modelingLevelDotClasses } from '@/lib/modeling/level-styles';
 
 const MODELING_DESCRIPTIONS_ZH: Record<number, string> = {
     1: '从模糊的现实问题出发，学习明确目标、系统边界、状态变量、假设、基线模型与验证证据，建立完整的建模契约。',
@@ -652,7 +654,11 @@ export default async function CourseDetailsPage(props: {
                                                     <div className="min-w-0 flex-1">
                                                         <div className="flex flex-wrap items-center gap-2">
                                                             <h3 className="text-base font-black leading-snug text-foreground sm:text-lg">{title}</h3>
-                                                            <span className="rounded-full border border-amber-300/70 bg-amber-50 px-2.5 py-1 text-[10px] font-black uppercase tracking-wider text-amber-800 dark:border-amber-300/20 dark:bg-amber-300/10 dark:text-amber-300">
+                                                            <span className={cn(
+                                                                'inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-[10px] font-black uppercase tracking-wider',
+                                                                modelingLevelBadgeClasses(modeling.level),
+                                                            )}>
+                                                                <span aria-hidden="true" className={cn('h-1.5 w-1.5 rounded-full shadow-[0_0_8px_currentColor]', modelingLevelDotClasses(modeling.level))} />
                                                                 Level {modeling.level}
                                                             </span>
                                                         </div>

@@ -15,6 +15,11 @@ import {
   Target,
 } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import {
+  modelingLevelDotClasses,
+  modelingLevelPanelClasses,
+  modelingLevelTextClasses,
+} from '@/lib/modeling/level-styles'
 
 const display = Bricolage_Grotesque({
   subsets: ['latin'],
@@ -68,16 +73,19 @@ const definitions = [
 
 const levels = [
   {
+    value: 1,
     level: 'Level 1',
     title: 'Foundations',
     body: 'For complete beginners. Build a full modeling workflow and prepare for CUMCM provincial 2/3 or MCM/ICM Honorable Mention.',
   },
   {
+    value: 2,
     level: 'Level 2',
     title: 'Advanced Methods',
     body: 'Assumes Level 1. Strengthen modeling depth, verification, and communication for CUMCM provincial 1 or MCM/ICM Meritorious.',
   },
   {
+    value: 3,
     level: 'Level 3',
     title: 'Award-Level Work',
     body: 'Assumes Levels 1–2. Develop research-grade reasoning for CUMCM national awards or MCM/ICM Outstanding/Finalist.',
@@ -185,12 +193,20 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
               <p className="mt-5 leading-7 text-white/60">Levels describe prerequisite depth and competition ambition—not a paywall or a measure of talent.</p>
             </div>
             <div className="grid gap-3">
-              {levels.map((item, index) => (
-                <article key={item.level} className="grid gap-4 rounded-3xl border border-white/12 bg-white/[.055] p-6 sm:grid-cols-[92px_180px_1fr] sm:items-center">
-                  <span className="text-sm font-bold text-amber-300">{item.level}</span>
+              {levels.map((item) => (
+                <article
+                  key={item.level}
+                  className={cn(
+                    'grid gap-4 rounded-3xl border p-6 transition-colors sm:grid-cols-[92px_180px_1fr] sm:items-center',
+                    modelingLevelPanelClasses(item.value),
+                  )}
+                >
+                  <span className={cn('inline-flex items-center gap-2 text-sm font-bold', modelingLevelTextClasses(item.value))}>
+                    <span aria-hidden="true" className={cn('h-2.5 w-2.5 rounded-full shadow-[0_0_12px_currentColor]', modelingLevelDotClasses(item.value))} />
+                    {item.level}
+                  </span>
                   <h3 className={cn(display.className, 'text-xl font-bold')}>{item.title}</h3>
                   <p className="text-sm leading-6 text-white/62">{item.body}</p>
-                  <span className="hidden">{index}</span>
                 </article>
               ))}
             </div>
