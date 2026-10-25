@@ -249,7 +249,6 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
         <div className="mt-12 grid gap-8">
           {[1, 2, 3].map((level) => {
             const levelLessons = visibleLessons.filter((lesson) => lesson.level === level)
-            if (levelLessons.length === 0) return null
 
             return (
               <section key={level} aria-labelledby={`syllabus-level-${level}`}>
@@ -281,6 +280,13 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-black/8 dark:divide-white/8">
+                      {levelLessons.length === 0 && (
+                        <tr>
+                          <td colSpan={4} className="px-5 py-5 text-center text-sm text-black/40 dark:text-white/35">
+                            {t('This level is in preparation. No articles are visible yet.', '本级别正在准备中，暂时没有可见文章。')}
+                          </td>
+                        </tr>
+                      )}
                       {levelLessons.map((lesson) => {
                         const isPublished = lesson.visibility === 'public'
                         const title = isChinese ? lesson.titleZh ?? lesson.title : lesson.title
