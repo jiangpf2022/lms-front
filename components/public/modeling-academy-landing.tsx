@@ -276,6 +276,15 @@ export function ModelingAcademyLanding({ locale, courseId, lessons }: ModelingAc
                     {t('A useful course should improve with every serious learner. We sincerely hope that participants will help maintain this community: point out unclear explanations, catch errors, suggest better examples, and leave a clearer path for the people who come later. Having five constructive suggestions adopted is therefore treated as a real contribution, not a coupon trick, and it independently qualifies for a full refund.', '一门真正有生命力的课程，应该因为每一位认真学习的人而变得更好。我们真诚希望大家一起维护这个社区：指出不清楚的解释、发现错误、提出更好的例子，也为后来学习的人留下一条更顺畅的路。因此，至少有 5 条建设性意见被采纳，本身就代表你对课程作出了真实贡献；它不是营销优惠，而是可以独立获得全额退款的条件。')}
                   </p>
                 </details>
+                <details className="group mt-3 rounded-2xl border border-emerald-900/10 bg-white/70 p-5 open:bg-emerald-50/70 dark:border-white/10 dark:bg-white/[.03] dark:open:bg-emerald-300/[.06]">
+                  <summary className="cursor-pointer list-none font-black marker:hidden">{t('What counts as constructive feedback?', '什么属于建设性意见？')}</summary>
+                  <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
+                    {t('Constructive feedback includes, but is not limited to, finding an error in an article, proposing a useful site feature, or explaining that a particular derivation, example, or paragraph is difficult to understand. Anything that helps us improve the course can count. Please describe the location, problem, and your reasoning as specifically as possible so that we can act on it rather than guess what went wrong.', '建设性意见包括但不限于：发现文章中的勘误、希望网站推出更实用的功能，或者指出某个推导、例子或段落不容易理解。只要能够帮助我们改善课程，都可以属于建设性意见。请尽可能具体地说明位置、问题与理由，让我们能够直接着手改进，而不必猜测问题究竟在哪里。')}
+                  </p>
+                  <p className="mt-3 text-sm leading-7 text-[#5d6962] dark:text-white/60">
+                    {t('We read every submission carefully, and you will be notified if your suggestion is adopted. In most cases, feedback that is sincere, specific, and not submitted merely to fill a quota will be accepted, and we will reply as quickly as we can. Please remember, however, that we are a very small team. Even when we move as fast as possible, careful review and implementation still take time.', '我们会认真阅读每一条意见；如果建议被采纳，你也会收到通知。通常情况下，只要意见是真诚、具体的，而不是随意填写或为了凑数，我们都会尽量予以通过，并尽快回复。也请理解，我们目前仍是一个很小的团队；即使会快马加鞭，认真核对、回复与实现建议仍然需要一定时间。')}
+                  </p>
+                </details>
               </div>
               <p className="mt-6 text-sm leading-6 text-[#68756d] dark:text-white/50">{t('Level 2 and Level 3 will provide deeper methods and more direct guidance. Pricing, access, and any refund policy will be explained when those levels launch.', 'Level 2 与 Level 3 将提供更深入的方法与更多针对性指导；具体价格、开放方式与退款规则会在正式推出时另行说明。')}</p>
             </div>
