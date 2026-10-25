@@ -371,21 +371,28 @@ export function ModelingLessonReader({
               <span className="rounded-full bg-white/10 px-3 py-1 text-xs font-black text-amber-300">{percent}%</span>
             </div>
           </div>
-          <div className="overflow-x-auto pb-2 [scrollbar-width:thin]">
-            <div className="flex min-w-max items-start px-2">
+          <div className="overflow-x-auto [scrollbar-width:thin]">
+            <div className="flex min-w-max items-start px-5 pb-3 pt-2 sm:px-7">
               {[...localized.map((chapter) => chapter.title), language === 'zh' ? '综合测验' : 'Final Quiz'].map((title, index) => {
                 const id = index === finalIndex ? 'final-quiz' : `chapter-${index + 1}`
                 const complete = progress.completed.includes(id)
                 const active = index === activeIndex
                 return (
                   <div key={`${id}-${title}`} className="flex items-start">
-                    <button type="button" onClick={() => navigate(index)} className="group flex w-[112px] flex-col items-center gap-2 text-center sm:w-[132px]">
-                      <span className={cn('flex h-11 w-11 items-center justify-center rounded-full border-2 text-sm font-black transition', complete && 'border-[#2366ad] bg-[#2366ad] text-white', active && 'ring-4 ring-sky-300 ring-offset-4 ring-offset-[#09131f]', !complete && !active && 'border-white/20 bg-white/5 text-white/45 group-hover:border-sky-300/60')}>
-                        {complete ? <Check className="h-5 w-5" /> : index + 1}
+                    <button
+                      type="button"
+                      onClick={(event) => {
+                        navigate(index)
+                        event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' })
+                      }}
+                      className="group flex min-h-[62px] w-[96px] scroll-mx-5 flex-col items-center gap-1.5 text-center sm:w-[112px] sm:scroll-mx-7"
+                    >
+                      <span className={cn('flex h-9 w-9 items-center justify-center rounded-full border-2 text-xs font-black transition', complete && 'border-[#2366ad] bg-[#2366ad] text-white', active && 'ring-2 ring-sky-300 ring-offset-[3px] ring-offset-[#09131f]', !complete && !active && 'border-white/20 bg-white/5 text-white/45 group-hover:border-sky-300/60')}>
+                        {complete ? <Check className="h-4 w-4" /> : index + 1}
                       </span>
-                      <span className={cn('w-full truncate text-xs font-semibold', active ? 'text-white' : 'text-white/55')}>{title}</span>
+                      <span className={cn('w-full truncate px-1 text-[11px] font-semibold sm:text-xs', active ? 'text-white' : 'text-white/55')}>{title}</span>
                     </button>
-                    {index < finalIndex && <span className={cn('mt-[21px] h-[3px] w-7 rounded-full sm:w-10', complete ? 'bg-[#2366ad]' : 'bg-white/15')} />}
+                    {index < finalIndex && <span className={cn('mt-[17px] h-[3px] w-5 rounded-full sm:w-8', complete ? 'bg-[#2366ad]' : 'bg-white/15')} />}
                   </div>
                 )
               })}
