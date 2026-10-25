@@ -42,7 +42,6 @@ function structuralMetrics(source) {
 function englishHeavyChineseLines(source) {
   const results = []
   let fenced = false
-  let displayMath = false
 
   source.split('\n').forEach((line, index) => {
     if (/^\s*```/.test(line) || /^\s*~~~/.test(line)) {
@@ -50,8 +49,10 @@ function englishHeavyChineseLines(source) {
       return
     }
     const dollarDelimiters = (line.match(/\$\$/g) ?? []).length
-    if (dollarDelimiters % 2 === 1) displayMath = !displayMath
-    if (fenced || displayMath || dollarDelimiters || /^\s*[|$\\]/.test(line) || /!\[/.test(line)) return
+    // Inspect prose line by line rather than carrying display-math state. A
+    // malformed opening delimiter must not hide all following English prose
+    // from this regression check.
+    if (fenced || dollarDelimiters || /^\s*[|$\\]/.test(line) || /!\[/.test(line)) return
 
     const inspected = line
       .replace(/https?:\/\/\S+/g, '')
