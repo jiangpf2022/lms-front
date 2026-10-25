@@ -60,7 +60,8 @@ export function PracticeCenter({ locale, lessons }: { locale: string; lessons: P
     const pool = lessons.flatMap((item) => item.chapters.flatMap((itemChapter, index) =>
       buildChapterQuiz(item.number, index, itemChapter.title)
     ))
-    return seededShuffle(pool, attempt * 7919 + randomCount).slice(0, randomCount)
+    const uniquePool = [...new Map(pool.map((question) => [question.prompt.en, question])).values()]
+    return seededShuffle(uniquePool, attempt * 7919 + randomCount).slice(0, randomCount)
   }, [attempt, chapter?.title, chapterIndex, lesson, lessons, mode, randomCount])
 
   const heading = mode === 'chapter'
