@@ -14,6 +14,7 @@ import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
 import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy'
 import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { canAccessModelingLesson, getModelingUserAccess, type ModelingAccessLevel } from '@/lib/modeling/user-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -27,7 +28,7 @@ interface PageProps {
 // published preview lesson, published course, current tenant. Read-only:
 // no completion tracking, no checkpoints, no comments, no AI task.
 // cache() dedupes the generateMetadata + page calls within a request.
-const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenantId: string, developer: boolean) => {
+const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenantId: string, developer: boolean, accessLevel: ModelingAccessLevel) => {
     if (!Number.isInteger(courseId) || !Number.isInteger(lessonId)) return null
     // A school can switch public previews off for the whole tenant (#799).
     // The anon RLS policy enforces the same rule, but this page reads through
@@ -74,6 +75,9 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
     if (isModelingCourse) {
         const visibility = modelingVisibility(lesson.sequence, lesson.status, developerSettings!)
         if (!developer && visibility !== 'public') return null
+        const manifestLesson = modelingManifest.lessons.find((item) => item.number === lesson.sequence)
+        const lessonLevel = modelingLevel(lesson.sequence, manifestLesson?.level ?? 1, developerSettings!)
+        if (!canAccessModelingLesson({ developer, accessLevel, lessonLevel, lessonSequence: lesson.sequence })) return null
     } else if (lesson.status !== 'published' || !lesson.is_preview) {
         return null
     }
@@ -81,7 +85,10 @@ const getPreviewLesson = cache(async (courseId: number, lessonId: number, tenant
     const previews = (siblings ?? []).filter((row) => {
         if (!isModelingCourse) return row.status === 'published' && row.is_preview
         const visibility = modelingVisibility(row.sequence, row.status, developerSettings!)
-        return developer ? visibility !== 'hidden' : visibility === 'public'
+        const manifestLesson = modelingManifest.lessons.find((item) => item.number === row.sequence)
+        const lessonLevel = modelingLevel(row.sequence, manifestLesson?.level ?? 1, developerSettings!)
+        return (developer ? visibility !== 'hidden' : visibility === 'public')
+            && canAccessModelingLesson({ developer, accessLevel, lessonLevel, lessonSequence: row.sequence })
     })
     const position = previews.findIndex((row) => row.id === lesson.id)
     const nextPreview = position >= 0 ? previews[position + 1] ?? null : null
@@ -105,8 +112,9 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
     const { id, lessonId, locale } = await props.params
     const tenantId = await getCurrentTenantId()
     const user = await getSessionUser()
+    const access = await getModelingUserAccess(user?.id)
     const [data, t] = await Promise.all([
-        getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user)),
+        getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user), access.level),
         getTranslations('coursePublicDetails'),
     ])
     if (!data) notFound()
@@ -127,8 +135,8 @@ export async function generateMetadata(props: PageProps): Promise<Metadata> {
 export default async function PublicLessonPreviewPage(props: PageProps) {
     const { id, lessonId, locale } = await props.params
     const [tenantId, user] = await Promise.all([getCurrentTenantId(), getSessionUser()])
-
-    const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user))
+    const access = await getModelingUserAccess(user?.id)
+    const data = await getPreviewLesson(Number(id), Number(lessonId), tenantId, isModelingDeveloper(user), access.level)
     if (!data) notFound()
     const { course, lesson, nextPreview } = data
     const sourceChapters = extractLessonChapters(lesson.content, lesson.title)

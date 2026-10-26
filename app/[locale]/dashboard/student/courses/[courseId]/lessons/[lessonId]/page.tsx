@@ -36,12 +36,15 @@ import { LessonProgressLine } from '@/components/student/lesson-progress-line'
 import { LessonScrollArea } from '@/components/student/lesson-scroll-area'
 import { AnimatedSection } from '@/components/student/animated-section'
 import { getTranslations } from 'next-intl/server'
-import {getCurrentTenantId, getCurrentUserId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { requireCourseAccess, requireRowInCourse } from '@/lib/services/course-access-guard'
 import { loadLessonCheckpoints } from '@/lib/checkpoints/load'
 import { CheckpointsProvider } from '@/components/lesson/checkpoints/checkpoints-provider'
 import { parseStructuredRequirements, structuredRequirementsSummary } from '@/lib/ai/lesson-requirements'
 import { isCommunityEnabled } from '@/lib/community/access'
+import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility, type ModelingDeveloperSettings } from '@/lib/modeling/developer-settings'
+import { canAccessModelingLesson, getModelingUserAccess, type ModelingAccessLevel } from '@/lib/modeling/user-access'
 
 interface PageProps {
   params: Promise<{ courseId: string; lessonId: string }>
@@ -53,7 +56,8 @@ export default async function LessonPage({ params }: PageProps) {
   const t = await getTranslations('components.lessons')
   const tenantId = await getCurrentTenantId()
 
-  const userId = await getCurrentUserId()
+  const user = await getSessionUser()
+  const userId = user?.id
   if (!userId) {
     redirect('/auth/login')
   }
@@ -62,6 +66,39 @@ export default async function LessonPage({ params }: PageProps) {
   // student never causes the lesson body to be read at all.
   const numericCourseId = parseInt(courseId)
   await requireCourseAccess(supabase, userId, numericCourseId)
+
+  // The normal LMS entitlement grants access to the course shell, but the
+  // modeling academy has a second, cumulative Level 0–3 content entitlement.
+  // Enforce it before selecting the lesson body so a direct dashboard URL
+  // cannot bypass the public reader's server-side gate.
+  const { data: lessonGate } = await supabase
+    .from('lessons')
+    .select('id, sequence, status, course_id, courses(title)')
+    .eq('id', parseInt(lessonId))
+    .eq('course_id', numericCourseId)
+    .eq('tenant_id', tenantId)
+    .maybeSingle()
+  if (!lessonGate) notFound()
+
+  const gateCourse = lessonGate.courses as unknown as { title: string } | null
+  let modelingGate: { developer: boolean; accessLevel: ModelingAccessLevel; settings: ModelingDeveloperSettings } | null = null
+  if (gateCourse?.title === modelingManifest.course.title) {
+    const [settings, access] = await Promise.all([
+      getModelingDeveloperSettings(),
+      getModelingUserAccess(userId),
+    ])
+    const developer = isModelingDeveloper(user)
+    const manifestLesson = modelingManifest.lessons.find((item) => item.number === lessonGate.sequence)
+    const lessonLevel = modelingLevel(lessonGate.sequence, manifestLesson?.level ?? 1, settings)
+    const visibility = modelingVisibility(lessonGate.sequence, lessonGate.status, settings)
+    if ((!developer && visibility !== 'public') || !canAccessModelingLesson({
+      developer,
+      accessLevel: access.level,
+      lessonLevel,
+      lessonSequence: lessonGate.sequence,
+    })) notFound()
+    modelingGate = { developer, accessLevel: access.level, settings }
+  }
 
   // #868: the sidebar links to the course feed when the plan includes it.
   // Started now, awaited below; it never rejects.
@@ -226,7 +263,7 @@ export default async function LessonPage({ params }: PageProps) {
       .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
   })()
 
-  const [{ data: allLessons }, { data: completions }, { data: lessonResources }, checkpoints] = await Promise.all([
+  const [{ data: allLessonRows }, { data: completions }, { data: lessonResources }, checkpoints] = await Promise.all([
     supabase
       .from('lessons')
       .select('id, title, sequence')
@@ -246,6 +283,18 @@ export default async function LessonPage({ params }: PageProps) {
       .order('display_order', { ascending: true }),
     loadLessonCheckpoints(supabase, { tenantId, lessonId: lesson.id, userId }),
   ])
+  const allLessons = (allLessonRows ?? []).filter((row) => {
+    if (!modelingGate) return true
+    const manifestLesson = modelingManifest.lessons.find((item) => item.number === row.sequence)
+    const lessonLevel = modelingLevel(row.sequence, manifestLesson?.level ?? 1, modelingGate.settings)
+    return modelingVisibility(row.sequence, 'published', modelingGate.settings) === 'public'
+      && canAccessModelingLesson({
+        developer: modelingGate.developer,
+        accessLevel: modelingGate.accessLevel,
+        lessonLevel,
+        lessonSequence: row.sequence,
+      })
+  })
   const communityHref = (await communityEnabled)
     ? `/dashboard/student/courses/${courseId}/community`
     : undefined

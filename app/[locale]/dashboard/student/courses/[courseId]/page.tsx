@@ -17,12 +17,15 @@ const AristotleStudySection = dynamic(
   }
 )
 import { getTranslations } from 'next-intl/server'
-import {getCurrentTenantId, getCurrentUserId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { getTenantAiEnabled } from '@/lib/ai/ui-flags'
 import { requireCourseAccess } from '@/lib/services/course-access-guard'
 import { getCheckpointLinkedExerciseIds } from '@/lib/checkpoints/load'
 import { loadCourseCommunityEntry } from '@/lib/community/access'
 import { CourseCommunityEntry } from '@/components/community/course-community-entry'
+import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { canAccessModelingLesson, getModelingUserAccess } from '@/lib/modeling/user-access'
 
 interface PageProps {
   params: Promise<{ courseId: string }>
@@ -35,7 +38,8 @@ export default async function CourseOverviewPage({ params }: PageProps) {
   const tenantId = await getCurrentTenantId()
   const numericCourseId = parseInt(courseId)
 
-  const userId = await getCurrentUserId()
+  const user = await getSessionUser()
+  const userId = user?.id
   if (!userId) {
     redirect('/auth/login')
   }
@@ -62,7 +66,7 @@ export default async function CourseOverviewPage({ params }: PageProps) {
   // Fetch all remaining data in parallel
   const [
     { data: authorData },
-    { data: lessons },
+    { data: lessonRows },
     { data: completions },
     { data: exams },
     { data: exercises },
@@ -120,6 +124,22 @@ export default async function CourseOverviewPage({ params }: PageProps) {
     // course feed ever gets a link to it.
     loadCourseCommunityEntry({ tenantId, viewerId: userId, courseId: numericCourseId }),
   ])
+
+  const lessons = course.title === modelingManifest.course.title
+    ? await (async () => {
+        const [settings, access] = await Promise.all([
+          getModelingDeveloperSettings(),
+          getModelingUserAccess(userId),
+        ])
+        const developer = isModelingDeveloper(user)
+        return (lessonRows ?? []).filter((lesson) => {
+          const manifestLesson = modelingManifest.lessons.find((item) => item.number === lesson.sequence)
+          const level = modelingLevel(lesson.sequence, manifestLesson?.level ?? 1, settings)
+          return (developer || modelingVisibility(lesson.sequence, 'published', settings) === 'public')
+            && canAccessModelingLesson({ developer, accessLevel: access.level, lessonLevel: level, lessonSequence: lesson.sequence })
+        })
+      })()
+    : lessonRows
 
   const authorProfile = authorData
   const completedLessonIds = new Set(completions?.map((c) => c.lesson_id) || [])

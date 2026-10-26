@@ -22,7 +22,7 @@ import { CourseCover } from '@/components/public/course-cover';
 import { CourseTrailer } from '@/components/public/course-trailer';
 import { Card, CardContent } from "@/components/ui/card";
 import { getTranslations } from 'next-intl/server';
-import { getCurrentTenantId, getCurrentUserId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { hasCourseAccess } from '@/lib/services/course-access'
 import type { Metadata } from 'next';
 import { buildPageMetadata, getSeoContext } from '@/lib/seo';
@@ -40,7 +40,8 @@ import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
 import { cn } from '@/lib/utils';
 import { modelingLevelBadgeClasses, modelingLevelDotClasses, modelingLevelIconClasses, modelingLevelRowClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles';
-import { getModelingDeveloperSettings, modelingLevel, modelingVisibility, type ModelingVisibility } from '@/lib/modeling/developer-settings';
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility, type ModelingVisibility } from '@/lib/modeling/developer-settings';
+import { canAccessModelingLesson, getModelingUserAccess } from '@/lib/modeling/user-access';
 import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy';
 
 export const dynamic = 'force-dynamic';
@@ -104,14 +105,15 @@ export default async function CourseDetailsPage(props: {
     params: Promise<{ id: string; locale: string }>;
     searchParams: Promise<{ enroll?: string }>;
 }) {
-    const [params, searchParams, t, supabase, userId, tenantId] = await Promise.all([
+    const [params, searchParams, t, supabase, user, tenantId] = await Promise.all([
         props.params,
         props.searchParams,
         getTranslations('coursePublicDetails'),
         createClient(),
-        getCurrentUserId(),
+        getSessionUser(),
         getCurrentTenantId(),
     ]);
+    const userId = user?.id ?? null;
     const courseId = Number(params.id);
     // Fetch course with lessons and category
     const { data: course, error } = await supabase
@@ -212,7 +214,7 @@ export default async function CourseDetailsPage(props: {
         })()
         : Promise.resolve(false);
 
-    const [{ data: author }, hasAccess, { data: productCourses }, planCoversCourse, socialProof, { data: lessonRows }, seo, freePreviewEnabled, { data: exerciseRows }, { data: examRows }, { data: resourceRows }, developerSettings] = await Promise.all([
+    const [{ data: author }, hasAccess, { data: productCourses }, planCoversCourse, socialProof, { data: lessonRows }, seo, freePreviewEnabled, { data: exerciseRows }, { data: examRows }, { data: resourceRows }, developerSettings, modelingAccess] = await Promise.all([
         authorPromise,
         accessPromise,
         productCoursesPromise,
@@ -225,6 +227,7 @@ export default async function CourseDetailsPage(props: {
         examsPromise,
         resourcesPromise,
         getModelingDeveloperSettings(),
+        getModelingUserAccess(userId),
     ]);
 
     const { averageRating, reviewCount, studentCount, recentReviews } = socialProof;
@@ -326,6 +329,7 @@ export default async function CourseDetailsPage(props: {
         formattedDate && { key: 'published', icon: Calendar, label: t('hero.published', { date: formattedDate }) },
     ].filter(Boolean) as { key: string; icon: typeof Users; label: string }[];
     const isModelingCourse = course.title === 'Mathematical Modeling';
+    const modelingDeveloper = isModelingDeveloper(user);
     const isChinese = params.locale.toLowerCase().startsWith('zh');
     const modelingMeta = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, {
         ...lesson,
@@ -638,6 +642,12 @@ export default async function CourseDetailsPage(props: {
                                             : modeling.excerpt;
                                         const articleHref = localized(`/courses/${params.id}/lessons/${lesson.id}`);
                                         const quizHref = `${articleHref}?chapter=final`;
+                                        const canRead = freePreviewEnabled && lesson.visibility === 'public' && canAccessModelingLesson({
+                                            developer: modelingDeveloper,
+                                            accessLevel: modelingAccess.level,
+                                            lessonLevel: modeling.level,
+                                            lessonSequence: lesson.sequence,
+                                        });
                                         return (
                                             <li key={lesson.id} className={cn('p-4 sm:p-5', modelingLevelRowClasses(modeling.level))}>
                                                 <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
@@ -661,7 +671,7 @@ export default async function CourseDetailsPage(props: {
                                                         </p>
                                                     </div>
                                                     <div className="flex shrink-0 flex-wrap gap-2 sm:w-40 sm:flex-col">
-                                                        {isPreview ? (
+                                                        {canRead ? (
                                                             <>
                                                                 <Link href={articleHref} prefetch className="inline-flex h-10 flex-1 items-center justify-center rounded-xl bg-[#163f2c] px-4 text-sm font-black text-white transition hover:bg-[#0f3021]">
                                                                     <BookOpen className="mr-2 h-4 w-4" /> {isChinese ? '阅读课程' : 'Read blog'}
@@ -676,7 +686,7 @@ export default async function CourseDetailsPage(props: {
                                                             </span>
                                                         ) : (
                                                             <span className="inline-flex h-10 items-center justify-center rounded-xl border border-border bg-muted px-4 text-sm font-bold text-muted-foreground">
-                                                                <Lock className="mr-2 h-4 w-4" /> {isChinese ? '尚未开放' : 'Locked'}
+                                                                <Lock className="mr-2 h-4 w-4" /> {isChinese ? `需要 Level ${modeling.level}` : `Requires Level ${modeling.level}`}
                                                             </span>
                                                         )}
                                                     </div>

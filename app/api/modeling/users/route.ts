@@ -2,20 +2,9 @@ import { NextResponse } from 'next/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { isModelingDeveloper } from '@/lib/modeling/developer-settings'
+import { MODELING_USER_ACCESS_KEY, normalizeModelingUserAccess } from '@/lib/modeling/user-access'
 
-const ACCESS_KEY = 'modeling-user-access-v1'
 const LEARNING_KEY = 'modeling-learning-center-v1'
-
-function accessRecord(value: unknown) {
-  if (!value || typeof value !== 'object' || !('level' in value)) return { storedLevel: 0 as const, level: 0 as const, expiresAt: null, expired: false }
-  const raw = value as { level?: unknown; expiresAt?: unknown }
-  const level = Number(raw.level)
-  const normalizedLevel: 0 | 1 | 2 | 3 = level === 1 || level === 2 || level === 3 ? level : 0
-  const parsedExpiry = typeof raw.expiresAt === 'string' ? new Date(raw.expiresAt) : null
-  const expiresAt = parsedExpiry && !Number.isNaN(parsedExpiry.getTime()) ? parsedExpiry.toISOString() : null
-  const expired = Boolean(expiresAt && new Date(expiresAt) <= new Date())
-  return { storedLevel: expired ? 0 as const : normalizedLevel, level: expired ? 0 as const : normalizedLevel, expiresAt, expired }
-}
 
 async function requireDeveloper() {
   const supabase = await createClient()
@@ -37,11 +26,11 @@ export async function GET() {
   }
   const ids = accounts.map((account) => account.id)
   const [{ data: accessRows, error: accessError }, { data: learningRows, error: learningError }] = await Promise.all([
-    ids.length ? admin.from('user_ui_state').select('user_id,value,updated_at').eq('key', ACCESS_KEY).in('user_id', ids) : Promise.resolve({ data: [], error: null }),
+    ids.length ? admin.from('user_ui_state').select('user_id,value,updated_at').eq('key', MODELING_USER_ACCESS_KEY).in('user_id', ids) : Promise.resolve({ data: [], error: null }),
     ids.length ? admin.from('user_ui_state').select('user_id,value,updated_at').eq('key', LEARNING_KEY).in('user_id', ids) : Promise.resolve({ data: [], error: null }),
   ])
   if (accessError || learningError) return NextResponse.json({ error: accessError?.message ?? learningError?.message }, { status: 500 })
-  const accessByUser = new Map((accessRows ?? []).map((row) => [row.user_id, { ...accessRecord(row.value), updatedAt: row.updated_at }]))
+  const accessByUser = new Map((accessRows ?? []).map((row) => [row.user_id, { ...normalizeModelingUserAccess(row.value), updatedAt: row.updated_at }]))
   const learningByUser = new Map((learningRows ?? []).map((row) => [row.user_id, { value: row.value, updatedAt: row.updated_at }]))
   return NextResponse.json({
     items: accounts.map((account) => ({
@@ -80,7 +69,7 @@ export async function PATCH(request: Request) {
   const effectiveLevel = expired ? 0 : level
   const { error } = await admin.from('user_ui_state').upsert({
     user_id: userId,
-    key: ACCESS_KEY,
+    key: MODELING_USER_ACCESS_KEY,
     value: { level: effectiveLevel, expiresAt, updatedAt: now, updatedBy: user.id },
     updated_at: now,
   }, { onConflict: 'user_id,key' })

@@ -1,10 +1,11 @@
 import { createAdminClient } from '@/lib/supabase/admin'
-import { getCurrentTenantId, getCurrentUserId } from '@/lib/supabase/tenant'
+import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { ModelingLearningCenter } from '@/components/modeling/modeling-learning-center'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 import type { Metadata } from 'next'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
-import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { canAccessModelingLesson, getModelingUserAccess } from '@/lib/modeling/user-access'
 
 export const dynamic = 'force-dynamic'
 
@@ -21,7 +22,8 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 
 export default async function LearningCenterPage({ params }: { params: Promise<{ locale: string }> }) {
   const { locale } = await params
-  const [tenantId, userId] = await Promise.all([getCurrentTenantId(), getCurrentUserId()])
+  const [tenantId, user] = await Promise.all([getCurrentTenantId(), getSessionUser()])
+  const userId = user?.id ?? null
   const admin = createAdminClient()
   const { data: course } = await admin
     .from('courses')
@@ -31,21 +33,27 @@ export default async function LearningCenterPage({ params }: { params: Promise<{
     .eq('status', 'published')
     .single()
 
-  const [{ data: lessons }, developerSettings] = await Promise.all([course
+  const [{ data: lessons }, developerSettings, access] = await Promise.all([course
     ? await admin
         .from('lessons')
         .select('id, sequence, title, content, status')
         .eq('tenant_id', tenantId)
         .eq('course_id', course.course_id)
         .order('sequence', { ascending: true })
-    : { data: [] }, getModelingDeveloperSettings()])
+    : { data: [] }, getModelingDeveloperSettings(), getModelingUserAccess(userId)])
 
-  const titleZh = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, lesson.titleZh]))
-  const lessonSummaries = (lessons ?? []).filter((lesson) => modelingVisibility(lesson.sequence, lesson.status, developerSettings) === 'public').map((lesson) => ({
+  const manifestBySequence = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, lesson]))
+  const developer = isModelingDeveloper(user)
+  const lessonSummaries = (lessons ?? []).filter((lesson) => {
+    const manifestLesson = manifestBySequence.get(lesson.sequence)
+    const level = modelingLevel(lesson.sequence, manifestLesson?.level ?? 1, developerSettings)
+    return modelingVisibility(lesson.sequence, lesson.status, developerSettings) === 'public'
+      && canAccessModelingLesson({ developer, accessLevel: access.level, lessonLevel: level, lessonSequence: lesson.sequence })
+  }).map((lesson) => ({
     id: lesson.id,
     sequence: lesson.sequence,
     title: lesson.title,
-    titleZh: titleZh.get(lesson.sequence) ?? lesson.title,
+    titleZh: manifestBySequence.get(lesson.sequence)?.titleZh ?? lesson.title,
     totalUnits: extractLessonChapters(lesson.content ?? '', lesson.title).en.length + 1,
   }))
 
