@@ -13,7 +13,7 @@ import { ModelingLessonReader } from '@/components/modeling/modeling-lesson-read
 import { readLocalModelingLesson } from '@/lib/modeling/local-content'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
 import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy'
-import { getModelingDeveloperSettings, isModelingDeveloper, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { getModelingDeveloperSettings, isModelingDeveloper, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -133,7 +133,8 @@ export default async function PublicLessonPreviewPage(props: PageProps) {
     const { course, lesson, nextPreview } = data
     const sourceChapters = extractLessonChapters(lesson.content, lesson.title)
     const modelingLesson = modelingManifest.lessons.find((item) => item.number === lesson.sequence)
-    const lessonLevel = modelingLesson?.level ?? 1
+    const developerSettings = await getModelingDeveloperSettings()
+    const lessonLevel = modelingLevel(lesson.sequence, modelingLesson?.level ?? 1, developerSettings)
     const serialize = async (
         chapter: (typeof sourceChapters.en)[number],
         chapterIndex: number,

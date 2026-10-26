@@ -7,6 +7,7 @@ export type ModelingVisibility = 'public' | 'coming-soon' | 'hidden'
 
 export type ModelingDeveloperSettings = {
   courseStates: Record<string, ModelingVisibility>
+  courseLevels: Record<string, 1 | 2 | 3>
 }
 
 export const MODELING_DEVELOPER_STATE_KEY = 'modeling-developer-center-v1'
@@ -39,7 +40,18 @@ export function normalizeModelingSettings(value: unknown): ModelingDeveloperSett
       }
     }
   }
-  return { courseStates: states }
+  const rawLevels = value && typeof value === 'object' && 'courseLevels' in value
+    ? (value as { courseLevels?: unknown }).courseLevels
+    : null
+  const levels: Record<string, 1 | 2 | 3> = {}
+  if (rawLevels && typeof rawLevels === 'object') {
+    for (const [key, level] of Object.entries(rawLevels)) {
+      if (/^\d+$/.test(key) && (level === 1 || level === 2 || level === 3)) {
+        levels[key] = level
+      }
+    }
+  }
+  return { courseStates: states, courseLevels: levels }
 }
 
 export async function getModelingDeveloperSettings() {
@@ -60,4 +72,13 @@ export function modelingVisibility(
   settings: ModelingDeveloperSettings,
 ): ModelingVisibility {
   return settings.courseStates[String(sequence)] ?? (databaseStatus === 'published' ? 'public' : 'hidden')
+}
+
+export function modelingLevel(
+  sequence: number,
+  defaultLevel: number,
+  settings: ModelingDeveloperSettings,
+): 1 | 2 | 3 {
+  const fallback = defaultLevel === 2 || defaultLevel === 3 ? defaultLevel : 1
+  return settings.courseLevels[String(sequence)] ?? fallback
 }

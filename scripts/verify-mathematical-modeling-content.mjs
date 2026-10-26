@@ -60,7 +60,30 @@ function englishHeavyChineseLines(source) {
       .replace(/\$(?!\$)[^$]+\$/g, '')
     const latin = count(inspected, /[A-Za-z]/g)
     const han = count(inspected, /\p{Script=Han}/gu)
-    if (latin > 100) results.push(index + 1)
+    if (latin > 70 && han < 20) results.push(index + 1)
+  })
+
+  return results
+}
+
+function chineseHeavyEnglishLines(source) {
+  const results = []
+  let fenced = false
+
+  source.split('\n').forEach((line, index) => {
+    if (/^\s*```/.test(line) || /^\s*~~~/.test(line)) {
+      fenced = !fenced
+      return
+    }
+    if (fenced || /^\s*[|$\\]/.test(line) || /!\[/.test(line)) return
+
+    const inspected = line
+      .replace(/https?:\/\/\S+/g, '')
+      .replace(/`[^`]+`/g, '')
+      .replace(/\$(?!\$)[^$]+\$/g, '')
+    const latin = count(inspected, /[A-Za-z]/g)
+    const han = count(inspected, /\p{Script=Han}/gu)
+    if (han > 6 && latin > 10) results.push(index + 1)
   })
 
   return results
@@ -79,31 +102,51 @@ for (const lesson of manifest.lessons) {
   if (/ZXQKEEP|ZXQSEP|<<<MM_/.test(source)) {
     failures.push(`${lesson.contentFile}: temporary translation marker remains`)
   }
+  if (count(source, /\$\$/g) % 2 !== 0) failures.push(`${lesson.contentFile}: unbalanced display-math dollar delimiters`)
+  if (count(source, /\\\[/g) !== count(source, /\\\]/g)) failures.push(`${lesson.contentFile}: unbalanced display-math bracket delimiters`)
+  if (count(source, /\*\*/g) % 2 !== 0) failures.push(`${lesson.contentFile}: unbalanced bold delimiters`)
+
+  const english = languagePanel(source, 'en')
+  const chinese = languagePanel(source, 'zh')
+  if (/VisualEvidenceGallery[^>]+language=["']zh["']/.test(english)) {
+    failures.push(`${lesson.contentFile}: Chinese gallery is mounted inside the English panel`)
+  }
+  if (/VisualEvidenceGallery[^>]+language=["']en["']/.test(chinese)) {
+    failures.push(`${lesson.contentFile}: English gallery is mounted inside the Chinese panel`)
+  }
+  if (english && chinese) {
+    const englishMetrics = structuralMetrics(english)
+    const chineseMetrics = structuralMetrics(chinese)
+    for (const key of ['levelTwoHeadings', 'levelThreeHeadings', 'images', 'callouts', 'tableRows']) {
+      if (englishMetrics[key] !== chineseMetrics[key]) {
+        failures.push(
+          `${lesson.contentFile}: bilingual ${key} mismatch (${englishMetrics[key]} English, ${chineseMetrics[key]} Chinese)`
+        )
+      }
+    }
+    for (const key of ['displayDollarDelimiters', 'displayBracketDelimiters']) {
+      if (englishMetrics[key] && chineseMetrics[key] / englishMetrics[key] < 0.5) {
+        failures.push(
+          `${lesson.contentFile}: Chinese ${key} coverage is only ${(100 * chineseMetrics[key] / englishMetrics[key]).toFixed(1)}% of English`
+        )
+      }
+    }
+    if (chinese.length / english.length < 0.25) {
+      failures.push(`${lesson.contentFile}: Chinese panel is still only ${(100 * chinese.length / english.length).toFixed(1)}% of English length`)
+    }
+    const untranslated = englishHeavyChineseLines(chinese)
+    if (untranslated.length) {
+      failures.push(`${lesson.contentFile}: likely untranslated Chinese-panel lines ${untranslated.slice(0, 8).join(', ')}`)
+    }
+    const mistranslated = chineseHeavyEnglishLines(english)
+    if (mistranslated.length) {
+      failures.push(`${lesson.contentFile}: likely Chinese text inside English-panel lines ${mistranslated.slice(0, 8).join(', ')}`)
+    }
+  }
   if (lesson.status === 'published') {
-    const english = languagePanel(source, 'en')
-    const chinese = languagePanel(source, 'zh')
     if (!english) failures.push(`${lesson.contentFile}: published lesson has no English panel`)
     if (!chinese) failures.push(`${lesson.contentFile}: published lesson has no Chinese panel`)
     if (!lesson.hasChinese) failures.push(`${lesson.contentFile}: manifest does not mark the published lesson as bilingual`)
-
-    if (english && chinese) {
-      const englishMetrics = structuralMetrics(english)
-      const chineseMetrics = structuralMetrics(chinese)
-      for (const key of Object.keys(englishMetrics)) {
-        if (englishMetrics[key] !== chineseMetrics[key]) {
-          failures.push(
-            `${lesson.contentFile}: bilingual ${key} mismatch (${englishMetrics[key]} English, ${chineseMetrics[key]} Chinese)`
-          )
-        }
-      }
-      if (chinese.length / english.length < 0.25) {
-        failures.push(`${lesson.contentFile}: Chinese panel is still only ${(100 * chinese.length / english.length).toFixed(1)}% of English length`)
-      }
-      const untranslated = englishHeavyChineseLines(chinese)
-      if (untranslated.length) {
-        failures.push(`${lesson.contentFile}: likely untranslated Chinese-panel lines ${untranslated.slice(0, 8).join(', ')}`)
-      }
-    }
   }
   for (const match of source.matchAll(/!\[[^\]]*\]\((\/[^)]+)\)/g)) {
     const assetPath = path.join(publicRoot, match[1])

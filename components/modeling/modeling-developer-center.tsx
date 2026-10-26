@@ -37,6 +37,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
   const isChinese = locale.toLowerCase().startsWith('zh')
   const t = (en: string, zh: string) => isChinese ? zh : en
   const [states, setStates] = useState<Record<string, ModelingVisibility>>({})
+  const [levels, setLevels] = useState<Record<string, 1 | 2 | 3>>({})
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
@@ -50,8 +51,9 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
       fetch('/api/modeling/feedback', { cache: 'no-store' }),
     ])
     if (settingsResponse.ok) {
-      const value = await settingsResponse.json() as { courseStates?: Record<string, ModelingVisibility> }
+      const value = await settingsResponse.json() as { courseStates?: Record<string, ModelingVisibility>; courseLevels?: Record<string, 1 | 2 | 3> }
       setStates(value.courseStates ?? {})
+      setLevels(value.courseLevels ?? {})
     }
     if (feedbackResponse.ok) {
       const value = await feedbackResponse.json() as { items?: Feedback[] }
@@ -66,22 +68,31 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
     states[String(lesson.sequence)] ?? (lesson.databaseStatus === 'published' ? 'public' : 'hidden'),
   ])) as Record<string, ModelingVisibility>, [lessons, states])
 
+  const resolvedLevels = useMemo(() => Object.fromEntries(lessons.map((lesson) => [
+    String(lesson.sequence),
+    levels[String(lesson.sequence)] ?? lesson.level,
+  ])) as Record<string, 1 | 2 | 3>, [lessons, levels])
+
   const sortedLessons = useMemo(() => [...lessons].sort((left, right) => {
     const leftValue = sortKey === 'visibility'
       ? resolvedStates[String(left.sequence)]
       : sortKey === 'title'
         ? (isChinese ? left.titleZh : left.title)
-        : left[sortKey]
+        : sortKey === 'level'
+          ? resolvedLevels[String(left.sequence)]
+          : left.sequence
     const rightValue = sortKey === 'visibility'
       ? resolvedStates[String(right.sequence)]
       : sortKey === 'title'
         ? (isChinese ? right.titleZh : right.title)
-        : right[sortKey]
+        : sortKey === 'level'
+          ? resolvedLevels[String(right.sequence)]
+          : right.sequence
     const result = typeof leftValue === 'number' && typeof rightValue === 'number'
       ? leftValue - rightValue
       : String(leftValue).localeCompare(String(rightValue), isChinese ? 'zh-CN' : 'en-US')
     return sortDirection === 'asc' ? result : -result
-  }), [isChinese, lessons, resolvedStates, sortDirection, sortKey])
+  }), [isChinese, lessons, resolvedLevels, resolvedStates, sortDirection, sortKey])
 
   function changeSort(nextKey: typeof sortKey) {
     if (sortKey === nextKey) setSortDirection((value) => value === 'asc' ? 'desc' : 'asc')
@@ -97,7 +108,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
     const response = await fetch('/api/modeling/developer', {
       method: 'PUT',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ courseStates: resolvedStates }),
+      body: JSON.stringify({ courseStates: resolvedStates, courseLevels: resolvedLevels }),
     })
     setSaving(false)
     setSaved(response.ok)
@@ -157,12 +168,13 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
                 <tbody className="divide-y divide-border">
                   {sortedLessons.map((lesson) => {
                     const selected = resolvedStates[String(lesson.sequence)]
+                    const selectedLevel = resolvedLevels[String(lesson.sequence)]
                     const selectedOption = visibilityOptions.find((option) => option.value === selected) ?? visibilityOptions[2]
                     const SelectedIcon = selectedOption.icon
                     return <tr key={lesson.sequence} className="transition hover:bg-[#f5f8f5] dark:hover:bg-white/[0.025]">
                       <td className="whitespace-nowrap px-4 py-3 font-mono text-xs font-black text-muted-foreground">{String(lesson.sequence).padStart(2, '0')}</td>
                       <td className="px-4 py-3"><div className="max-w-xl font-bold">{isChinese ? lesson.titleZh : lesson.title}</div></td>
-                      <td className="whitespace-nowrap px-4 py-3"><span className={cn('rounded-full px-2.5 py-1 text-[10px] font-black', lesson.level === 1 ? 'bg-emerald-100 text-emerald-800' : lesson.level === 2 ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800')}>{isChinese ? `级别 ${lesson.level}` : `Level ${lesson.level}`}</span></td>
+                      <td className="whitespace-nowrap px-4 py-3"><label className={cn('inline-flex items-center rounded-lg border px-2.5 py-1.5', selectedLevel === 1 ? 'border-emerald-300 bg-emerald-50 text-emerald-800' : selectedLevel === 2 ? 'border-amber-300 bg-amber-50 text-amber-800' : 'border-rose-300 bg-rose-50 text-rose-800')}><select aria-label={t(`Level for ${lesson.title}`, `${lesson.titleZh} 的课程级别`)} value={selectedLevel} onChange={(event) => { setLevels((current) => ({ ...current, [String(lesson.sequence)]: Number(event.target.value) as 1 | 2 | 3 })); setSaved(false) }} className="bg-transparent text-xs font-black outline-none"><option value={1}>{t('Level 1', '级别 1')}</option><option value={2}>{t('Level 2', '级别 2')}</option><option value={3}>{t('Level 3', '级别 3')}</option></select></label></td>
                       <td className="px-4 py-3"><label className={cn('inline-flex items-center gap-2 rounded-lg border px-2.5 py-1.5', selectedOption.classes)}><SelectedIcon className="h-3.5 w-3.5" /><select aria-label={t(`Visibility for ${lesson.title}`, `${lesson.titleZh} 的公开状态`)} value={selected} onChange={(event) => { setStates((current) => ({ ...current, [String(lesson.sequence)]: event.target.value as ModelingVisibility })); setSaved(false) }} className="bg-transparent text-xs font-black outline-none"><option value="public">{t('Public', '完全公开')}</option><option value="coming-soon">{t('Coming soon', '准备公开')}</option><option value="hidden">{t('Hidden', '完全隐藏')}</option></select></label></td>
                       <td className="whitespace-nowrap px-4 py-3 text-right"><Link href={`/${locale}/courses/1/lessons/${lesson.id}`} className="rounded-full border border-border px-3 py-1.5 text-xs font-black hover:bg-muted">{t('Preview', '预览')}</Link></td>
                     </tr>

@@ -40,7 +40,7 @@ import { lessonThumbnail } from '@/lib/lessons/video-thumbnail';
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
 import { cn } from '@/lib/utils';
 import { modelingLevelBadgeClasses, modelingLevelDotClasses, modelingLevelIconClasses, modelingLevelRowClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles';
-import { getModelingDeveloperSettings, modelingVisibility, type ModelingVisibility } from '@/lib/modeling/developer-settings';
+import { getModelingDeveloperSettings, modelingLevel, modelingVisibility, type ModelingVisibility } from '@/lib/modeling/developer-settings';
 import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy';
 
 export const dynamic = 'force-dynamic';
@@ -327,7 +327,10 @@ export default async function CourseDetailsPage(props: {
     ].filter(Boolean) as { key: string; icon: typeof Users; label: string }[];
     const isModelingCourse = course.title === 'Mathematical Modeling';
     const isChinese = params.locale.toLowerCase().startsWith('zh');
-    const modelingMeta = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, lesson]));
+    const modelingMeta = new Map(modelingManifest.lessons.map((lesson) => [lesson.number, {
+        ...lesson,
+        level: modelingLevel(lesson.number, lesson.level, developerSettings),
+    }]));
     const localized = (path: string) => `/${params.locale}${path}`;
 
     return (

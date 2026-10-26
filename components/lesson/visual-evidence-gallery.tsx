@@ -23,41 +23,41 @@ type TeachingFigure = {
 }
 
 const teachingFigures: TeachingFigure[] = [
-  { src: 'ppt/ppt-01-slide-3.webp', en: '2020 MCM Problem A: pair a profit trend with a bankruptcy-time distribution so that expected performance and tail risk are read together.', zh: '2020 MCM A 题：把收益趋势与破产时间分布并列，让读者同时看到期望表现与尾部风险。' },
-  { src: 'ppt/ppt-02-slide-4.webp', en: '2020 MCM Problem D: several performance indicators share one time axis, making trade-offs and regime changes directly comparable.', zh: '2020 MCM D 题：多个性能指标共享同一时间轴，便于直接比较权衡关系与阶段变化。' },
-  { src: 'ppt/ppt-03-slide-5.webp', en: 'Competition-paper composite: three-dimensional summaries and site maps connect numerical patterns to their spatial setting.', zh: '竞赛论文组合图：三维统计与场地图并列，把数值模式重新放回空间情境。' },
-  { src: 'ppt/ppt-04-slide-7.webp', en: '2020 MCM Problem A workflow: the figure separates three models, then shows how their outputs support one final decision.', zh: '2020 MCM A 题流程图：先区分三个模型，再说明各模型输出如何共同支持最终决策。' },
-  { src: 'ppt/ppt-05-slide-8.webp', en: 'UAV geometry: every coordinate, angle, and displacement used in the equations is made visible in one consistent frame.', zh: '无人机几何示意图：把方程中的坐标、角度和位移放进同一个一致的参考系。' },
-  { src: 'ppt/ppt-06-slide-9.webp', en: 'Competition workflow: data, classification, clustering, optimization, and sensitivity analysis are arranged as an evidence chain.', zh: '竞赛建模流程：数据、分类、聚类、优化与敏感性分析被组织成完整证据链。' },
-  { src: 'ppt/ppt-07-slide-30.webp', en: 'A policy framework uses arrows only where information or decisions actually move between modules.', zh: '政策框架图只在信息或决策真正流动的位置使用箭头，避免装饰性连线。' },
-  { src: 'ppt/ppt-08-slide-32.webp', en: 'A self-supervised vision pipeline distinguishes pretraining, clustering, and iterative refinement by both position and color.', zh: '自监督视觉流程同时利用位置与颜色区分预训练、聚类和迭代更新。' },
-  { src: 'ppt/ppt-09-slide-35.webp', en: '2020 MCM Problem D: a soccer formation makes the graph structure interpretable before any network metric is reported.', zh: '2020 MCM D 题：先用足球阵型解释网络结构，再报告网络指标，读者更容易理解节点与边。' },
-  { src: 'ppt/ppt-10-slide-37.webp', en: '2023 MCM Problem A: the human–land system is decomposed into coupled subsystems before a strategy-evaluation model is introduced.', zh: '2023 MCM A 题：先把人地系统拆成相互耦合的子系统，再引入策略评价模型。' },
+  { src: 'ppt/ppt-01-slide-3.webp', en: '2020 MCM Problem A, Team 2001334: the full modeling workflow turns raw environmental data into a sequence of testable decisions.', zh: '2020 MCM A 题 Team 2001334：完整流程把原始环境数据逐步转化为可检验的决策。' },
+  { src: 'ppt/ppt-02-slide-4.webp', en: 'Team 2001334: data cleaning is shown as a reproducible pipeline instead of being hidden in one sentence.', zh: 'Team 2001334：把数据清洗画成可复现的流程，而不是藏在一句“预处理完成”里。' },
+  { src: 'ppt/ppt-03-slide-5.webp', en: 'Team 2001334: a shared coordinate system makes every later spatial variable and distance calculation auditable.', zh: 'Team 2001334：统一坐标系让后续空间变量与距离计算都可以回查。' },
+  { src: 'ppt/ppt-04-slide-7.webp', en: 'Team 2001334: an ensemble of sea-temperature trajectories reveals agreement, uncertainty, and outliers in one view.', zh: 'Team 2001334：海温轨迹集合在一张图里同时呈现共识、不确定性与离群情形。' },
+  { src: 'ppt/ppt-05-slide-8.webp', en: 'Team 2001334: rolling validation for an ARIMA model displays how forecast skill changes across time rather than reporting one score.', zh: 'Team 2001334：ARIMA 滚动验证展示预测能力如何随时间变化，而不是只报告一个分数。' },
+  { src: 'ppt/ppt-06-slide-9.webp', en: 'Team 2001334: a globe-scale view establishes geographic context before the paper zooms into local migration cells.', zh: 'Team 2001334：先用全球视图建立地理语境，再进入局部迁移网格。' },
+  { src: 'ppt/ppt-07-slide-30.webp', en: 'Team 2001334: the migration grid converts a continuous ocean into discrete states that match the model equations.', zh: 'Team 2001334：迁移网格把连续海域转成与模型方程一致的离散状态。' },
+  { src: 'ppt/ppt-08-slide-32.webp', en: 'Team 2001334: a probability surface makes the spatial prediction visible together with its concentration and spread.', zh: 'Team 2001334：概率曲面让空间预测的位置、集中程度与扩散范围同时可见。' },
+  { src: 'ppt/ppt-09-slide-35.webp', en: 'Team 2001334: observed and predicted locations share one map, so spatial error can be judged directly.', zh: 'Team 2001334：观测位置与预测位置共用一张地图，使空间误差能够被直接判断。' },
+  { src: 'ppt/ppt-10-slide-37.webp', en: 'Team 2001334: the profit trajectory is plotted against time to make the decision consequence, not merely the model output, visible.', zh: 'Team 2001334：收益轨迹沿时间展开，突出决策后果，而不只是展示模型输出。' },
 ]
 
 const scientificFigures: TeachingFigure[] = [
-  { src: 'ppt/ppt-11-slide-13.webp', en: 'A terrain surface uses height, shading, and a restrained color scale to communicate one geometric quantity.', zh: '地形曲面同时使用高度、阴影和克制的色标表达同一个几何量。' },
-  { src: 'ppt/ppt-12-slide-14.webp', en: 'A violin plot keeps distribution shape, median, and spread visible instead of collapsing every group to one bar.', zh: '小提琴图保留分布形状、中位数与离散程度，不把每组数据压缩成一根柱子。' },
-  { src: 'ppt/ppt-13-slide-21.webp', en: 'A tensor-oriented diagram combines small time-series panels with explicit data-organization axes.', zh: '张量示意图把时间序列小图与明确的数据组织轴结合起来。' },
-  { src: 'ppt/ppt-14-slide-40.webp', en: 'A neural-network schematic labels the role of each layer while keeping the computational direction unambiguous.', zh: '神经网络示意图标注每层作用，同时保持计算方向清晰。' },
-  { src: 'ppt/ppt-15-slide-41.webp', en: 'A hybrid sequence architecture separates recurrent, convolutional, fully connected, and output modules by structure.', zh: '混合序列模型按结构区分循环、卷积、全连接与输出模块。' },
-  { src: 'ppt/ppt-16-slide-46.webp', en: 'Training curves compare both loss trajectories and parameter-space paths, connecting convergence evidence with mechanism.', zh: '训练曲线同时比较损失轨迹与参数空间路径，把收敛证据和算法机制联系起来。' },
-  { src: 'ppt/ppt-17-slide-48.webp', en: 'A multi-scale network diagram shows how information travels across resolution levels rather than listing layer names.', zh: '多尺度网络图强调信息如何跨分辨率流动，而不是只罗列层名称。' },
-  { src: 'ppt/ppt-18-slide-51.webp', en: 'A dense convolutional architecture remains readable because repeated blocks, dimensions, and skip paths use consistent encoding.', zh: '复杂卷积结构依靠一致的模块、尺寸与跳连编码保持可读性。' },
-  { src: 'ppt/ppt-19-slide-56.webp', en: 'A biochemical pathway uses spatial grouping and color families to separate reaction stages without breaking continuity.', zh: '生化通路用空间分组与颜色家族区分反应阶段，同时保持过程连续。' },
-  { src: 'ppt/ppt-20-slide-60.webp', en: 'A protein-mechanism plate combines molecular structure with localized callouts so the reader can move from object to mechanism.', zh: '蛋白机制图把分子结构与局部标注结合，使读者能够从对象自然过渡到机制。' },
+  { src: 'ppt/ppt-11-slide-13.webp', en: 'Team 2001334: a survival-style distribution of bankruptcy time exposes tail risk that a mean profit cannot show.', zh: 'Team 2001334：破产时间分布揭示平均收益无法表达的尾部风险。' },
+  { src: 'ppt/ppt-12-slide-14.webp', en: 'Team 2001334: movement routes are layered on geographic context so that mechanism and location can be read together.', zh: 'Team 2001334：迁移路径叠加地理背景，使机制与位置能够一起阅读。' },
+  { src: 'ppt/ppt-13-slide-21.webp', en: 'Team 2001334: the uncertainty band separates the central forecast from the range of plausible outcomes.', zh: 'Team 2001334：不确定性带把中心预测与可能结果范围清楚地区分开。' },
+  { src: 'ppt/ppt-14-slide-40.webp', en: 'Team 2001334: a territorial grid links the discretized state space to the physical region it represents.', zh: 'Team 2001334：区域网格把离散状态空间与其代表的真实区域联系起来。' },
+  { src: 'ppt/ppt-15-slide-41.webp', en: 'Team 2001334: a trend panel and a distribution panel answer “when” and “how variable” without forcing them into one chart.', zh: 'Team 2001334：趋势图与分布图分别回答“何时变化”和“波动多大”，避免强行塞进一张图。' },
+  { src: 'ppt/ppt-16-slide-46.webp', en: 'Team 2001334: the timing distribution presents uncertainty as a shape rather than as an unexplained error bar.', zh: 'Team 2001334：时间分布用完整形状表达不确定性，而不是只给一个缺少解释的误差棒。' },
+  { src: 'ppt/ppt-17-slide-48.webp', en: 'Team 2001334: sensitivity results rank influential inputs and make robustness a visible part of the conclusion.', zh: 'Team 2001334：敏感性结果对关键输入排序，让稳健性成为结论中可见的一部分。' },
+  { src: 'ppt/ppt-18-slide-51.webp', en: 'Team 2001334: a Q–Q diagnostic turns a distributional assumption into something the reader can inspect.', zh: 'Team 2001334：Q–Q 诊断把分布假设变成读者可以直接检查的证据。' },
+  { src: 'ppt/ppt-19-slide-56.webp', en: 'Team 2001334: spatial bootstrap results display both location and sampling uncertainty instead of hiding either one.', zh: 'Team 2001334：空间 Bootstrap 同时表达位置与抽样不确定性，没有把其中一项藏起来。' },
+  { src: 'ppt/ppt-20-slide-60.webp', en: '2023 MCM Problem B, Team 2316192: the Masai Mara map orients every later human–land variable in a concrete place.', zh: '2023 MCM B 题 Team 2316192：马赛马拉地图先建立具体空间背景，再引出后续人地变量。' },
 ]
 
 const awardIds: Record<Exclude<GalleryGroup, 'claim'>, string[]> = {
-  comparison: ['001', '002', '052', '077', '003', '006', '007', '008', '009', '029'],
-  time: ['045', '054', '065', '066', '067', '068', '069', '070', '071', '081'],
-  distribution: ['046', '047', '087', '088', '089', '090', '022', '023', '024', '043'],
-  diagnostics: ['012', '013', '020', '021', '049', '050', '076', '083', '084', '085'],
-  maps: ['010', '025', '026', '027', '028', '031', '032', '033', '034', '035'],
-  networks: ['004', '005', '014', '015', '016', '017', '018', '019', '037', '038'],
-  architecture: ['011', '030', '044', '048', '051', '062', '078', '079', '080', '082'],
-  scientific: ['053', '055', '056', '057', '058', '039', '040', '041', '042', '036'],
-  'award-pages': ['059', '060', '061', '063', '064', '074', '075', '091', '086', '094'],
+  comparison: ['001', '002', '003', '004', '005', '006', '007', '008', '009', '010'],
+  time: ['011', '012', '013', '014', '015', '016', '017', '018', '019', '020'],
+  distribution: ['021', '022', '023', '024', '025', '026', '027', '028', '029', '030'],
+  diagnostics: ['031', '032', '033', '034', '035', '036', '037', '038', '039', '040'],
+  maps: ['041', '042', '043', '044', '045', '046', '047', '048', '049', '050'],
+  networks: ['051', '052', '053', '054', '055', '056', '057', '058', '059', '060'],
+  architecture: ['061', '062', '063', '064', '065', '066', '067', '068', '069', '070'],
+  scientific: [],
+  'award-pages': ['071', '072', '073', '074', '075', '076', '077', '078', '079', '080'],
 }
 
 const groupLabels: Record<GalleryGroup, { en: string; zh: string }> = {
@@ -80,46 +80,86 @@ function awardSource(id: string, language: 'en' | 'zh') {
       ? '2020 MCM D 题（团队组建），Team 2006782，Outstanding Winner 论文'
       : '2020 MCM Problem D (Teaming), Team 2006782, Outstanding Winner paper'
   }
-  if (value <= 43) {
+  if (value <= 49) {
     return language === 'zh'
-      ? '2016 全国大学生数学建模竞赛 B 题（小区开放道路通行影响），全国一等奖论文'
-      : '2016 CUMCM Problem B (Traffic Impact of Opening Gated Communities), National First Prize paper'
-  }
-  if (value <= 52) {
-    return language === 'zh'
-      ? '2016 全国大学生数学建模竞赛 D 题（风电场运行状况分析及优化），全国一等奖论文'
-      : '2016 CUMCM Problem D (Wind-Farm Operation Analysis and Optimization), National First Prize paper'
+      ? '2023 MCM B 题（马赛马拉生态系统），Team 2316192，Finalist 论文'
+      : '2023 MCM Problem B (Masai Mara Ecosystem), Team 2316192, Finalist paper'
   }
   if (value <= 61) {
     return language === 'zh'
-      ? '2015 全国大学生数学建模竞赛 A 题（太阳影子定位），全国一等奖论文 A4'
-      : '2015 CUMCM Problem A (Solar-Shadow Positioning), National First Prize paper A4'
+      ? '2023 MCM C 题（Wordle），Team 2309397，Outstanding Winner 论文'
+      : '2023 MCM Problem C (Wordle), Team 2309397, Outstanding Winner paper'
   }
-  if (value <= 71) {
+  if (value <= 75) {
     return language === 'zh'
-      ? '2023 MCM A 题（耐旱植物群落），Team 2321860 获奖论文'
-      : '2023 MCM Problem A (Drought-Tolerant Plant Communities), Team 2321860 award paper'
-  }
-  if (value <= 78) {
-    return language === 'zh'
-      ? '2023 ICM F 题（绿色 GDP），Team 2315018 获奖论文'
-      : '2023 ICM Problem F (Green GDP), Team 2315018 award paper'
+      ? '2022 MCM A 题（自行车轮廓），Team 2209812，Outstanding Winner 论文'
+      : '2022 MCM Problem A (Bicycle Profiles), Team 2209812, Outstanding Winner paper'
   }
   return language === 'zh'
-    ? '2023 MCM C 题（Wordle），Team 2309397 获奖论文'
-    : '2023 MCM Problem C (Wordle), Team 2309397 award paper'
+    ? '2023 MCM B 题（马赛马拉生态系统），Team 2316192，Finalist 论文'
+    : '2023 MCM Problem B (Masai Mara Ecosystem), Team 2316192, Finalist paper'
 }
+
+const groupLessons: Record<Exclude<GalleryGroup, 'claim' | 'scientific'>, { en: string; zh: string }> = {
+  comparison: {
+    en: 'The comparison is persuasive because alternatives share a common scale and the visually strongest contrast answers one decision question.',
+    zh: '这张比较图有效，是因为各方案共享可比尺度，最强的视觉差异也正好回答一个决策问题。',
+  },
+  time: {
+    en: 'Time is encoded consistently from left to right, while color and annotation are reserved for structural changes rather than decoration.',
+    zh: '时间始终从左到右编码，颜色与标注只用于突出结构变化，而不是装饰。',
+  },
+  distribution: {
+    en: 'The figure preserves spread and tail behavior, so a risky option cannot hide behind an attractive average.',
+    zh: '图中保留离散程度与尾部形态，因此高风险方案无法躲在一个漂亮的平均值后面。',
+  },
+  diagnostics: {
+    en: 'Observed behavior is placed beside the model implication, turning validation into visible evidence instead of a verbal assurance.',
+    zh: '观测行为与模型含义被并置，使验证成为可见证据，而不是一句口头保证。',
+  },
+  maps: {
+    en: 'Geographic context, legend, and model output remain distinguishable, allowing the reader to connect location with magnitude without guessing.',
+    zh: '地理背景、图例与模型输出层次分明，读者无需猜测就能把位置与数值联系起来。',
+  },
+  networks: {
+    en: 'Nodes and links encode model meaning rather than ornament; grouping and direction reveal how influence or flow travels through the system.',
+    zh: '节点与连线承载模型含义而非装饰，分组和方向清楚地展示影响或流量如何穿过系统。',
+  },
+  architecture: {
+    en: 'The diagram controls reading order with hierarchy, alignment, and restrained color, so a complex model can be reconstructed module by module.',
+    zh: '图形用层级、对齐与克制配色控制阅读顺序，使复杂模型能够按模块被重新理解。',
+  },
+  'award-pages': {
+    en: 'The page works as a complete argument: the figure, caption, surrounding prose, and numerical evidence reinforce the same claim.',
+    zh: '这一页构成完整论证：图片、图注、正文与数值证据共同支持同一个结论。',
+  },
+}
+
+const inspectionCues = [
+  { en: 'Notice the explicit labels and units.', zh: '注意明确的标签与单位。' },
+  { en: 'Notice how the eye reaches the main result before the supporting detail.', zh: '注意视线如何先到达主要结论，再进入支撑细节。' },
+  { en: 'Notice that repeated encodings keep the comparison learnable.', zh: '注意重复使用一致编码，使比较更容易学习。' },
+  { en: 'Notice how white space separates evidence instead of wasting space.', zh: '注意留白如何分隔证据，而不是浪费版面。' },
+  { en: 'Notice that the palette has a semantic job.', zh: '注意颜色承担了明确的语义任务。' },
+  { en: 'Notice that the caption states what should be read, not merely what was drawn.', zh: '注意图注说明了应该读出什么，而不只是画了什么。' },
+  { en: 'Notice the balance between global pattern and local detail.', zh: '注意整体模式与局部细节之间的平衡。' },
+  { en: 'Notice that visual emphasis follows decision importance.', zh: '注意视觉强调与决策重要性保持一致。' },
+  { en: 'Notice how uncertainty remains visible beside the central result.', zh: '注意不确定性如何与中心结果同时保留。' },
+  { en: 'Notice that every decorative element has been subordinated to evidence.', zh: '注意所有装饰元素都服从于证据表达。' },
+]
 
 function FigureCard({
   src,
   caption,
   label,
   language,
+  analysis,
 }: {
   src: string
   caption: string
   label: string
   language: 'en' | 'zh'
+  analysis: string
 }) {
   return (
     <figure className="my-8 overflow-hidden rounded-2xl border border-slate-200/80 bg-white/85 shadow-[0_18px_50px_-36px_rgba(15,23,42,0.65)] dark:border-white/10 dark:bg-slate-950/70">
@@ -128,9 +168,9 @@ function FigureCard({
       <img src={src} alt={caption} loading="lazy" className="mx-auto block h-auto max-h-[720px] w-auto max-w-full object-contain" />
       <figcaption className="border-t border-slate-200/80 px-5 py-4 text-sm leading-7 text-slate-600 dark:border-white/10 dark:text-slate-300">
         <span className="mb-1 block text-xs font-black uppercase tracking-[0.16em] text-blue-700 dark:text-sky-300">{label}</span>
-        <span>{caption}</span>
-        <span className="mt-1 block text-xs text-slate-500 dark:text-slate-400">
-          {language === 'zh' ? '阅读时先找结论、视觉编码与证据之间的对应关系。' : 'Read the figure by tracing its claim, visual encoding, and evidence.'}
+        <span className="block">{caption}</span>
+        <span className="mt-2 block rounded-xl bg-blue-50 px-3 py-2 text-xs leading-6 text-slate-700 dark:bg-sky-400/10 dark:text-slate-200">
+          <strong>{language === 'zh' ? '为什么有效：' : 'Why it works: '}</strong>{analysis}
         </span>
       </figcaption>
     </figure>
@@ -179,6 +219,9 @@ export function VisualEvidenceGallery({ groups, language = 'en', start = 1 }: Vi
                 caption={figure.caption}
                 label={language === 'zh' ? `图 ${groupStart + index}` : `Figure ${groupStart + index}`}
                 language={language}
+                analysis={group === 'claim' || group === 'scientific'
+                  ? `${language === 'zh' ? '这张图从课件所引用的美赛论文中回溯到原始论文，并重新截取有效内容区域。' : 'This figure was traced from the course deck to its MCM paper and recropped around the evidence-bearing region.'} ${inspectionCues[index % inspectionCues.length][language]}`
+                  : `${groupLessons[group][language]} ${inspectionCues[index % inspectionCues.length][language]}`}
               />
             ))}
           </section>

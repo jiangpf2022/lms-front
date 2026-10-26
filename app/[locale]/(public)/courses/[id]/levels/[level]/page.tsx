@@ -4,7 +4,7 @@ import type { Metadata } from 'next'
 import { BookOpenText, Clock3, ClipboardCheck, LockKeyhole } from 'lucide-react'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { getCurrentTenantId } from '@/lib/supabase/tenant'
-import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { getModelingDeveloperSettings, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
 import { modelingLevelBadgeClasses, modelingLevelIconClasses, modelingLevelRowClasses, modelingLevelTitleClasses } from '@/lib/modeling/level-styles'
 import { cn } from '@/lib/utils'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
@@ -50,7 +50,7 @@ export default async function ModelingLevelPage({ params }: { params: Promise<{ 
   const meta = new Map(modelingManifest.lessons.map((item) => [item.number, item]))
   const lessons = (rows ?? []).flatMap((row) => {
     const item = meta.get(row.sequence)
-    if (!item || item.level !== levelNumber) return []
+    if (!item || modelingLevel(row.sequence, item.level, settings) !== levelNumber) return []
     const visibility = modelingVisibility(row.sequence, row.status, settings)
     if (visibility === 'hidden') return []
     return [{ ...row, ...item, visibility }]

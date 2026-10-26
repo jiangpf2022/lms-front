@@ -8,6 +8,10 @@ Imagine the objective surface as a mountain range at night. You can measure the 
 This blog studies genetic algorithms (GA), differential evolution (DE), particle swarm optimization (PSO), and simulated annealing (SA). We will treat them as algorithms, not metaphors. Every update will be written explicitly; representation and constraints will receive as much attention as the objective. The real case is a 2024 CUMCM national excellent paper on crop planning that uses a differential-evolution genetic algorithm (DEGA). It gives us a chance to ask the question competition papers too often avoid: how do we know the heuristic is solving the model we intended?
 
 
+![A rugged objective landscape explored by evolutionary paths, particle swarms, and an annealing trajectory](/mathematical-modeling/modeling-07-search-landscape-v2.webp)
+
+*Different search rules explore the same landscape in different ways. The image is a metaphor, not a certificate: none of the paths proves that it found the global optimum.*
+
 The heuristic contract
 A metaheuristic must declare its **encoding, initialization, variation operators, constraint handling, stopping rule, random-seed protocol, and comparison baseline**. A convergence curve alone is not evidence of global optimality.
 
@@ -1475,6 +1479,10 @@ The ten questions below move from representation and basic update rules to numer
 
 本博客研究遗传算法（GA）、差分进化（DE）、粒子群优化（PSO）和模拟退火（SA）。我们将把它们作为算法来处理，而不是隐喻。每一次更新都将明确写出；表示和约束将获得与目标函数同样的关注。真实案例是2024年CUMCM全国优秀论文中的作物规划问题，该论文使用差分进化遗传算法（DEGA）。它给我们提供了一个机会去提出一个比赛论文往往回避的问题：我们如何知道启发式方法在解决我们想要的模型？
 
+
+![进化路径、粒子群与退火轨迹共同探索崎岖目标景观](/mathematical-modeling/modeling-07-search-landscape-v2.webp)
+
+*不同搜索规则以不同方式探索同一片景观。这是一种直观比喻，而不是最优性证明：任何一条轨迹都不能仅凭图像证明自己找到了全局最优解。*
 
 启发式合同
 一个元启发式算法必须声明其 **编码、初始化、变异算子、约束处理、停止规则、随机种子协议以及比较基线**。仅仅依靠收敛曲线并不能证明全局最优。

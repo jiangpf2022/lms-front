@@ -5,7 +5,7 @@ import manifest from '@/content/mathematical-modeling/manifest.json'
 import { PracticeCenter } from '@/components/modeling/practice-center'
 import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 import { buildChapterQuiz } from '@/lib/modeling/math-quiz-bank'
-import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings'
+import { getModelingDeveloperSettings, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings'
 
 export const dynamic = 'force-dynamic'
 
@@ -33,7 +33,7 @@ export default async function PracticeCenterPage({ params }: { params: Promise<{
       number: lesson.number,
       title: lesson.title,
       titleZh: lesson.titleZh,
-      level: lesson.level,
+      level: modelingLevel(lesson.number, lesson.level, settings),
       chapters: chapters.en.map((chapter, index) => ({
         title: chapter.title,
         titleZh: chapters.zh[index]?.title ?? chapter.title,

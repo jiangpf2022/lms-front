@@ -10,6 +10,10 @@ Optimization often arrives wearing intimidating notation: vectors, cones, multip
 The running competition case is the 2024 CUMCM Problem C on crop-planning. A publicly displayed national excellent paper formulates a seven-year planting strategy over heterogeneous plots, seasons, crops, rotation rules, uncertain yield, price, cost, and demand. That case is useful because it reveals both the power and the danger of optimization: writing “maximize profit” is easy; encoding what can actually be planted, sold, rotated, and managed is the real work. We will reconstruct the core model independently rather than copying the paper's equations or numerical answer. The original paper remains the source of record in the [CUMCM excellent-paper archive](https://dxs.moe.gov.cn/zx/hd/sxjm/sxjmlw/).
 
 
+![A modern bakery production floor overlaid with the geometry of linear, quadratic, and conic optimization](/mathematical-modeling/modeling-04-optimization-studio-v2.webp)
+
+*The three geometries are different, but they begin from the same discipline: define the decision, preserve units, and make every constraint auditable.*
+
 The optimization contract
 Every optimization model must expose five things: **decision variables**, **objective**, **constraints**, **data**, and **validation**. If one is missing, the solver may still return a number, but you do not yet have a defensible decision.
 
@@ -1728,10 +1732,7 @@ Optimization is most persuasive when it returns more than a vector. The vector s
 
 The questions below move from basic model recognition to difficult formulation and certification choices. Single-answer and multiple-answer questions are mixed. Read the explanation after checking: the goal is to understand why a tempting alternative fails, not merely to collect a score.
 
-
 The next blog goes deeper into convexity proofs, conjugates, duality, proximal operators, first-order rates, and algorithms for models too large to hand directly to a generic solver.
-
-
 
 </LanguagePanel>
 
@@ -1743,6 +1744,10 @@ The next blog goes deeper into convexity proofs, conjugates, duality, proximal o
 
 当前的竞赛案例是2024年CUMCM作物规划问题C。一篇公开展示的全国优秀论文制定了一个七年的种植策略，涵盖异质地块、季节、作物、轮作规则、不确定的产量、价格、成本和需求。该案例之所以有用，是因为它揭示了优化的力量和风险：写出“利润最大化”很容易；真正的工作是编码实际可以种植、销售、轮作和管理的内容。我们将独立重建核心模型，而不是复制论文中的方程或数值答案。原始论文仍然是记录的来源。 [CUMCM 优秀论文档案](https://dxs.moe.gov.cn/zx/hd/sxjm/sxjmlw/).
 
+
+![现代烘焙生产空间与线性、二次和锥优化几何的结合](/mathematical-modeling/modeling-04-optimization-studio-v2.webp)
+
+*三种几何结构并不相同，但它们都从同一条纪律开始：定义决策、保留单位，并让每一条约束都可以被检查。*
 
 优化合同
 每个优化模型必须包含五个方面： **决策变量**, **目标**, **约束条件**, **数据**，以及 **验证**。如果缺少其中一个，求解器可能仍会返回一个数字，但你还没有一个有据可依的决策。
@@ -2848,622 +2853,132 @@ $$p_{tk}=p_k^0-\gamma_k(q_{tk}^{\mathrm{region}}-\bar q_k)_+.$$
 
 ## 实现与验证
 
-```python
-import cvxpy as cp
-import numpy as np
+求解器返回一个向量，并不意味着建模工作已经结束。真正可交付的结果至少要经过四次翻译：从现实叙述到数学约束，从数学模型到数值问题，从数值解到可执行方案，再从一次成功运行到可复现的决策流程。任何一层出错，最终建议都可能看起来精确却无法使用。
 
-profit = np.array([36.0, 30.0])
-x = cp.Variable(2, nonneg=True)
-constraints = [4*x[0] 0$, the system couples neighboring hours. A high target at hour 4 pulls up hours 3 and 5, while low neighboring targets pull the peak down. This is smoothing, not an arbitrary black box. The Hessian $2(I+\lambda D^TD)$ is positive definite because for nonzero $v$,
+先做一个很小的人工算例。对于线性规划，检查一个明显可行点和一个刻意违规点；对于二次规划，检查 Hessian 是否半正定，并计算一个 KKT 残差；对于整数规划，枚举一个只有两三个二元变量的小实例。小算例不是“玩具”，而是把每条约束的意义从大型模型中隔离出来的单元测试。
 
-$$v^T(I+\lambda D^TD)v=\|v\|_2^2+\lambda\|Dv\|_2^2>0.$$
+### 作物规划：联动决策
 
-Therefore the unconstrained solution is unique.
-
-At $\lambda=0$, $x=r$ and the bus-hour total is 26 exactly. The target is feasible, so tracking is perfect. Why smooth at all? Because the target asks the fleet to jump from 3 to 7 and later fall from 8 to 4 in one hour. If each bus needs a driver shift of at least three hours, the simple bound and budget have omitted a crucial mechanism. A roughness penalty approximates that friction, but explicit shift variables may be more faithful. Penalization should not replace a truly hard labor rule.
-
-Suppose the operator chooses $\lambda$ by minimizing the same objective used to fit the schedule. That is circular: each $\lambda$ defines its own objective and will appear optimal under its own scale. Instead, create a trade-off curve. For each $\lambda$, report tracking RMSE, maximum hourly change, total bus-hours, predicted passengers left behind, and estimated staffing cost. Choose a point where additional smoothness has diminishing operational value, then stress-test it under alternative demand forecasts.
-
-There is also a data question hidden inside $r$. If $r_t$ is derived from average passenger counts, a squared loss penalizes positive and negative mismatch symmetrically. But an undersupply of three buses at the peak may be far worse than an oversupply of three. Introduce positive and negative deviations
-
-$$x_t-r_t=d_t^+-d_t^-,\qquad d_t^+,d_t^-\ge0,$$
-
-and use asymmetric linear or quadratic penalties. Alternatively build a queue model where unserved passengers carry forward. The choice changes the meaning of the recommendation.
-
-To connect QP with KKT, assume the bus-hour budget binds and no box bound does. With multiplier $\nu\ge0$, stationarity is
-
-$$2(I+\lambda D^TD)x-2r+\nu\mathbf1=0.$$
-
-Because $D\mathbf1=0$, multiplying by $\mathbf1^T$ gives
-
-$$2\mathbf1^Tx-2\mathbf1^Tr+6\nu=0.$$
-
-If budget $B2.5$, so the new rule binds and moves the facility. A constrained optimizer will find the point, but a diagram should show the intersection of the hospital disk with the competing distance disks. The geometry lets readers see which promise caused the relocation.
-
-Coordinates themselves may be uncertain. Let actual community $i$ be $a_i+P_i u$, $\|u\|_2\le1$. Requiring
-
-$$\|x-a_i-P_iu\|_2\le t\quad\text{for all }u$$
-
-does not in general collapse to exactly $\|x-a_i\|_2+\|P_i\|_2\le t$ unless we accept a conservative triangle-inequality bound or the uncertainty is isotropic in the required sense. A safe bound is
-
-$$\|x-a_i\|_2+\|P_i\|_2\le t.$$
-
-If $P_i=\rho_i I$, this bound is exact: the perturbation can point directly away from the facility, so worst-case distance is $\|x-a_i\|_2+\rho_i$. Stating when a robust counterpart is exact prevents a conservative approximation from being presented as equivalence.
-
-Demand uncertainty produces another model. If communities may require several ambulances simultaneously, distance alone is insufficient. Facility capacity, response-time queues, and backup coverage matter. A two-stage model can open bases first and dispatch ambulances after demand is observed. A static minimax center is still a valuable baseline: it is transparent, globally solvable, and supplies a geometric check. Complexity should be added where the baseline's failure is named.
-
-Road networks create a particularly important boundary. Euclidean distance may put the facility directly across a river from a community, close on the map but far by road. Replace distance with shortest-path travel times between candidate sites and demand nodes. With a finite candidate set and facility-opening decisions, the model becomes a $p$-center MILP rather than an SOCP. If a bridge can fail, include disruption scenarios and measure backup access.
-
-Validation combines geometry and operations. Plot circles for active constraints and verify their radii numerically. Compare Euclidean and road-network solutions. Simulate calls under held-out demand and report response-time quantiles, not only averages. Stress-test closure of the most-used route. A robust-looking center on a clean diagram is not enough if dispatch queues dominate actual response.
-
-### Studio F: crop planning as a linked decision system
-
-The crop-planning case is where many isolated ideas meet. Let $i$ index plots, $k$ crops, $t$ years, and $s$ seasons. Let $x_{ikts}$ be planted area and $z_{ikts}$ indicate whether crop $k$ is used on plot $i$ in that season. Let $q_{kts}$ be produced quantity and $y_{kts}$ sold quantity. A simplified model contains
+设 $i$ 表示地块，$k$ 表示作物，$t$ 表示年份，$s$ 表示季节。令 $x_{ikts}$ 为种植面积，$z_{ikts}in{0,1}$ 表示是否启用该作物。一个可信的基线至少包含地块面积、作物兼容性、轮作、产量、销售上限与劳动资源：
 
 $$
-q_{kts}=\sum_i h_{ikts}x_{ikts},
+sum_k x_{ikts}le A_i,qquad
+L_{ik}z_{ikts}le x_{ikts}le A_i z_{ikts}.
 $$
 
-$$0\le y_{kts}\le q_{kts},\qquad y_{kts}\le D_{kts},$$
+第一式限制总面积，第二式把“是否种植”和“种多少”连接起来。若没有下界 $L_{ik}$，模型可能在很多地块上安排几乎为零的碎片；若下界过大，轮作要求又可能让问题无解。参数必须来自机械作业、管理成本或实际种植习惯，而不能为了让表格好看随意设置。
 
-and profit
-
-$$
-\sum_{k,t,s}p_{kts}y_{kts}
--\sum_{i,k,t,s}c_{ikts}x_{ikts}.
-$$
-
-The separate sales variable prevents revenue from being collected on production above demand. If surplus is discarded, it has zero price and perhaps a disposal cost. If surplus sells at a discount, add $y_{kts}^{(1)}$ and $y_{kts}^{(2)}$ with separate price tiers. The scenario must specify whether discounted demand is unlimited; otherwise the model can again invent a market.
-
-Plot capacity is
-
-$$\sum_kx_{ikts}\le A_i.$$
-
-Compatibility can be encoded by omitting impossible variables or setting $x_{ikts}\le A_i m_{iks}$ for parameter $m_{iks}\in\{0,1\}$. Omitting variables is often cleaner and reduces model size, while an explicit mask can make the data pipeline easier to audit. In either case, an incompatible crop must not appear as a zero-cost opportunity.
-
-If a crop is selected, minimum practical area may be required:
-
-$$L_{ik}z_{ikts}\le x_{ikts}\le A_i z_{ikts}.$$
-
-The lower link prevents tiny fragments; the upper link prevents area without activation. Setting $L_{ik}$ too large can make rotations infeasible. Setting it to zero eliminates the intended fragmentation control. Report how $L_{ik}$ was determined and test alternatives.
-
-A simple no-consecutive-planting rule is
-
-$$z_{ikts}+z_{ik,t+1,s'}\le1$$
-
-for relevant adjacent seasons. But “adjacent” must follow the agronomic calendar, not merely adjacent array indices. If one greenhouse has two seasons and an open field has one, build an explicit predecessor relation. Many rotation bugs come from assuming every plot shares the same temporal grid.
-
-A legume requirement over every three-year window can be expressed as
+生产量和销售量必须分开。令 $q_{kts}$ 为产量，$y_{kts}$ 为全价销售量，则
 
 $$
-\sum_{\tau=t}^{t+2}\sum_{k\in\mathcal L}\sum_s x_{ik\tau s}
-\ge \alpha_iA_i,
+q_{kts}=sum_i gamma_{ikts}x_{ikts},qquad
+0le y_{kts}le min{q_{kts},D_{kts}}.
 $$
 
-or as a binary occurrence requirement depending on the rule. These are not equivalent. An area threshold asks for sufficient cumulative legume area; an occurrence rule can be satisfied by a very small planting unless a minimum-area link is present. Translate the actual agronomic requirement before choosing one.
+如果剩余产品折价销售，应再引入折价销售变量及其上限；否则模型可能把不存在的市场当成无限需求。轮作、豆科窗口、同一季重复以及最后一年效应也要逐条测试。最好的检查方法，是构造一个会在遗漏某条规则时立即产生“过于赚钱”结果的小实例。
 
-Labor and management burden couple plots even when land does not. If crop $k$ needs $a_{kts}$ labor-hours per mu,
+### 求解器究竟证明了什么
 
-$$\sum_{i,k}a_{kts}x_{ikts}\le H_{ts}.$$
+连续线性规划中，原始可行解给出可实现目标值，对偶可行解给出界。两者接近时，可以证明编码后的数学问题已被高精度求解。但求解器不会证明数据正确、现实叙述翻译正确或建议能够落地。
 
-Without this row, the optimizer may create a theoretically profitable schedule that requires every plot to be harvested on the same day. Monthly or weekly labor periods may be needed when seasonal totals hide peaks. Equipment, storage, seed, and cash-flow constraints follow the same resource logic.
-
-Uncertain yield, demand, cost, and price should not all be perturbed independently without thought. Bad weather may lower several yields together and raise market prices; inflation may increase both input costs and sale prices; regional demand may be correlated across substitute crops. Independent uniform draws can manufacture implausible worlds and understate joint risk. Construct scenarios from mechanisms, historical residuals, or clearly stated stress combinations.
-
-There are several defensible objectives. Expected profit maximization is suitable for a risk-neutral planner with repeat opportunities. Worst-case profit is conservative and sensitive to the uncertainty set. Mean-CVaR trades average performance against bad-tail outcomes. Regret compares a fixed plan with the scenario-specific clairvoyant optimum. A multi-objective model may include profit, minimum household income, crop diversity, or soil health. The choice is a policy statement, not a solver option.
-
-For a finite scenario set $\Omega$ with loss $L_\omega(x)$, CVaR at level $\beta$ can be written
-
-$$\operatorname{CVaR}\_\beta(L)=\min\_{\eta}\left[\eta+\frac{1}{(1-\beta)|\Omega|}\sum\_{\omega\in\Omega}\xi\_\omega\right].$$
-
-subject to
-
-$$\xi_\omega\ge L_\omega(x)-\eta,\qquad\xi_\omega\ge0.$$
-
-Here $\eta$ is a loss threshold and $\xi_\omega$ captures exceedance. When scenario losses are linear in the decisions, this risk term remains linear. If the base model contains binaries, the result is a MILP rather than a continuous LP.
-
-The seven-year horizon creates end effects. A model may exploit the last year by planting a crop whose soil consequence occurs after the horizon. Add a terminal condition, salvage value, or test a longer horizon and report whether the first years change. Decisions near the beginning should be relatively stable if the horizon is adequate.
-
-Decomposition can exploit structure. With fixed binary crop choices, continuous area and sales decisions may form an LP. Benders decomposition treats binary planning as a master problem and continuous scenario operations as subproblems, using dual information to add cuts. Scenario subproblems can run in parallel. This is worthwhile only if the monolithic model is genuinely too slow; decomposition adds implementation and verification burden.
-
-A small verifier should ignore the solver's internal constraint objects. Read the exported schedule and independently calculate every plot-season area, forbidden pairing, adjacency rule, legume window, labor total, production, sales cap, and objective component. Print violations with semantic labels such as “Plot G17, 2028 season 2 exceeds area by 0.30 mu.” A generic maximum residual is useful, but a labeled violation is easier to fix.
-
-Interpretability comes from summaries tied to decisions. Show land-use heatmaps across time, crop shares, binding labor periods, sales saturation, profit distribution over scenarios, and changes relative to a simple current-practice baseline. Report whether a recommended crop appears because of genuine advantage or a fragile price assumption. A schedule is not a recommendation until someone can understand why it changes.
-
-### Studio G: what the solver is actually certifying
-
-Optimization reports often jump from a model to a table labeled “optimal solution.” That phrase is meaningful only relative to a precisely specified mathematical problem and a stated numerical tolerance. A solver does not certify that the story was translated correctly, that the data are trustworthy, or that the recommended policy will work in deployment. It certifies a narrower statement about the encoded problem. Understanding that statement prevents both excessive trust and unnecessary suspicion.
-
-For a continuous LP, modern solvers usually use simplex, an interior-point method, or a combination. A primal feasible point gives an objective value achievable by the model. A dual feasible point gives a bound. For a minimization LP,
-
-$$b^Ty\le c^Tx$$
-
-under a consistent primal-dual convention. If the two values match within tolerance, the gap certifies near-global optimality. The crucial fact is not that an algorithm stopped; it is that two independently constrained objects meet.
-
-Consider a minimization LP with primal value $1{,}000.002$ and dual value $999.998$. The absolute gap is $0.004$. A common relative measure is
+对最小化问题，可用
 
 $$
-\frac{|z_P-z_D|}{1+|z_P|},
+	ext{relative gap}=rac{z_P-z_D}{max{1,|z_P|,|z_D|}}
 $$
 
-approximately $4\times10^{-6}$. Whether this is adequate depends on decision scale. If the objective is millions of dollars and the variables will be rounded to whole trucks, it is likely negligible. If the objective difference between legal and illegal chemical exposure is tiny only because units were scaled poorly, the same printed gap says little. Numerical tolerance and domain tolerance are different things.
+报告原始值与对偶界之间的差距。整数规划则报告当前整数解 $z_I$ 与分支定界界限 $z_B$。例如利润为 482 万元、上界为 490 万元，只能说“当前可行方案距离模型内最优值至多约 $1.66%$”，不能写成“已证明全局最优”。
 
-Primal residuals measure encoded feasibility. For $Ax\le b$, a scaled violation for row $i$ may be
+还要检查原始残差、对偶残差、互补性、整数性与数值尺度。若变量同时包含 $10^9$ 元和 $10^{-7}$ 的概率，应重新选择单位或无量纲化。把求解器内部容差翻译回实际单位：$10^{-6}$ 的违反可能是一微升，也可能是一人或一百万元。
 
-$$
-r_i=\frac{\max(0,a_i^Tx-b_i)}{1+|b_i|+\|a_i\|_1\|x\|_\infty}.
-$$
+### 诊断一个看似合理的错误模型
 
-Scaling prevents a row with coefficients around $10^9$ from dominating a row around $10^{-4}$ merely because of units. Still, a solver-scaled residual should be translated back. A violation of $10^{-6}$ may mean one microliter, one person, or one million dollars depending on the variable scale. For an indivisible safety requirement, even a small fractional violation may need explicit repair.
-
-Dual residuals check stationarity or reduced costs. Complementarity checks whether positive multipliers correspond to nearly active rules. For a convex QP, small KKT residuals plus convexity provide strong evidence of global optimality. For a nonconvex QP, the same residuals show only a stationary candidate. A point at the top of a hill can satisfy a zero gradient. Curvature and global bounds determine what more can be claimed.
-
-Mixed-integer optimization uses a different certificate. A feasible integer incumbent has value $z_I$. The branch-and-bound tree produces a valid bound $z_B$ from relaxations. For minimization, $z_B\le z^*\le z_I$. A relative gap may be reported as
+考虑电动车队充电。令 $p_{vt}$ 为车辆 $v$ 在时段 $t$ 的充电功率，$e_{vt}$ 为电量。最简单的能量递推为
 
 $$
-\operatorname{gap}=
-\frac{z_I-z_B}{\max\{1,|z_I|\}}.
+e_{v,t+1}=e_{vt}+eta_c p_{vt}^{c}Delta t-
+rac{p_{vt}^{d}Delta t}{eta_d}-d_{vt}.
 $$
 
-Suppose a crop plan has incumbent profit 4.82 million RMB and upper bound 4.90 million in a maximization problem. The plan is feasible and no plan can exceed 4.90 million under the model, so the unknown improvement is at most 80,000 RMB, about 1.66% of the incumbent. We may say “feasible with a certified 1.66% worst-case gap.” We may not call it proven optimal.
-
-An incumbent can be excellent before the gap is small, and a small gap can accompany a poor real model. If revenue data are uncertain by 15%, spending six hours shrinking a mathematical gap from 0.5% to 0.1% may not improve the decision. Computational effort should reflect the relative sizes of optimization error, data uncertainty, and model discrepancy.
-
-Branch-and-bound is easier to understand through a two-variable example. Suppose $x_1,x_2$ must be integers, but the LP relaxation returns $(3.4,2.0)$. Branch on $x_1$:
-
-$$x_1\le3\qquad\text{or}\qquad x_1\ge4.$$
-
-Every integer solution belongs to one branch. Solve an LP relaxation in each child. A child whose bound cannot beat the incumbent is pruned; an infeasible child is pruned; a child with an integral solution may update the incumbent. Cutting planes add valid inequalities that remove fractional relaxation points without removing any feasible integer point. Good formulations produce tight relaxations, shrinking the tree.
-
-This explains why big-$M$ quality matters. Consider $0\le x\le Mz$, $z\in\{0,1\}$. In the LP relaxation, a huge $M$ permits a small fractional $z$ to support a large $x$ while paying only a fraction of a fixed charge. The bound becomes unrealistically optimistic and branch-and-bound works harder. Derive the smallest valid $M$ from capacity, demand, time, or conservation. If the modeling system supports indicator constraints, they may avoid explicit large coefficients, although the solver still uses internal reformulations.
-
-Warm starts can help repeated solves. In a rolling schedule, yesterday's plan may be a good incumbent today. In a parameter sweep, the previous continuous solution may initialize the next solve. But a warm start is not a certificate and can sometimes bias a nonconvex local method toward one basin. Report how initialization was used, especially when comparing algorithms.
-
-Solver logs contain diagnostic evidence. For a MILP, plot incumbent and bound against time, preferably on a logarithmic time scale when runtimes vary widely. A long flat incumbent with a steadily improving bound suggests proof is hard but the plan was found early. A good bound with poor incumbents suggests feasible-solution search is difficult. Both curves flat with a large gap may indicate a weak formulation, symmetry, or difficult combinatorics.
-
-Symmetry arises when interchangeable objects receive separate labels. If three identical vehicles are indexed individually, permuting their labels creates multiple equivalent solutions. The solver may explore redundant branches. Symmetry-breaking constraints—such as ordering vehicle usage—can help, but they must not exclude distinct physical plans when vehicles are not truly identical.
-
-Interior-point methods approach an LP or conic optimum through the interior rather than walking along vertices. They solve Newton systems derived from barrier problems such as
+这里功率乘以时间才得到能量。漏掉 $Delta t$ 后，改变时间网格会改变“物理规律”。如果车辆正在行驶，还需用可用性 $a_{vt}$ 约束 $p_{vt}le Pa_{vt}$；若多个车辆共用变压器，则必须有
 
 $$
-\min_x c^Tx-\mu\sum_i\log(b_i-a_i^Tx).
+sum_v p_{vt}le P_{mathrm{station}}.
 $$
 
-As $\mu$ decreases, the central-path solution approaches the boundary optimum. Interior-point methods have strong polynomial complexity and perform well for large sparse continuous problems. They may return a point in the middle of an optimal face rather than a basic vertex; crossover can recover a basis when sensitivity analysis needs one.
+只给每辆车单独的功率上限，会让所有车辆同时充电并超过站点容量。随后再加入离站电量、充电桩数量、峰值电费和必要的退化成本。每次扩展都应该对应一个明确的失败案例，而不是为了堆积符号。
 
-First-order methods use gradients and cheap projections or proximal steps. For smooth convex $f$ with Lipschitz gradient,
+用一辆车、三个时段做守恒测试。初始电量 10 kWh，效率 0.9，连续两小时以 10 kW 充电，则电量应为 $10+2	imes0.9	imes10=28$ kWh；随后行驶消耗 12 kWh，剩余 16 kWh。若程序不是这个结果，应先检查效率与时间步，而不是调整求解器参数。
 
-$$x^{k+1}=\Pi_C(x^k-\alpha_k\nabla f(x^k)).$$
+### 敏感性与不确定性
 
-They can handle enormous problems where factoring KKT systems is too expensive, but high-accuracy convergence may be slow. A competition paper should not choose a first-order method solely because it sounds modern. Compare problem dimension, sparsity, required accuracy, and available reliable solvers.
+敏感性分析问“输入变化时答案如何变化”；不确定性分析问“哪些输入变化是可信的，以及这些变化如何传播”；稳健优化则选择一个在指定不确定集合内仍可接受的决策。三者相关，但不能混为一谈。
 
-Conic solvers exploit self-concordant barriers for second-order or semidefinite cones. Modeling systems such as CVXPY verify disciplined convex programming rules before constructing a cone program. This verification is valuable: it prevents some nonconvex expressions from masquerading as convex. Yet DCP rules are sufficient rather than necessary; a convex expression may require an algebraically equivalent recognized form.
-
-Numerical scaling can determine whether a mathematically sound model solves reliably. Suppose one variable is measured in dollars around $10^9$ and another in failure probability around $10^{-7}$. Coefficients span sixteen orders of magnitude. Rescale dollars to millions and probabilities to parts per million, or nondimensionalize the equations. Keep the mapping to physical units explicit so output is converted correctly.
-
-Rounding solver output is a decision, not formatting. If $x=2.9999998$ for a binary variable, solver integrality tolerance may justify interpreting it as 3 only if the variable is general integer and constraints are rechecked. If a continuous dose is printed to two decimals, verify the rounded dose remains feasible. The safe workflow stores full-precision values, creates a rounded presentation copy, and runs the independent verifier on the copy actually delivered.
-
-Randomness can enter through heuristics, parallel search, scenario sampling, or tie-breaking. Record seeds and solver version, but do not expect bit-for-bit repeatability from every parallel solver. Reproducibility means the same decision claim and tolerances can be recovered, not necessarily the identical branch tree. When small numerical changes select different alternate optima, compare objectives and operational summaries rather than raw vectors alone.
-
-Finally, a solver may correctly say infeasible. Build an irreducible infeasible subsystem or use elastic constraints to diagnose conflicting rules. If coverage requires 12 nurses while legal shifts permit only 10, the result is an important finding. Do not quietly relax the coverage row. Display the conflict and let the decision maker choose whether to add staff, reduce service, or change a policy.
-
-### Studio H: diagnosing a plausible but wrong model
-
-Imagine a team optimizing charging for an electric delivery fleet. They define $p_{vt}$ as charging power for vehicle $v$ in hour $t$, electricity price $c_t$, battery energy $e_{vt}$, charger limit $P$, and capacity $E_v$. Their first model is
+局部灵敏度
 
 $$
-\min\sum_{v,t}c_tp_{vt}
+S_i=rac{partial z^*}{partial	heta_i}
 $$
 
-with
-
-$$0\le p_{vt}\le P,\qquad 0\le e_{vt}\le E_v,\qquad
-e_{v,t+1}=e_{vt}+\eta p_{vt}.$$
-
-It solves beautifully and charges almost entirely in the cheapest hours. Yet no vehicle-departure constraints appear. The optimizer may send trucks onto routes with empty batteries. This is not a solver failure; the feasible set omitted the service obligation.
-
-For a route starting after hour $t$, require
-
-$$e_{vt}\ge E_{v,t}^{\mathrm{req}}.$$
-
-If energy consumption $d_{vt}$ occurs between hours, the balance is
-
-$$e_{v,t+1}=e_{vt}+\eta_c p_{vt}\Delta t-d_{vt}.$$
-
-Units now reveal a missing $Δt$ in the first model: power in kW times hours gives energy in kWh. Without it, changing hourly resolution changes the physics.
-
-Next the team allows $p_{vt}>0$ while a vehicle is driving. Add availability $a_{vt}\in\{0,1\}$ as data and impose $p_{vt}\le Pa_{vt}$. If the schedule itself is a decision, availability becomes linked to route binaries and the joint model is a MILP. Treating an endogenous schedule as fixed data can understate the trade-off between routing and charging.
-
-Then every vehicle charges at 7 p.m., exceeding the station connection. Individual limits do not enforce a shared transformer limit:
-
-$$\sum_vp_{vt}\le P_t^{\mathrm{station}}.$$
-
-If chargers are discrete, introduce assignment variables. If only $m$ chargers exist,
-
-$$\sum_v z_{vt}\le m,\qquad p_{vt}\le Pz_{vt}.$$
-
-If a vehicle cannot switch chargers every minute, minimum connection durations or switching costs may be needed. Each refinement corresponds to an observed failure of the simpler model.
-
-The objective also misses demand charges. Many commercial tariffs bill the maximum power during a month. Introduce peak $q$ with
-
-$$q\ge\sum_vp_{vt}\quad\forall t$$
-
-and add $c^{\mathrm{peak}}q$ to the objective. This remains an LP when schedules are fixed. A flat energy price can still produce a smooth schedule because the peak charge discourages synchronization.
-
-Battery degradation may be approximated by throughput cost $c^{\mathrm{deg}}\sum p_{vt}Δt$, but actual degradation depends on temperature, depth of discharge, state of charge, and charging rate. A convex piecewise-linear penalty may be a useful planning approximation. State its domain and validate against engineering data. A complex degradation law is not automatically better if parameters are unavailable.
-
-Suppose renewable generation $g_t$ can charge the fleet, and grid import is $y_t$. The correct balance may be
+依赖单位。正量之间更适合报告弹性
 
 $$
-y_t+r_t=g_t+\sum_vp_{vt}+w_t,
+E_i=rac{	heta_i}{z^*}rac{partial z^*}{partial	heta_i}.
 $$
 
-where $r_t$ is renewable curtailment and $w_t$ other station load, depending on sign convention. Writing this row from a labeled flow diagram is safer than recalling it from memory. Test a zero-load case and a high-generation case: imports should not become negative unless export is allowed.
+然而，连续目标值变化平稳，并不代表离散决策也稳定。设施选择、作物启用和排班可能在阈值处突然改变。因此应同时报告目标变化与决策变化，例如设施集合的 Jaccard 相似度、作物启用向量的 Hamming 距离或分配量的归一化 $ell_1$ 距离。
 
-A battery can sometimes discharge to the grid. Separate charge $p_{vt}^c$ and discharge $p_{vt}^d$:
+情景要来自机制：恶劣天气可能同时降低多种产量并抬高价格，桥梁中断会改变整张路网，需求高峰可能发生时间平移而不仅是整体放大。把每个参数独立设为最坏值，常会制造物理上不可能的世界。稳健预算 $Gamma$ 的意义正是限制同时发生满幅不利偏差的系数数量；应把保护程度与名义性能画在同一张图里。
 
-$$
-e_{v,t+1}=e_{vt}+\eta_cp_{vt}^c\Delta t-
-\frac{p_{vt}^d\Delta t}{\eta_d}.
-$$
+### 会改变答案的表述差异
 
-If prices are nonnegative and efficiencies are below one, simultaneous charging and discharging is usually economically dominated. With negative prices, subsidies, or inconsistent tariffs, the relaxation may exploit simultaneous flows. A binary mode variable or complementarity rule prevents it, but first inspect whether the apparent arbitrage exposes a tariff-model error.
+“最小化等待”可能指平均等待、最大等待、超出服务门槛的比例，或平方惩罚 $sum_i w_i^2$。若方案 A 的等待为 $(1,1,1,13)$ 分钟，方案 B 为 $(4,4,4,4)$，两者平均值相同，但最大等待、方差与服务违约数完全不同。选择目标函数，本身就是价值判断。
 
-Now consider uncertainty. Route consumption depends on traffic and temperature. If decisions are fixed day-ahead, require adequate energy under scenarios or use a chance constraint. If dispatchers can adjust later, separate day-ahead commitments from real-time recourse. A static robust model that forces the same detailed hourly charging plan under every scenario may be unnecessarily conservative when actual operations can respond.
+逻辑条件也要精确翻译：
 
-An ellipsoidal robust departure requirement can arise if uncertain route consumption is $\bar d+Pu$ with $\|u\|_2\le\rho$. Ensuring energy covers all such consumption yields a norm protection term. A scenario model instead checks selected joint patterns. A distributionally robust model protects over probability distributions near empirical evidence. The choice should match what is known about uncertainty and how failure is valued.
+- “A 与 B 至少一个”是 $z_A+z_Bge1$；
+- “恰好一个”是 $z_A+z_B=1$；
+- “若 A，则 B”是 $z_Ale z_B$；
+- “A 只有在 B 时成立”仍是 $z_Ale z_B$。
 
-The team's first validation is a unit test with one vehicle and three hours. Initial energy is 10 kWh, capacity 30, efficiency 0.9, power limit 10 kW, and one-hour periods. Charging at 10 kW for two hours gives $10+2(0.9)(10)=28$ kWh. A route then consumes 12, leaving 16. If code reports 20, efficiency or time-step scaling is wrong. This four-line test is more diagnostic than comparing a thousand-variable solution with intuition.
+绝对值同样有方向差异。$|x-a|le r$ 等价于 $a-rle xle a+r$，但 $|x-a|ge r$ 是两个区域的并集，需要析取逻辑。对每条“若”“至少”“至多”“恰好”都画一个四格真值表，比凭记忆写大 $M$ 更安全。
 
-The second validation is conservation. Sum the state equation over time:
+### 从数学最优到可执行方案
 
-$$
-e_{v,T}-e_{v,0}=
-\sum_t\eta_cp_{vt}^c\Delta t-
-\sum_t\frac{p_{vt}^d\Delta t}{\eta_d}-
-\sum_td_{vt}.
-$$
+把 127.6 个司机小时四舍五入为 128，并没有得到排班。真实班次可能以四小时或八小时为单位，还受休息、资格与重叠时段限制。战略层决定开仓库、购置充电桩；战术层决定周容量与班次模板；运营层决定下一辆车如何调度。层级不同，变量和信息到达时间也不同。
 
-The telescoping identity must hold for every vehicle. It catches index shifts that individual rows may hide, especially when departure consumption is applied to the wrong interval.
+当不确定性逐步揭示时，规则可能比静态日程更有用。例如“当队列超过 35 人且备用司机可用时增派一辆车”是一项可执行策略。阈值可以通过仿真优化，但必须在独立情景上评估，避免把随机噪声当成优越性能。比较两个策略时，应让它们面对同一组随机路径，并对逐情景差值计算置信区间。
 
-The third validation is policy simulation. Feed the optimized schedule into an event simulation with actual arrival, departure, consumption, charger occupancy, and outages. Record missed departures, low-state-of-charge events, peak power, cost, and charger waiting. Compare with a simple earliest-deadline-first charging policy under identical scenarios. If the optimizer saves 2% cost but causes more missed routes under modest forecast error, the decision may not be worthwhile.
+交付文件要同时包含输入契约与输出契约。输入契约记录名称、单位、来源、时间戳、允许范围、缺失规则，以及在决策时是否已知；输出契约说明每一行如何映射回变量。再用一段独立代码重新计算约束和目标，避免“建模代码与验证代码共享同一个错误”。
 
-This diagnostic sequence illustrates a powerful writing structure. Begin with the simplest credible model. Show a counterexample that exposes one missing mechanism. Add the corresponding equation. Repeat only while the mechanism changes the recommendation or its credibility. The reader sees why complexity is present instead of receiving a final wall of symbols.
+### 紧凑的端到端审计
 
-### Studio I: sensitivity, uncertainty, and the difference between them
+提交前依次做以下检查：
 
-Sensitivity analysis asks how an answer changes when inputs change. Uncertainty analysis asks what input values are plausible and how uncertainty propagates. Robust optimization chooses a decision protected against an uncertainty set. These ideas overlap, but treating them as synonyms leads to weak conclusions.
+1. 为所有决策变量写出单位，并检查符号是否在不同章节改变含义；
+2. 把目标的每一项读成一句话，确认量纲一致或权重有依据；
+3. 用零解、明显可行点和刻意违规点测试约束方向；
+4. 检查初始条件、终端条件和决策时可获得的信息；
+5. 对所有逻辑语句写真值表；
+6. 检查凸性、整数性、锥右端符号与求解器状态；
+7. 独立重算目标，报告残差、界、间隙和运行时间；
+8. 与人工小解和可信基线比较；
+9. 扰动关键假设，找出决策发生改变的阈值；
+10. 确认表格、图形与结论来自同一次运行。
 
-Return to the bakery. Let flour capacity be $F$. Solving over $F=70,75,\ldots,110$ produces a value function $v(F)$. Because it is an LP or MILP depending on setup decisions, $v(F)$ may be piecewise linear with jumps or slope changes. Plot profit and the two product quantities. A slope segment is an empirical shadow price; a breakpoint marks an active-set or integer decision change.
+最后保存一个最小可复现实例。它应小到队友能逐个检查数字，却必须触发模型最困难的机制：固定费用、销售上限、轮作、锥约束或整数逻辑。测试不仅要证明正确版本会通过，还要故意交换单位、删除一条约束或把二元变量放松成连续变量，确认验证器真的会报警。
 
-One-at-a-time sensitivity changes one input while holding others fixed. It is easy to explain and useful for debugging. It can be misleading when inputs are coupled. Increasing crop yield while holding market price and demand fixed may be plausible; increasing yield and price together may contradict historical market response. Define perturbations through mechanisms or joint scenarios when correlations matter.
+### 综合：选择合适的结构
 
-A local derivative
+当边际贡献与规则都是线性且决策可连续分割时，从 LP 开始；当启用、指派、逻辑与不可分性重要时使用 MILP；当平方项表达风险、跟踪、能量或平滑且 Hessian 半正定时使用凸 QP；当欧氏范数、椭球不确定性或凸二次风险约束出现时考虑 SOCP。它们是诊断后的起点，不是强行贴到故事上的标签。
 
-$$S_i=\frac{\partial z^*}{\partial\theta_i}$$
+最有说服力的优化结果从来不只是一个向量。向量说明“做什么”，活跃约束说明“什么阻止继续改善”，对偶价格说明“增加哪种资源可能有价值”，界与间隙说明“还有多少最优性未知”，情景测试说明“方案在哪里脆弱”。这些证据合在一起，才构成一个可以被复核的决策论证。
 
-depends on units. A dimensionless elasticity
+## 知识检查
 
-$$E_i=\frac{\theta_i}{z^*}\frac{\partial z^*}{\partial\theta_i}$$
+下面的问题从基本模型识别逐步走向更困难的建模与最优性认证。题目混合单选与多选；提交后请阅读解释，目标不是只收集分数，而是理解那些看似合理的错误选项为什么失败。
 
-compares relative effects when quantities are positive. If $E_i=0.8$, a local 1% increase in $\theta_i$ corresponds to about 0.8% increase in the output. Elasticity is still local and can fail near thresholds.
-
-For discrete decisions, objective sensitivity alone is inadequate. Define decision stability, for example Jaccard similarity of selected facilities, Hamming distance of crop activations, or normalized $\ell_1$ distance of allocations. A plan can retain nearly the same profit while completely changing which communities are served or which plots are planted. Decision makers experience the plan, not merely its objective.
-
-Global variance-based sensitivity treats uncertain inputs as distributions and decomposes output variance. A first-order Sobol index measures variance attributable to one input; a total-effect index includes interactions. Such indices require a probabilistic model and many evaluations. If distributions are invented without evidence, precise indices create false authority. Screening methods or structured stress tests may be more honest.
-
-Scenario design should include a nominal case, historically grounded alternatives, and decision-relevant stresses. A stress is not a random nightmare; it targets a mechanism that could reverse the decision. For the relief network, close the bridge or reduce one warehouse supply. For the bakery, lower celebration demand near the setup threshold. For the bus schedule, shift rather than merely scale the peak. For a portfolio, change correlation during a downturn. For crops, combine poor yield with a price response rather than perturbing them independently.
-
-Robust optimization needs an uncertainty budget. If every coefficient independently takes its worst value, the resulting plan may protect against a physically impossible simultaneous disaster. Budgeted uncertainty allows at most $\Gamma$ coefficients to experience full adverse deviation, with partial combinations allowed. As $\Gamma$ rises, protection grows and nominal performance usually falls. Plot both, and explain what $\Gamma$ means operationally.
-
-Chance constraints require
-
-$$\Pr(a^Tx\le b)\ge1-\epsilon.$$
-
-Under Gaussian affine uncertainty, this can become an SOCP involving a mean plus a standard-deviation quantile. But the guarantee depends on distribution assumptions. Heavy tails, dependence, and parameter estimation can invalidate it. Empirical scenario approaches give finite-sample bounds under their own assumptions. A paper should state the guarantee's conditions beside the number.
-
-Out-of-sample evaluation is essential when optimization uses estimated quantities. Optimizing noise creates the optimizer's curse: among many alternatives, the selected one tends to have an unusually favorable estimation error. Evaluate the chosen decision on data not used to estimate or select it. Nested validation may be necessary when hyperparameters and models are compared.
-
-Regret is useful when scenario scales differ. For minimization scenario $\omega$, let $z_\omega(x)$ be the cost of fixed decision $x$, and let $z_\omega^*$ be the cost if that scenario were known in advance. Regret is
-
-$$R_\omega(x)=z_\omega(x)-z_\omega^*.$$
-
-Minimax regret chooses $x$ to minimize the worst lost opportunity. It does not minimize worst absolute cost. A scenario that is expensive for every decision may dominate robust cost but contribute little regret. Choose based on the question: survival under absolute loss or avoiding preventable disadvantage.
-
-Value of perfect information compares the expected stochastic-program cost with expected cost under scenario-wise clairvoyance. Value of the stochastic solution compares a true stochastic solution with a policy based on expected inputs. These quantities say whether modeling uncertainty changes the decision enough to matter. They can justify the effort of scenario modeling—or reveal that a simple deterministic plan is adequate.
-
-Communicate uncertainty with decision thresholds. Instead of a tornado chart containing twenty bars, identify where the recommended action changes. “Open the decorating station if demand is at least eight loaves when setup cost is 70” is actionable. “Setup cost has normalized sensitivity 0.43” is harder to use. Show a two-dimensional phase diagram when two inputs jointly determine the decision.
-
-The final uncertainty audit asks four questions. What is unknown at decision time? What evidence defines plausible values? Which decisions can adapt after information arrives? What failure measure matters? Those four answers determine whether ordinary sensitivity, scenarios, stochastic programming, robust optimization, or a simple safety margin is appropriate.
-
-### Studio J: formulation choices that change the answer
-
-Two teams can read the same story, use the same data, and obtain incompatible recommendations without either making an algebra error. The difference is often a formulation choice hidden inside an innocent phrase. This final studio collects several such choices and shows how to expose them before they become conclusions.
-
-Start with “minimize waiting time.” Does this mean average wait,
-
-$$\frac{1}{N}\sum_{i=1}^Nw_i,$$
-
-maximum wait $\max_i w_i$, the fraction above a service threshold, or a convex penalty $\sum_i w_i^2$? Average wait can sacrifice a small group to help many others. Maximum wait protects the worst user but may spend a great deal for a small improvement. A threshold objective reflects a service promise but treats waits just below and just above the threshold discontinuously. Squared wait increasingly penalizes long delays. None is universally correct.
-
-Suppose four passengers wait $(1,1,1,13)$ minutes under Plan A and $(4,4,4,4)$ under Plan B. Both average four minutes. Maximum wait favors B; variance favors B; a threshold of five minutes counts one violation for A and zero for B. If a model claims the plans are equivalent because their averages match, it has chosen an ethical position without saying so.
-
-Fairness constraints can make that position explicit. If groups $g$ have average waits $\bar w_g$, require
-
-$$|\bar w_g-\bar w_h|\le\delta$$
-
-using two linear inequalities for each pair. Or minimize the maximum group wait with epigraph $t\ge\bar w_g$. But a group average may conceal extreme individuals. Fairness must match the harm being addressed and should be reported beside efficiency cost.
-
-Next consider “meet demand.” An equality $\sum_i x_{ij}=d_j$ assumes exact service and no surplus. An inequality $\sum_i x_{ij}\ge d_j$ permits oversupply, harmless only if oversupply has no cost or physical consequence. A soft balance $\sum_i x_{ij}+u_j=d_j$ with penalized shortage admits failure at a stated price. A chance constraint promises a probability of meeting uncertain demand. These are different contracts.
-
-The penalty on shortage needs calibration. If one unserved patient costs $p$ in the objective, compare $p$ with every other cost unit. If $p$ is too small, the model buys cheap shortage. If it is enormous, numerical conditioning suffers and all other trade-offs vanish. Lexicographic optimization avoids arbitrary exchange rates when service truly has priority: first minimize shortage, fix its optimum within tolerance, then minimize operating cost.
-
-“Use no more than three facilities” is $\sum_j z_j\le3$. “Use exactly three” is equality. “Use up to three but pay a fixed cost” may need only the inequality plus fixed-charge objective. These versions behave differently when demand is low. Ask whether unused capacity is allowed, whether an approved site must open, and whether zero facilities is logically possible.
-
-“At least one of A and B” is $z_A+z_B\ge1$. “Exactly one” is equality. “If A, then B” is $z_A\le z_B$. “A only if B” means the same implication, despite conversational ambiguity. “A if B” means $z_B\le z_A$. Truth tables with four binary combinations are the safest way to verify logic.
-
-Exclusive alternatives can be modeled by disjunction. Suppose a depot must lie left of a river strip or right of it:
-
-$$x_1\le L\quad\text{or}\quad x_1\ge U.$$
-
-With bounds $\ell\le x_1\le u$, binary $z$ can impose
-
-$$x_1\le L+(u-L)z,$$
-
-$$x_1\ge U-(U-\ell)(1-z).$$
-
-At $z=0$, the left rule is active; at $z=1$, the right rule is active. Deriving the coefficients from actual bounds creates a much tighter model than inserting a generic million.
-
-Products of binaries can be linearized exactly. For $w=z_1z_2$,
-
-$$w\le z_1,\qquad w\le z_2,\qquad w\ge z_1+z_2-1,\qquad w\ge0.$$
-
-The constraints make $w=1$ exactly when both binaries are one. A binary times a bounded continuous variable needs a McCormick envelope. If $w=zx$ and $\ell\le x\le u$,
-
-$$
-\begin{aligned}
-w&\ge\ell z,& w&\le uz,\\
-w&\ge x-u(1-z),& w&\le x-\ell(1-z).
-\end{aligned}
-$$
-
-For binary $z$, these are exact. For continuous $z\in[0,1]$, they give the convex envelope over the box, a relaxation rather than equality in general.
-
-Absolute values also have direction-sensitive formulations. To minimize $|x-a|$, introduce $t\ge x-a$ and $t\ge a-x$, then minimize $t$. To impose $|x-a|\le r$, use $a-r\le x\le a+r$. But $|x-a|\ge r$ is nonconvex: it means $x\le a-r$ or $x\ge a+r$ and requires disjunctive logic if both sides are allowed. Treating all absolute-value constraints as two linear inequalities can reverse their meaning.
-
-The maximum of affine functions is convex. To minimize
-
-$$\max_k(a_k^Tx+b_k),$$
-
-introduce $t$ with $t\ge a_k^Tx+b_k$ for all $k$ and minimize $t$. The minimum of affine functions is concave; maximizing it uses the analogous hypograph. Incorrect epigraph direction is a frequent formulation bug. Test with one scalar and two lines before deploying the general model.
-
-Piecewise-linear convex costs can use an epigraph of supporting lines. Piecewise-linear concave revenue can use segment variables under suitable ordering. A general nonconvex piecewise function may need SOS2 variables or binaries. State whether breakpoints approximate a physical curve, tariff, or empirical response, and examine approximation error where the optimum lands.
-
-Ratios demand special care. Efficiency $\text{benefit}/\text{cost}$ is undefined at zero cost and can prefer tiny projects with attractive ratios over projects with large total benefit. A linear-fractional objective
-
-$$\max\frac{c^Tx+\alpha}{d^Tx+\beta}$$
-
-with positive denominator can sometimes be transformed by Charnes-Cooper. But maximizing a ratio answers a different question from maximizing net benefit subject to a budget. Ask the decision maker which quantity matters.
-
-For example, Project A saves 100 hours for cost 10, ratio 10. Project B saves 8,000 hours for cost 1,000, ratio 8. A ratio objective selects A even if enough budget exists for B and total saved time is the mission. Ratios are excellent descriptive metrics but dangerous default objectives.
-
-Time indexing creates boundary bugs. Inventory balance
-
-$$I_{t+1}=I_t+q_t-d_t$$
-
-requires an initial $I_1$ and a terminal interpretation for $I_{T+1}$. If $q_T$ is allowed but demand ends at $T$, the model may buy terminal stock with no value unless cost prevents it. If leftover inventory has salvage value, include it. If a repeating weekly schedule is intended, impose cyclic $I_{T+1}=I_1$. These choices affect the last period and can propagate backward.
-
-Rolling-horizon implementation distinguishes planning from execution. Solve several weeks, implement only the first day, update forecasts, then solve again. This reduces forecast dependence but can create myopic decisions if terminal values are poor. Backtest the entire rolling policy, not merely a single optimization window.
-
-Network flow balances need one sign convention. For node $i$,
-
-$$\sum_{j:(j,i)}x_{ji}-\sum_{j:(i,j)}x_{ij}=b_i$$
-
-can define $b_i$ as net demand. If sources use negative $b_i$ and sinks positive, verify $\sum_i b_i=0$ in a closed network. Copying a row with the opposite convention can create or destroy flow. Print each node's inflow, outflow, and balance in the verifier.
-
-Multi-commodity flow adds commodity $k$. Shared arc capacity is
-
-$$\sum_kx_{ijk}\le u_{ij},$$
-
-not one separate capacity for each commodity. Forgetting the sum effectively duplicates infrastructure. Conversely, commodities may have different compatibility or loss factors. Aggregate only when their physical use is interchangeable.
-
-Losses alter conservation. If fraction $α_{ij}$ arrives,
-
-$$\sum_j\alpha_{ji}x_{ji}-\sum_jx_{ij}=b_i.$$
-
-In electricity, nonlinear losses may require a convex approximation or AC power-flow model. A linear transport model can still be a baseline, but the paper must identify where it is reliable and validate voltage or thermal constraints afterward.
-
-Capacity expansion often combines continuous and lumpy choices. Existing capacity $u_i$, continuous expansion $e_i$, and binary construction $z_i$ might satisfy
-
-$$\text{flow}_i\le u_i+e_i,\qquad 0\le e_i\le \bar e_i z_i,$$
-
-with fixed and variable costs. If construction comes in modules, use integer module count. Depreciation and multi-year timing require discounting and lead times. Opening capacity instantaneously in the year it is chosen may be unrealistic.
-
-Discounted value for cash flow $C_t$ at rate $r$ is
-
-$$\sum_{t=0}^T\frac{C_t}{(1+r)^t}.$$
-
-Keep nominal versus real prices consistent with nominal versus real discount rates. Optimization can exploit an inconsistency by shifting costs or benefits in time. Sensitivity to $r$ is especially important for infrastructure with large upfront cost and long benefits.
-
-The final formulation choice is the baseline. Compare a sophisticated optimizer with a policy someone could actually use: nearest facility, proportional allocation, earliest deadline, current practice, equal weights, or a greedy schedule. A weak straw baseline exaggerates improvement. A strong transparent baseline reveals which part of the optimizer creates value.
-
-For every important equation, write one counterexample that would pass if the equation were missing or reversed. Zero production tests resource directions. One impossible assignment tests compatibility. A final-period purchase tests horizon logic. A cheap shortage tests penalty calibration. A fractional setup tests activation. A river-crossing point tests disjunction. Counterexamples convert verbal intent into executable tests.
-
-### Studio K: from mathematical optimum to an implementable policy
-
-An optimization project is not finished when the solver returns $x^*$. The result must survive four translations: from full-precision mathematics to a human-readable plan, from a static plan to operating rules, from modeled conditions to the real environment, and from one successful run to a reproducible decision process. Each translation can destroy feasibility or change the claimed benefit.
-
-Consider a meal-delivery model that assigns 127.6 driver-hours to Monday. The fractional number may be appropriate during strategic capacity planning, where driver-hours are purchased in flexible shifts. It is not an executable roster. If actual shifts last four or eight hours, the decision needs discrete shift patterns. Rounding 127.6 to 128 does not specify who works when, whether breaks are legal, or whether enough drivers overlap at the peak.
-
-A useful hierarchy separates strategic, tactical, and operational decisions. Strategic decisions—open a depot, buy chargers, choose crop infrastructure—have long horizons and are often discrete. Tactical decisions—weekly capacity, planting areas, shift templates—translate assets into plans. Operational decisions—dispatch the next ambulance, reroute one truck, charge a particular vehicle—respond to current information. Forcing every detail into one monolithic model can be unnecessary; optimizing only the strategic layer while assuming operations will somehow work can be dangerous.
-
-One approach is hierarchical optimization. The upper model chooses capacity $y$. A lower scheduling model tests whether operations $x$ can satisfy demand:
-
-$$
-\min_y C(y)+Q(y),
-$$
-
-where
-
-$$
-Q(y)=\min_x\{q^Tx: W x\ge h-Ty, x\in X\}.
-$$
-
-The recourse value $Q(y)$ is not an arbitrary correction; it is the best operating cost available after the capacity decision. If the lower problem is infeasible for some $y$, feasibility cuts or explicit emergency actions are needed. Benders decomposition uses lower-problem duals to approximate $Q(y)$ in the master model. Even when decomposition is not implemented, this structure clarifies what the strategic decision assumes about later adaptation.
-
-Policies can be more useful than schedules when uncertainty unfolds. A static bus schedule fixes every $x_t$ in advance. A policy might say “add one bus when the observed queue exceeds 35 and a reserve driver is available.” The threshold can be optimized in simulation. The policy is simpler to execute, reacts to information, and may be more robust than a detailed nominal schedule.
-
-However, simulation-based policy optimization introduces sampling noise. If $\theta$ is a policy parameter and $\hat J_N(\theta)$ is average cost over $N$ random scenarios, selecting the lowest observed value among many candidates overfits simulation noise. Use common random numbers so policies face the same scenarios, tune on one set, and evaluate the chosen policy on independent scenarios. Report confidence intervals for paired differences.
-
-Suppose Policy A and B are tested on the same $N$ demand paths. Let $D_s=J_s(A)-J_s(B)$. The standard error of the mean difference is
-
-$$
-\operatorname{SE}(\bar D)=
-\frac{s_D}{\sqrt N},
-$$
-
-where $s_D$ is the sample standard deviation of paired differences. Pairing usually reduces variance because hard scenarios affect both policies. Comparing two independent averages discards that information.
-
-Implementation also requires a fallback. A crop plan may become infeasible after a weather shock; a route may be blocked; a nurse may call out. A robust operating procedure specifies which constraints may be softened, in what order, and at what alert level. Emergency shortage variables should exist in the implementation even if the nominal optimum uses none. Their penalties create a controlled degradation rather than software failure.
-
-Slack priorities can be lexicographic. For a hospital roster:
-
-1. never violate qualifications or legal rest;
-2. minimize uncovered critical-care demand;
-3. minimize uncovered ordinary demand;
-4. minimize overtime;
-5. improve preferences and fairness.
-
-Encoding all five with gigantic weights can create numerical and interpretive problems. Sequential optimization is clearer: solve priority 1, fix its optimum, then optimize priority 2, and so forth. Allow a tolerance only when the decision maker explicitly accepts it.
-
-The handoff document should include a data contract. For each input, state name, unit, source, timestamp, allowed range, missing-value rule, and whether it is known at decision time. A model using tomorrow's realized demand during today's scheduling is not deployable even if historical backtests look excellent. The distinction between event time and data-arrival time must be explicit.
-
-Output needs a contract too. A crop schedule should identify plot, year, season, crop, area, expected production, sold quantity, and scenario assumptions. A routing plan needs ordered stops and timing, not just selected edges. A facility plan needs coordinates or site IDs plus capacity and service assignment. Every output row should be traceable to variables and pass a schema validator.
-
-Versioning protects the evidence chain. Store the raw input checksum, preprocessing version, model version, solver and version, parameter file, seed, timestamp, and output checksum. If a figure is regenerated after data change, its caption should correspond to the same run as the reported table. Silent mixture of results from different runs is surprisingly common under competition pressure.
-
-An independent evaluator is stronger than relying on the model-building code. If the optimization code constructs a capacity row incorrectly and the “verification” calls the same row object, both agree on the same mistake. A separate evaluator reads exported decisions and raw data, then reconstructs quantities with simpler code. Independence need not mean another programming language, but it should avoid reusing the exact algebraic construction.
-
-For a crop model, the evaluator can emit a certificate table:
-
-$$
-\begin{array}{lrrr}
-\text{check}&\text{maximum violation}&\text{location}&\text{tolerance}\\\hline
-\text{plot area}&0.0000&-&10^{-6}\\
-\text{rotation}&0&-&0\\
-\text{legume window}&0.0000&-&10^{-6}\\
-\text{sales cap}&0.0000&-&10^{-6}\\
-\text{integrality}&0.0000&-&10^{-6}
-\end{array}
-$$
-
-If there is a violation, replace the dash with the offending semantic index. This table is far more informative than “all constraints satisfied.” It states what was checked and how precisely.
-
-Objective reconciliation is equally important. Break profit into full-price revenue, discounted revenue, planting cost, labor cost, setup cost, and penalties. Sum the table and compare with solver output. A mismatch often reveals that the report and code use different scenarios, discounting, or units.
-
-Rounding must be included in reconciliation. Suppose continuous planting areas are rounded to two decimals. On hundreds of crops, row totals can exceed plot area by accumulated rounding. Use a controlled rounding procedure: floor values, compute remaining capacity, then allocate hundredths according to marginal value while respecting all rules. For coupled rotations, solve a small repair optimization that minimizes distance from the continuous plan.
-
-The repaired plan has its own objective $z_R$. Compare with the continuous bound $z_C$ and, if available, the exact integer incumbent $z_I$. The difference $z_C-z_R$ combines relaxation and repair loss; it is not necessarily the true optimality gap. Be precise about which comparison is certified and which is empirical.
-
-Monitoring begins after deployment. Define leading indicators tied to model assumptions: forecast error, constraint slack, frequency of emergency actions, queue length, unmet demand, price deviation, and data missingness. A model can remain numerically optimal while its input distribution drifts beyond the validated range.
-
-For feature or parameter distribution $P_0$ during development and $P_t$ during operation, distance measures can flag drift, but statistical difference does not automatically imply decision harm. Measure decision drift too: does the recommended action change, does feasibility shrink, or does regret against a revised benchmark rise? Monitoring should connect data changes to consequences.
-
-A retraining or reoptimization trigger can use thresholds. Reoptimize daily for routine updated demand; retrain a forecast when error exceeds a control limit; revisit model structure when residual patterns persist or a previously negligible constraint becomes regularly binding. Do not respond to every noisy fluctuation with a model rewrite.
-
-Human override is part of the system. Record when operators reject recommendations and why. Overrides may reveal missing constraints, inaccurate data, or legitimate contextual knowledge. They may also reflect habit or misunderstanding. Analyze patterns rather than treating every override as either proof that humans are wrong or proof that optimization failed.
-
-Explanations should be decision-specific. “The optimizer chose Depot B because it minimizes the objective” is circular. A better explanation says: “Depot B shortens access to the two highest-demand communities; the river constraint prevents the unconstrained center; moving to Depot A adds 18 expected vehicle-hours, while no capacity rule improves.” Active constraints, counterfactual changes, and objective components form a causal narrative within the model.
-
-Counterfactuals must stay feasible. Asking “what if we did not open Depot B?” means fix $z_B=0$ and reoptimize all other variables, not merely delete B's benefit from the current objective. Reoptimization allows the system to adapt and gives the true model-based opportunity cost.
-
-For black-box stakeholders, present three layers. The first is the recommendation and its expected consequence. The second is the small set of binding reasons and sensitivity thresholds. The third is the technical appendix with complete formulation, data, and certificates. Transparency does not require placing every matrix on the first page; it requires making the evidence traceable.
-
-A predeployment shadow run is often prudent. Generate recommendations without acting on them, compare with current operations, and investigate disagreements. This tests data latency, integration, feasibility, and explanation quality at low risk. The shadow period should have acceptance criteria defined beforehand so only favorable anecdotes do not determine deployment.
-
-An A/B test may be impossible or unethical for strategic decisions, but phased rollout, matched regions, stepped-wedge designs, or interrupted time series can provide causal evidence. Operational evaluation must account for adaptation: drivers learn routes, customers respond to service, and managers change behavior. A one-week result may not represent steady state.
-
-Optimization can create feedback. A demand model trained on sales observes only demand served under previous inventory decisions. If stockouts occurred, sales understate latent demand. Optimizing future inventory from censored sales perpetuates shortage. Record lost sales, availability, and interventions, or use a model that accounts for censoring.
-
-Fairness can also change through feedback. Directing more resources to areas with historically recorded incidents may increase future detection there, reinforcing the pattern. Sensitivity analysis on weights cannot fix a target built from selective observation. The model boundary must include the measurement process when it affects data.
-
-Security and privacy matter for deployment data. Use the minimum personal information required, aggregate when possible, restrict access, and document retention. An assignment optimum does not justify exposing medical or employee information in a public spreadsheet. Competition prototypes should use anonymized identifiers and avoid publishing raw sensitive records.
-
-Operational resilience asks how the system fails. Remove one facility, one key worker, one road, or one data feed and re-evaluate. Compute $N-1$ contingency performance where appropriate. Redundancy may look inefficient in the nominal objective but valuable under disruption. If resilience is a requirement, encode or evaluate it rather than praising it after the fact.
-
-The implementation decision can be framed as a final optimization: balance expected model benefit against integration cost, training cost, maintenance burden, and failure risk. Sometimes the sophisticated model is not worth deploying. A transparent heuristic with 98% of modeled benefit, easy verification, and robust human understanding may be the better system.
-
-Before release, conduct a red-team review. Give one person the task of breaking the model: construct extreme inputs, reverse units, remove data, inspect horizon endpoints, try zero and maximum capacities, check logical truth tables, and search for profitable loopholes. A model that survives adversarial examples earns more confidence than one that merely reproduces its training cases.
-
-Finally, prepare a rollback. Preserve the previous policy, define the alert that triggers rollback, and ensure outputs can be disabled without interrupting the operation. Optimization is a component of a decision system, not an oracle that replaces responsibility.
-
-The complete chain is therefore longer than “formulate, solve, report.” It is: define the decision, formulate, hand-check, solve, certify, translate, repair, simulate, explain, shadow-test, deploy, monitor, learn, and revise. Each step has its own evidence. Skipping one does not make the mathematics false, but it can make the recommendation unusable.
-
-### Studio L: a compact end-to-end audit
-
-Imagine receiving an optimization paper with ten minutes left before submission. Use the following audit in order. First, circle every decision variable and write its unit. If a symbol changes meaning across sections, fix it. Second, read each objective term as a sentence and verify all terms share one value scale or a documented trade-off weight. Third, test every constraint at zero, at an obvious feasible point, and at a deliberately violating point.
-
-Fourth, inspect time and information. Does an equation use data unavailable when the decision is made? Are initial and terminal conditions present? Are adjacent periods correct across seasons or calendar boundaries? Fifth, inspect logic. For every “if,” “only if,” “either,” and “at most,” write a truth table or enumerate a tiny case.
-
-Sixth, classify curvature and discreteness. Confirm every quadratic Hessian claimed convex is PSD, every cone right-hand side has the required sign, and every indivisible decision is integer. Seventh, verify solver status, tolerance, objective bound, and runtime. A feasible incumbent is not automatically optimal; “optimal inaccurate” is not the same as optimal.
-
-Eighth, run the independent output checker and reconcile the objective. Ninth, compare with a hand solution and a meaningful baseline. Tenth, perturb the most important assumptions and show whether decisions—not just objective values—change. Eleventh, inspect every table and figure for matching run identifiers, units, and scenario definitions. Twelfth, rewrite the conclusion so it states conditions and limitations.
-
-This audit will not prove that reality obeys the model. It will ensure that the paper's claims follow from the encoded model, that the encoding follows the stated assumptions, and that numerical output survives basic attempts to break it. That is the standard an optimization result should meet before it influences a real decision.
-
-One final artifact makes the audit repeatable: a minimal reproducible instance. It should be small enough that a teammate can inspect every number without the original data workbook. For an LP, use two activities and two resources and include the expected primal solution, dual solution, active rows, and objective. For a QP, provide the Hessian, eigenvalues, unconstrained minimizer, active-set solution, and KKT residuals. For an SOCP, use a geometric case with an analytic center and radius. For a MILP, choose an instance small enough to enumerate every integer alternative.
-
-The instance must exercise the difficult feature rather than only a trivial path. If production and sales are separated, include a case where production can exceed demand. If fixed charges matter, include one scenario just below and one just above the activation threshold. If rotation is important, use enough periods for the forbidden sequence to occur. If uncertainty creates a cone, choose a perturbation whose worst direction can be calculated by hand.
-
-Store expected results with tolerances, not only screenshots. A regression test might assert
-
-$$
-|z-z_{\mathrm{expected}}|\le10^{-6},
-$$
-
-maximum constraint violation below $10^{-7}$, and the expected set of active constraints. Active sets can change under degeneracy while solutions remain valid, so do not overconstrain a test when several optima exist. In that case test feasibility, objective, and membership in the known optimal face.
-
-Create deliberate failure tests as well. Swap two cost columns and confirm the objective reconciliation fails. Remove a demand row and confirm the unbounded or implausible solution is detected. Change a binary to continuous and confirm integrality checks fail. Reverse one network arc and confirm node balance identifies the location. Tests that only pass the finished implementation do not demonstrate that the verifier can catch errors.
-
-Performance tests need stable measures. Record model dimensions, nonzero coefficients, construction time, solve time, nodes, iterations, incumbent, bound, and peak memory. Do not compare runtime across machines without reporting hardware and solver settings. More importantly, do not trade correctness for a dramatic speed chart: verify every variant under the same output audit.
-
-Reproducibility also includes failure behavior. If an input column is missing, stop with a useful message rather than silently filling zero. If no feasible solution exists, export the diagnostic relaxation rather than an empty “optimal plan.” If a time limit is reached, preserve the incumbent and bound and label them accurately. A reliable pipeline makes uncertainty in computation visible.
-
-Finally, ask a teammate who did not write the model to reproduce the small case from the README. Every undocumented assumption they have to ask about is evidence of a missing sentence, unit, or command. When they can rebuild the result, explain its active constraints, and intentionally trigger a verifier failure, the optimization work has become inspectable rather than personal magic.
-
-Keep an assumption ledger beside those tests. Each entry should record the assumption, its reason, supporting evidence, affected equations, a plausible violation, and the analysis that would detect that violation. “Travel time is constant” is too vague; “the route matrix uses weekday off-peak medians and is stress-tested at the 80th percentile” can be audited. Link every important conclusion back to the entries on which it depends.
-
-The ledger also prevents sensitivity analysis from becoming decorative. Rank assumptions by their ability to change feasibility, active constraints, or the recommended action. Test those first. A parameter with a large effect on the fourth decimal of profit but no effect on the decision deserves less attention than a modest uncertainty that opens a different facility or leaves a shelter unserved.
-
-When the model is updated, rerun the full chain rather than editing the final table manually. A changed data source can alter units; a new constraint can invalidate an old hand solution; a solver upgrade can change tolerances; a revised scenario can make a caption false. Automated checks should fail loudly until every dependent artifact is regenerated and reconciled. That discipline turns a numerical answer into durable, reviewable decision evidence.
-
-### Cross-studio synthesis: choosing the right structure
-
-Across the six studios, the stories differ but the diagnostic questions repeat. Are decisions continuous or indivisible? Are coefficients known before the decision? Does a square express risk, physics, or merely convenience? Is uncertainty bounded, probabilistic, scenario-based, or revealed later? Can one global model be solved, or is the feasible set a union requiring integer logic or decomposition?
-
-Use an LP when marginal contributions and rules are linear and decisions can be continuous. Use a MILP when activation, assignment, logical alternatives, or indivisibility matters. Use a convex QP when curvature represents variance, tracking, energy, or smoothness and the Hessian is PSD. Use an SOCP when Euclidean norms, ellipsoidal uncertainty, or quadratic risk constraints appear in a convex form. These are starting classifications, not labels to force onto a story.
-
-The strongest verification pattern is also shared:
-
-1. solve a tiny instance by hand or enumeration;
-2. reconstruct all constraints from exported decisions;
-3. recompute every objective component independently;
-4. inspect solver status, residuals, bounds, and integrality gap;
-5. compare with a transparent baseline;
-6. perturb important inputs and locate decision breakpoints;
-7. test on held-out or stress scenarios when data permit;
-8. translate active constraints and dual values into domain language.
-
-One should resist a common competition temptation: producing many algorithms and selecting the one with the most favorable number. Models with different objectives or information sets are not contestants in a fair race. Establish one evaluation protocol, give every method the same data available at decision time, and explain why any additional complexity changes evidence or decisions.
-
-Optimization is most persuasive when it returns more than a vector. The vector says what to do. Active constraints say what prevents further improvement. Dual values say which extra resource may matter. sensitivity reveals when the recommendation changes. Bounds say how much optimality remains unknown. Scenarios reveal where the plan is vulnerable. Together these form a decision argument.
-
-## Knowledge Check
-
-The questions below move from basic model recognition to difficult formulation and certification choices. Single-answer and multiple-answer questions are mixed. Read the explanation after checking: the goal is to understand why a tempting alternative fails, not merely to collect a score.
-
-
-The next blog goes deeper into convexity proofs, conjugates, duality, proximal operators, first-order rates, and algorithms for models too large to hand directly to a generic solver.
+下一篇博客将进一步讨论凸性证明、共轭函数、对偶、近端算子、一阶方法的收敛速度，以及规模大到无法直接交给通用求解器的问题。
 
 </LanguagePanel>
 

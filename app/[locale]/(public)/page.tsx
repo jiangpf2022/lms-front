@@ -12,7 +12,7 @@ import type { Data } from "@measured/puck";
 import { getLandingData } from "@/lib/puck/utils/landing-data";
 import { readRootMeta } from "@/lib/puck/utils/root-meta";
 import modelingManifest from '@/content/mathematical-modeling/manifest.json';
-import { getModelingDeveloperSettings, modelingVisibility } from '@/lib/modeling/developer-settings';
+import { getModelingDeveloperSettings, modelingLevel, modelingVisibility } from '@/lib/modeling/developer-settings';
 import { MODELING_DESCRIPTIONS_ZH } from '@/lib/modeling/copy';
 
 const DEFAULT_TENANT_ID = '00000000-0000-0000-0000-000000000001'
@@ -132,7 +132,7 @@ export default async function LandingPage({ params }: { params: Promise<{ locale
 
   const lessons: ModelingLessonSummary[] = (lessonRows ?? []).map((lesson) => ({
     ...lesson,
-    level: modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.level ?? 1,
+    level: modelingLevel(lesson.sequence, modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.level ?? 1, developerSettings),
     titleZh: modelingManifest.lessons.find((item) => item.number === lesson.sequence)?.titleZh,
     descriptionZh: MODELING_DESCRIPTIONS_ZH[lesson.sequence],
     exerciseCount: exerciseCounts.get(lesson.id) ?? 0,
