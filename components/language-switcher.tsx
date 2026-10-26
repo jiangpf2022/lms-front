@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useRouter } from 'next/navigation';
-import { useTranslations } from 'next-intl';
+import { useLocale, useTranslations } from 'next-intl';
 import { buttonVariants } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -16,7 +16,9 @@ import { APP_NAME } from '@/lib/app-name';
 export function LanguageSwitcher() {
   const pathname = usePathname();
   const router = useRouter();
+  const locale = useLocale();
   const t = useTranslations('common');
+  const modelingAcademy = APP_NAME.toLowerCase().includes('modeling academy');
 
   const switchLocale = (newLocale: string) => {
     const currentPath = pathname;
@@ -41,11 +43,11 @@ export function LanguageSwitcher() {
     <DropdownMenu>
       <DropdownMenuTrigger className={cn(buttonVariants({ variant: "ghost", size: "icon" }), "w-9 px-0")}>
         <Globe className="h-[1.2rem] w-[1.2rem] rotate-0 scale-100 transition-all" />
-        <span className="sr-only">{t('toggleLanguage')}</span>
+        <span className="sr-only">{modelingAcademy && locale.startsWith('zh') ? '切换语言' : t('toggleLanguage')}</span>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end">
         <DropdownMenuItem onClick={() => switchLocale('en')}>English</DropdownMenuItem>
-        {APP_NAME.toLowerCase().includes('modeling academy') ? (
+        {modelingAcademy ? (
           <DropdownMenuItem onClick={() => switchLocale('zh')}>中文</DropdownMenuItem>
         ) : (
           <>

@@ -172,7 +172,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                     className="hidden text-muted-foreground hover:text-foreground sm:inline-flex"
                                     render={<Link href={localized('/auth/login')} />}
                                 >
-                                    {t('login')}
+                                    {isModelingAcademy ? (isChinese ? '登录' : 'Login') : t('login')}
                                 </Button>
                             )}
                             {headerSettings?.ctaText && headerSettings?.ctaLink ? (
@@ -181,7 +181,7 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                                 </Button>
                             ) : isModelingAcademy ? (
                                 <Button className="hidden font-medium xl:inline-flex" render={<Link href={localized('/courses/1')} prefetch />}>
-                                    Start learning →
+                                    {isChinese ? '开始学习 →' : 'Start learning →'}
                                 </Button>
                             ) : isMainPlatform ? (
                                 <Button className="font-medium" render={<Link href="/create-school" />}>
