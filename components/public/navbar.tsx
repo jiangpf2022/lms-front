@@ -111,6 +111,9 @@ export async function Navbar({ headerSettings }: NavbarProps = {}) {
                             <Link href={localized('/practice-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '练习' : 'Practice'}</span><span className="hidden lg:inline">{isChinese ? '练习中心' : 'Practice Center'}</span>
                             </Link>
+                            <Link href={localized('/mock-contests')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
+                                <span className="lg:hidden">{isChinese ? '比赛' : 'Contest'}</span><span className="hidden lg:inline">{isChinese ? '模拟赛' : 'Mock Contests'}</span>
+                            </Link>
                             <Link href={localized('/learning-center')} prefetch className="whitespace-nowrap rounded-full px-1.5 py-2 text-[10px] font-bold text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:px-2 sm:text-xs lg:text-sm">
                                 <span className="lg:hidden">{isChinese ? '面板' : 'Dashboard'}</span><span className="hidden lg:inline">{isChinese ? '学习面板' : 'Dashboard'}</span>
                             </Link>

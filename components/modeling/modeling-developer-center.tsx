@@ -2,9 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import Link from 'next/link'
-import { ArrowUpDown, BookOpenText, CheckCircle2, Clock3, Eye, EyeOff, LayoutDashboard, MessageSquareText, RefreshCcw, ShieldCheck } from 'lucide-react'
+import { ArrowUpDown, BookOpenText, CheckCircle2, Clock3, Eye, EyeOff, LayoutDashboard, MessageSquareText, RefreshCcw, ShieldCheck, Trophy, Users } from 'lucide-react'
 import { cn } from '@/lib/utils'
 import type { ModelingVisibility } from '@/lib/modeling/developer-settings'
+import { ModelingMockContestManager } from '@/components/modeling/modeling-mock-contest-manager'
+import { ModelingUserAnalytics } from '@/components/modeling/modeling-user-analytics'
 
 type DeveloperLesson = {
   id: number
@@ -13,6 +15,7 @@ type DeveloperLesson = {
   titleZh: string
   level: number
   databaseStatus: string
+  totalUnits?: number
 }
 
 type Feedback = {
@@ -41,7 +44,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
   const [feedback, setFeedback] = useState<Feedback[]>([])
   const [saving, setSaving] = useState(false)
   const [saved, setSaved] = useState(false)
-  const [activePanel, setActivePanel] = useState<'library' | 'feedback'>('library')
+  const [activePanel, setActivePanel] = useState<'library' | 'users' | 'contests' | 'feedback'>('library')
   const [sortKey, setSortKey] = useState<'sequence' | 'title' | 'level' | 'visibility'>('sequence')
   const [sortDirection, setSortDirection] = useState<'asc' | 'desc'>('asc')
 
@@ -134,6 +137,8 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
           </div>
           <nav className="mt-3 grid gap-1">
             <button onClick={() => setActivePanel('library')} className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'library' ? 'bg-[#163f2c] text-white' : 'text-muted-foreground hover:bg-muted')}><BookOpenText className="h-4 w-4" /> {t('Course Library', '课程库')}</button>
+            <button onClick={() => setActivePanel('users')} className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'users' ? 'bg-sky-700 text-white' : 'text-muted-foreground hover:bg-muted')}><Users className="h-4 w-4" /> {t('User Analytics', '用户分析')}</button>
+            <button onClick={() => setActivePanel('contests')} className={cn('flex items-center gap-3 rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'contests' ? 'bg-amber-600 text-white' : 'text-muted-foreground hover:bg-muted')}><Trophy className="h-4 w-4" /> {t('Mock Contests', '模拟赛')}</button>
             <button onClick={() => setActivePanel('feedback')} className={cn('flex items-center justify-between rounded-xl px-3 py-2.5 text-left text-sm font-bold transition', activePanel === 'feedback' ? 'bg-indigo-700 text-white' : 'text-muted-foreground hover:bg-muted')}><span className="flex items-center gap-3"><MessageSquareText className="h-4 w-4" /> {t('Feedback', '意见反馈')}</span>{feedback.filter((item) => item.status === 'pending').length > 0 && <span className="rounded-full bg-amber-400 px-2 py-0.5 text-[10px] font-black text-amber-950">{feedback.filter((item) => item.status === 'pending').length}</span>}</button>
           </nav>
           <div className="mt-3 border-t border-border pt-3">
@@ -143,7 +148,7 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
 
         <div className="min-w-0">
           <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-            <div><h2 className="text-3xl font-black tracking-[-0.035em]">{activePanel === 'library' ? t('Course Library', '课程库') : t('Reader Feedback', '意见反馈')}</h2><p className="mt-1 text-sm text-muted-foreground">{activePanel === 'library' ? t('Sort lessons and manage publication status in one compact table.', '用紧凑表格排序课程并管理公开状态。') : t('Review suggestions and record whether they were adopted.', '查看读者建议并记录是否采纳。')}</p></div>
+            <div><h2 className="text-3xl font-black tracking-[-0.035em]">{{ library: t('Course Library', '课程库'), users: t('User Analytics', '用户分析'), contests: t('Mock Contests', '模拟赛'), feedback: t('Reader Feedback', '意见反馈') }[activePanel]}</h2><p className="mt-1 text-sm text-muted-foreground">{{ library: t('Sort lessons and manage publication status in one compact table.', '用紧凑表格排序课程并管理公开状态。'), users: t('Manage Level 0–3 access and inspect synced course and quiz performance.', '管理 Level 0–3 权限，并分析已同步的课程进度与测验表现。'), contests: t('Schedule timed contests and prepare problem choices without storing files.', '安排限时模拟赛并准备题目选项，不保存上传文件。'), feedback: t('Review suggestions and record whether they were adopted.', '查看读者建议并记录是否采纳。') }[activePanel]}</p></div>
             <button onClick={() => { void refresh() }} className="inline-flex h-9 items-center gap-2 rounded-full border border-border bg-white/80 px-4 text-xs font-black dark:bg-white/5"><RefreshCcw className="h-3.5 w-3.5" /> {t('Refresh', '刷新')}</button>
           </header>
 
@@ -183,6 +188,10 @@ export function ModelingDeveloperCenter({ lessons, locale }: { lessons: Develope
               </table>
             </div>
           </section>}
+
+          {activePanel === 'users' && <ModelingUserAnalytics lessons={lessons} locale={locale} />}
+
+          {activePanel === 'contests' && <ModelingMockContestManager locale={locale} />}
 
           {activePanel === 'feedback' && <section className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-xl backdrop-blur dark:border-white/10 dark:bg-white/[0.045] sm:p-5">
             <div className="space-y-3">

@@ -12,6 +12,7 @@ import {
   ChevronRight,
   CircleHelp,
   Clock3,
+  Lightbulb,
   MessageSquareText,
   RotateCcw,
   Send,
@@ -618,6 +619,9 @@ export function ModelingLessonReader({
               </div>
               {activeIndex === 0 && localizedLessonDescription && <p className="mt-6 max-w-3xl text-base leading-7 text-[#526259] dark:text-white/60">{localizedLessonDescription}</p>}
             </header>
+            <aside className="not-prose mb-9 rounded-2xl border border-indigo-200/80 bg-[linear-gradient(135deg,rgba(238,242,255,.92),rgba(240,253,250,.88))] p-5 dark:border-indigo-300/15 dark:bg-[linear-gradient(135deg,rgba(79,70,229,.10),rgba(16,185,129,.08))]">
+              <div className="flex items-start gap-3"><span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-indigo-700 text-white"><Lightbulb className="h-4 w-4" /></span><div><p className="text-[10px] font-black uppercase tracking-[0.18em] text-indigo-700 dark:text-indigo-300">{language === 'zh' ? '先思考，再看推导' : 'Think first, then derive'}</p><p className="mt-2 text-sm leading-7 text-[#46554d] dark:text-white/70">{language === 'zh' ? `在继续阅读“${activeChapter.title}”之前，先试着回答：我们真正需要求出的量是什么？它应当由哪些已知量决定？单位、边界条件或守恒关系会限制公式长成什么样？不必立刻算出答案；先写下你的第一步，再沿着下面的解释逐步核对。` : `Before reading the derivation in “${activeChapter.title},” pause and ask: what quantity are we actually trying to determine, which known quantities should control it, and how do units, boundary conditions, or balance laws constrain the form of the equation? You do not need the full answer yet—write your first step, then compare it with the reasoning below.`}</p></div></div>
+            </aside>
             <LessonContent mdx={activeChapter.mdx} videoUrl={null} embedCode={null} embedMode="sandboxed" />
             </div>
           </article>

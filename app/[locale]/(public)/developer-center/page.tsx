@@ -5,6 +5,8 @@ import { getCurrentTenantId, getSessionUser } from '@/lib/supabase/tenant'
 import { isModelingDeveloper } from '@/lib/modeling/developer-settings'
 import { ModelingDeveloperCenter } from '@/components/modeling/modeling-developer-center'
 import modelingManifest from '@/content/mathematical-modeling/manifest.json'
+import { readLocalModelingLesson } from '@/lib/modeling/local-content'
+import { extractLessonChapters } from '@/lib/modeling/lesson-chapters'
 
 export const dynamic = 'force-dynamic'
 
@@ -22,13 +24,18 @@ export default async function DeveloperCenterPage({ params }: { params: Promise<
     ? await admin.from('lessons').select('id,sequence,title,status').eq('tenant_id', tenantId).eq('course_id', course.course_id).order('sequence')
     : { data: [] }
   const rowMap = new Map((rows ?? []).map((row) => [row.sequence, row]))
-  const lessons = modelingManifest.lessons.map((item) => ({
-    id: rowMap.get(item.number)?.id ?? item.number,
-    sequence: item.number,
-    title: item.title,
-    titleZh: item.titleZh,
-    level: item.level,
-    databaseStatus: rowMap.get(item.number)?.status ?? item.status,
+  const lessons = await Promise.all(modelingManifest.lessons.map(async (item) => {
+    const source = await readLocalModelingLesson(item.number, modelingManifest.course.title)
+    const totalUnits = source ? extractLessonChapters(source, item.title).en.length + 1 : 9
+    return {
+      id: rowMap.get(item.number)?.id ?? item.number,
+      sequence: item.number,
+      title: item.title,
+      titleZh: item.titleZh,
+      level: item.level,
+      databaseStatus: rowMap.get(item.number)?.status ?? item.status,
+      totalUnits,
+    }
   }))
   return <ModelingDeveloperCenter lessons={lessons} locale={locale} />
 }
